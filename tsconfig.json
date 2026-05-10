@@ -15,9 +15,6 @@
       ],
       "@sigx/ssg-theme-daisyui": [
         "./packages/ssg-theme-daisyui/src/index.ts"
-      ],
-      "@sigx/ssr-islands": [
-        "./packages/ssr-islands/src/index.ts"
       ]
     }
   },

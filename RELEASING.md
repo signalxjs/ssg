@@ -28,9 +28,8 @@ npm dist-tag add <pkg>@X.Y.Z latest
 
 The publish script publishes packages in dependency order:
 
-1. `@sigx/ssr-islands`
-2. `@sigx/ssg`
-3. `@sigx/ssg-theme-daisyui`
+1. `@sigx/ssg`
+2. `@sigx/ssg-theme-daisyui`
 
 ## Onboarding a new package to npm Trusted Publishing
 

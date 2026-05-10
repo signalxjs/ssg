@@ -2,7 +2,7 @@
 
 # SignalX SSG
 
-**Static site generation and SSR islands for [SignalX](https://github.com/signalxjs/core).**
+**Static site generation for [SignalX](https://github.com/signalxjs/core).**
 
 [![npm @sigx/ssg](https://img.shields.io/npm/v/@sigx/ssg.svg?label=@sigx/ssg&color=blue)](https://www.npmjs.com/package/@sigx/ssg)
 [![license](https://img.shields.io/npm/l/@sigx/ssg.svg)](./LICENSE)
@@ -18,14 +18,13 @@
 | --- | --- |
 | [`@sigx/ssg`](packages/ssg) | Static site generator with file-based routing, MDX, and pluggable themes |
 | [`@sigx/ssg-theme-daisyui`](packages/ssg-theme-daisyui) | daisyUI/Tailwind theme for `@sigx/ssg` |
-| [`@sigx/ssr-islands`](packages/ssr-islands) | Islands runtime + Vite plugin for partial hydration |
 
 ## Install
 
 ```bash
 npm install @sigx/ssg sigx
 # optional
-npm install @sigx/ssg-theme-daisyui @sigx/ssr-islands
+npm install @sigx/ssg-theme-daisyui
 ```
 
 ## Quick start — `@sigx/ssg`
@@ -60,7 +59,7 @@ src/pages/
 - **File-based routing** with dynamic segments and catch-all routes.
 - **MDX support** — first-class for docs and blogs, with frontmatter.
 - **Pluggable themes** — `@sigx/ssg-theme-daisyui` ships layouts, header, sidebar, TOC.
-- **Islands architecture** via `@sigx/ssr-islands` — `client:load`, `client:visible`, `client:idle` directives for partial hydration.
+- **Islands architecture** via [`@sigx/ssr-islands`](https://github.com/signalxjs/ssr-islands) — `client:load`, `client:visible`, `client:idle` directives for partial hydration.
 - **Streaming SSR** — render to a stream with async-component support.
 - **Built on Vite 8 + Rolldown** — fast dev, fast builds.
 
@@ -69,6 +68,7 @@ src/pages/
 - [`signalxjs/core`](https://github.com/signalxjs/core) — `reactivity`, `runtime-core`, `runtime-dom`, `server-renderer`, `vite`, `sigx`
 - [`signalxjs/router`](https://github.com/signalxjs/router) — `@sigx/router` (used by `@sigx/ssg`)
 - [`signalxjs/store`](https://github.com/signalxjs/store) — `@sigx/store`
+- [`signalxjs/ssr-islands`](https://github.com/signalxjs/ssr-islands) — `@sigx/ssr-islands`
 - [`signalxjs/cli`](https://github.com/signalxjs/cli) — `@sigx/cli` (sigx-cli plugin host)
 - [`signalxjs/lynx`](https://github.com/signalxjs/lynx) — Lynx native runtime + modules
 - [`signalxjs/docs`](https://github.com/signalxjs/docs) — Docs site (consumes this repo's `@sigx/ssg`)

@@ -25,7 +25,6 @@ body:
       options:
         - "@sigx/ssg"
         - "@sigx/ssg-theme-daisyui"
-        - "@sigx/ssr-islands"
         - Not sure / multiple
     validations:
       required: true

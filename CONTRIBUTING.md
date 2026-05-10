@@ -1,12 +1,11 @@
 # Contributing to SignalX SSG
 
-Thanks for your interest! This repo holds the **SSG cluster** for [SignalX](https://github.com/signalxjs/core):
+Thanks for your interest! This repo holds:
 
 - `@sigx/ssg` — static site generator with file-based routing, MDX, themes
 - `@sigx/ssg-theme-daisyui` — daisyUI/Tailwind theme for `@sigx/ssg`
-- `@sigx/ssr-islands` — islands runtime + Vite plugin for partial hydration
 
-Higher-level pieces (router, store, native targets, scaffolding CLI) live in their own repositories under [`signalxjs`](https://github.com/signalxjs).
+Companion pieces (router, store, ssr-islands, native targets, scaffolding CLI) live in their own repositories under [`signalxjs`](https://github.com/signalxjs).
 
 ## Prerequisites
 
@@ -28,7 +27,6 @@ pnpm build
 packages/
   ssg/                  → @sigx/ssg
   ssg-theme-daisyui/    → @sigx/ssg-theme-daisyui
-  ssr-islands/          → @sigx/ssr-islands
 ```
 
 ## Common tasks

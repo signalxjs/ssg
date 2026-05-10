@@ -157,7 +157,7 @@ A theme bundles layouts, components, and CSS so you don't have to.
 
 ## Islands hydration
 
-`@sigx/ssg` works with [`@sigx/ssr-islands`](https://github.com/signalxjs/ssg/tree/main/packages/ssr-islands) for selective hydration via `client:*` directives. See the islands README for details.
+`@sigx/ssg` works with [`@sigx/ssr-islands`](https://github.com/signalxjs/ssr-islands) for selective hydration via `client:*` directives. See the islands README for details.
 
 ## Configuration
 

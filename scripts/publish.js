@@ -33,7 +33,6 @@ const rootDir = join(__dirname, '..');
 
 // Packages in dependency order (dependencies first).
 const PACKAGES = [
-    'packages/ssr-islands',
     'packages/ssg',
     'packages/ssg-theme-daisyui',
 ];
