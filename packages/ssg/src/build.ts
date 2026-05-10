@@ -45,6 +45,20 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const config = await loadConfig(options.configPath);
     const resolvedConfig = resolveConfigPaths(config, root);
 
+    // Inherit Vite's `base` when the SSG config doesn't set one, so the
+    // sitemap and post-build steps share the prefix Vite uses for assets.
+    if (!resolvedConfig.base || resolvedConfig.base === '/') {
+        try {
+            const viteForBase = await import('vite');
+            const viteResolved = await viteForBase.resolveConfig({ root }, 'build');
+            if (viteResolved.base && viteResolved.base !== '/') {
+                resolvedConfig.base = viteResolved.base;
+            }
+        } catch {
+            // Vite config not loadable here — continue with default '/'.
+        }
+    }
+
     // Step 2: Scan routes
     console.log('🔍 Scanning pages...');
     const routes = await scanPages(resolvedConfig, root);
@@ -429,22 +443,24 @@ function generateHeadTags(pathInfo: PathToRender, config: SSGConfig): string {
 }
 
 /**
- * Get output file path for a URL path
+ * Get output file path for a URL path.
+ *
+ * - `/`         → `<outDir>/index.html`
+ * - `/about`    → `<outDir>/about/index.html`
+ * - `/foo.html` → `<outDir>/foo.html`
  */
 function getOutputPath(urlPath: string, outDir: string): string {
-    // Normalize path
-    let normalized = urlPath.replace(/^\//, '').replace(/\/$/, '');
+    const normalized = urlPath.replace(/^\//, '').replace(/\/$/, '');
 
     if (!normalized) {
-        normalized = 'index';
+        return path.join(outDir, 'index.html');
     }
 
-    // Add .html extension or /index.html for directories
-    if (!normalized.endsWith('.html')) {
-        normalized = path.join(normalized, 'index.html');
+    if (normalized.endsWith('.html')) {
+        return path.join(outDir, normalized);
     }
 
-    return path.join(outDir, normalized);
+    return path.join(outDir, normalized, 'index.html');
 }
 
 /**
