@@ -48,5 +48,6 @@
     "homepage": "https://github.com/signalxjs/ssg",
     "bugs": {
         "url": "https://github.com/signalxjs/ssg/issues"
-    }
+    },
+    "packageManager": "pnpm@10.28.2"
 }
