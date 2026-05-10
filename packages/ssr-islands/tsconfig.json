@@ -14,12 +14,8 @@
     "skipLibCheck": true,
     "jsx": "react-jsx",
     "jsxImportSource": "sigx",
-    "paths": {
-      "@sigx/runtime-core": ["../runtime-core/dist"],
-      "@sigx/server-renderer": ["../server-renderer/dist"],
-      "sigx": ["../sigx/dist"]
-    }
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "__tests__"]
 }
