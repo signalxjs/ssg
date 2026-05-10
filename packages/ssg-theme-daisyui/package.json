@@ -1,0 +1,55 @@
+{
+    "name": "@sigx/ssg-theme-daisyui",
+    "version": "0.4.1",
+    "description": "DaisyUI theme for @sigx/ssg with pre-built layouts and components",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsgo",
+        "dev": "tsgo --watch"
+    },
+    "keywords": [
+        "sigx",
+        "ssg",
+        "theme",
+        "daisyui"
+    ],
+    "author": "Andreas Ekdahl",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/signalxjs/ssg.git",
+        "directory": "packages/ssg-theme-daisyui"
+    },
+    "homepage": "https://github.com/signalxjs/ssg/tree/main/packages/ssg-theme-daisyui",
+    "bugs": {
+        "url": "https://github.com/signalxjs/ssg/issues"
+    },
+    "dependencies": {
+        "@sigx/router": "^0.4.2",
+        "@sigx/ssg": "workspace:^"
+    },
+    "peerDependencies": {
+        "daisyui": ">=5.0.0",
+        "sigx": "^0.4.1",
+        "tailwindcss": ">=4.0.0"
+    },
+    "devDependencies": {
+        "sigx": "^0.4.1",
+        "typescript": "^5.9.3"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}
