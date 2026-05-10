@@ -219,12 +219,15 @@ export async function render(url, context) {
     // Note: We must create a new router per render because history is URL-specific
     const router = createRouter({
         routes: routesWithLayouts,
-        history: createMemoryHistory({ initialLocation: url || '/' }),
+        history: createMemoryHistory({
+            base: '${config.base || '/'}',
+            initialLocation: url || '/',
+        }),
     });
 
     // Create app with router - router's install() sets up DI via app.defineProvide()
     const app = defineApp(<LayoutRouter />).use(router);
-    
+
     const html = await renderToString(app);
     return html;
 }
