@@ -84,12 +84,16 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
 
             // Load SSG config - always try to load from file first
             const fileConfig = await loadConfig(options.configPath);
-            
-            // Merge file config with plugin options (plugin options take precedence)
-            ssgConfig = defineSSGConfig({
-                ...fileConfig,
-                ...options,
-            });
+
+            // Merge file config with plugin options (plugin options take precedence).
+            // Inherit Vite's `base` when the SSG config doesn't set one, so the
+            // generated router and sitemap stay in sync with the asset URLs Vite
+            // emits (e.g. when deploying under a sub-path like /docs/).
+            const merged = { ...fileConfig, ...options };
+            if ((merged.base == null || merged.base === '/') && resolvedConfig.base && resolvedConfig.base !== '/') {
+                merged.base = resolvedConfig.base;
+            }
+            ssgConfig = defineSSGConfig(merged);
 
             // Detect custom entry points
             entryDetection = detectCustomEntries(root, ssgConfig);

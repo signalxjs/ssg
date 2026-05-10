@@ -16,6 +16,10 @@ build/
 !packages/*/scripts/*.js
 !scripts/*.js
 
+# Keep hand-written ambient declarations (the dist .d.ts files that
+# tsgo emits stay ignored because they live under dist/).
+!packages/*/src/**/*.d.ts
+
 # TypeScript cache
 *.tsbuildinfo
 
