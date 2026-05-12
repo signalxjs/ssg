@@ -37,16 +37,16 @@
         "url": "https://github.com/signalxjs/ssg/issues"
     },
     "dependencies": {
-        "@sigx/router": "^0.4.4",
+        "@sigx/router": "^0.4.5",
         "@sigx/ssg": "workspace:^"
     },
     "peerDependencies": {
         "daisyui": ">=5.0.0",
-        "sigx": "^0.4.1",
+        "sigx": "^0.4.3",
         "tailwindcss": ">=4.0.0"
     },
     "devDependencies": {
-        "sigx": "^0.4.1",
+        "sigx": "^0.4.3",
         "typescript": "^6.0.3"
     },
     "publishConfig": {
