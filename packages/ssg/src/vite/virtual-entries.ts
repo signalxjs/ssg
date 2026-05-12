@@ -168,7 +168,7 @@ const layoutRoutes = setupLayouts(routes);
 
 // Create router with browser history
 const router = createRouter({
-    history: createWebHistory('${config.base || '/'}'),
+    history: createWebHistory({ base: '${config.base || '/'}' }),
     routes: layoutRoutes,
     scrollBehavior(to, from, savedPosition) {
         if (savedPosition) return savedPosition;
