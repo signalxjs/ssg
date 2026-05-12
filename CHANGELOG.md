@@ -4,6 +4,20 @@ All notable changes to packages in this repo. Each package may also keep its own
 
 ## [Unreleased]
 
+## 0.4.5 — 2026-05-12
+
+- `@sigx/ssg`: bump `@sigx/router` to `^0.4.5`, `@sigx/server-renderer` to `^0.4.3`, `sigx` peer to `^0.4.3`, `shiki` to `^4.0.2`, `esbuild` to `^0.28.0`.
+- `@sigx/ssg-theme-daisyui`: bump `@sigx/router` to `^0.4.5`, `sigx` peer to `^0.4.3`.
+- Repo: added `verify-pack` smoke test mirroring `signalxjs/core` (`pnpm verify:pack`) and ruleset-based branch protection on `main` requiring it.
+
+## 0.4.3 — 2026-05-10
+
+- `@sigx/ssg`: fix root index resolution, virtual types entry, and Vite base inheritance.
+
+## 0.4.4 — 2026-05-10
+
+- `@sigx/ssg`: pass router base into the virtual SSR entry.
+
 ## 0.4.2 — 2026-05-10
 
 - `@sigx/ssr-islands` extracted to its own repo at [`signalxjs/ssr-islands`](https://github.com/signalxjs/ssr-islands). It is no longer published from this repo.
