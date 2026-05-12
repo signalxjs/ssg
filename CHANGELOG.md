@@ -4,6 +4,10 @@ All notable changes to packages in this repo. Each package may also keep its own
 
 ## [Unreleased]
 
+## 0.4.6 — 2026-05-12
+
+- `@sigx/ssg`: **Fix** — generated client entry now calls `createWebHistory({ base })` instead of `createWebHistory(base)`. `@sigx/router` 0.4.x takes an options object; the old positional-string call silently passed `base = undefined`, so the router never stripped the base prefix from `window.location.pathname`. The result was that any deployment with a non-root `base` (e.g. GitHub Pages at `/docs/`) failed to match any routes — `LayoutRouter` rendered `null`, no page components hydrated, all `onMounted` hooks (typewriter, scroll-reveal, theme init, etc.) never fired, and the start page appeared "broken" (SSR HTML visible, but no interactivity). Verified end-to-end against signalxjs/docs.
+
 ## 0.4.5 — 2026-05-12
 
 - `@sigx/ssg`: bump `@sigx/router` to `^0.4.5`, `@sigx/server-renderer` to `^0.4.3`, `sigx` peer to `^0.4.3`, `shiki` to `^4.0.2`, `esbuild` to `^0.28.0`.
