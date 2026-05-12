@@ -18,6 +18,7 @@
     "publish:dry": "node scripts/publish.js --dry-run",
     "publish:all": "node scripts/publish.js",
     "publish:beta": "node scripts/publish.js --tag beta",
+    "verify:pack": "node scripts/verify-pack.js",
     "version:set": "node scripts/bump-version.js",
     "version:patch": "node scripts/bump-version.js patch",
     "version:minor": "node scripts/bump-version.js minor",
