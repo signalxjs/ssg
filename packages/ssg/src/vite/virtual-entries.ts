@@ -235,18 +235,20 @@ export async function render(url, context) {
 }
 
 /**
- * Generate virtual HTML template
+ * Generate virtual HTML template (dev server).
+ *
+ * Per-page-overridable head content (title, description, canonical, OG,
+ * Twitter) is emitted by generateHeadTags() in build.ts and injected at
+ * the `<!--head-tags-->` marker. In dev mode the marker is not replaced,
+ * so a fallback `<title>` from site config keeps the browser tab readable
+ * while developing; production builds replace the marker.
  */
 export function generateHtmlTemplate(config: SSGConfig): string {
     const site = config.site || {};
     const lang = site.lang || 'en';
     const title = site.title || 'SignalX App';
-    const description = site.description || '';
     const favicon = site.favicon || '/favicon.ico';
     const themeColor = site.themeColor || '#000000';
-    const ogImage = site.ogImage || '';
-    const url = site.url || '';
-    const twitter = site.twitter || '';
     const fonts = site.fonts || [];
 
     // Build font preconnect and stylesheet links
@@ -258,38 +260,13 @@ export function generateHtmlTemplate(config: SSGConfig): string {
     <link href="https://fonts.googleapis.com/css2?family=${fonts.join('&family=')}&display=swap" rel="stylesheet" />`;
     }
 
-    // Build OG meta tags
-    let ogTags = '';
-    if (url || ogImage) {
-        ogTags = `
-    <!-- Open Graph -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />${url ? `
-    <meta property="og:url" content="${url}" />` : ''}${ogImage ? `
-    <meta property="og:image" content="${ogImage}" />` : ''}`;
-    }
-
-    // Build Twitter card tags
-    let twitterTags = '';
-    if (twitter || ogImage) {
-        twitterTags = `
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="${ogImage ? 'summary_large_image' : 'summary'}" />${twitter ? `
-    <meta name="twitter:site" content="@${twitter}" />` : ''}
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />${ogImage ? `
-    <meta name="twitter:image" content="${ogImage}" />` : ''}`;
-    }
-
     return `<!DOCTYPE html>
 <html lang="${lang}">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="${description}" />
     <meta name="theme-color" content="${themeColor}" />
-    <link rel="icon" type="image/x-icon" href="${favicon}" />${fontLinks}${ogTags}${twitterTags}
+    <link rel="icon" type="image/x-icon" href="${favicon}" />${fontLinks}
     <title>${title}</title>
     <!--head-tags-->
 </head>
@@ -302,19 +279,19 @@ export function generateHtmlTemplate(config: SSGConfig): string {
 }
 
 /**
- * Generate HTML template for production build
- * Uses the actual client entry path instead of virtual module
+ * Generate HTML template for production build.
+ *
+ * Per-page-overridable head content (title, description, canonical, OG,
+ * Twitter) is emitted by generateHeadTags() in build.ts and injected at
+ * the `<!--head-tags-->` marker. Keeping copies in this template caused
+ * duplicate `<title>` tags in built output and stale OG metadata; the
+ * template now only carries truly static head content.
  */
 export function generateProductionHtmlTemplate(config: SSGConfig, clientEntryPath: string): string {
     const site = config.site || {};
     const lang = site.lang || 'en';
-    const title = site.title || 'SignalX App';
-    const description = site.description || '';
     const favicon = site.favicon || '/favicon.ico';
     const themeColor = site.themeColor || '#000000';
-    const ogImage = site.ogImage || '';
-    const url = site.url || '';
-    const twitter = site.twitter || '';
     const fonts = site.fonts || [];
 
     // Build font preconnect and stylesheet links
@@ -326,39 +303,13 @@ export function generateProductionHtmlTemplate(config: SSGConfig, clientEntryPat
     <link href="https://fonts.googleapis.com/css2?family=${fonts.join('&family=')}&display=swap" rel="stylesheet" />`;
     }
 
-    // Build OG meta tags
-    let ogTags = '';
-    if (url || ogImage) {
-        ogTags = `
-    <!-- Open Graph -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />${url ? `
-    <meta property="og:url" content="${url}" />` : ''}${ogImage ? `
-    <meta property="og:image" content="${ogImage}" />` : ''}`;
-    }
-
-    // Build Twitter card tags
-    let twitterTags = '';
-    if (twitter || ogImage) {
-        twitterTags = `
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="${ogImage ? 'summary_large_image' : 'summary'}" />${twitter ? `
-    <meta name="twitter:site" content="@${twitter}" />` : ''}
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />${ogImage ? `
-    <meta name="twitter:image" content="${ogImage}" />` : ''}`;
-    }
-
     return `<!DOCTYPE html>
 <html lang="${lang}">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="${description}" />
     <meta name="theme-color" content="${themeColor}" />
-    <link rel="icon" type="image/x-icon" href="${favicon}" />${fontLinks}${ogTags}${twitterTags}
-    <title>${title}</title>
+    <link rel="icon" type="image/x-icon" href="${favicon}" />${fontLinks}
     <!--head-tags-->
 </head>
 <body>
