@@ -415,28 +415,73 @@ async function renderPage(
 }
 
 /**
- * Generate head tags for a page
+ * Generate head tags for a page.
+ *
+ * Single source for everything per-page-overridable: title, description,
+ * canonical, Open Graph, and Twitter Card. The HTML templates (dev + prod)
+ * deliberately do NOT emit these — emitting them in both places caused
+ * duplicate `<title>` tags in built output.
  */
 function generateHeadTags(pathInfo: PathToRender, config: SSGConfig): string {
     const tags: string[] = [];
+    const site = config.site || {};
     const meta = pathInfo.route.meta || {};
 
-    // Title
-    const title = meta.title || config.site?.title;
+    const title = meta.title || site.title;
+    const description = meta.description || site.description;
+    const ogImage = site.ogImage;
+    const twitter = site.twitter;
+
+    // Build canonical first so OG/Twitter can reuse it. Mirror sitemap.ts
+    // so canonical and sitemap URLs are byte-identical (Google flags
+    // soft-conflicts when they differ).
+    let canonical: string | null = null;
+    if (site.url) {
+        const siteUrl = site.url.replace(/\/$/, '');
+        const base = config.base?.replace(/\/$/, '') || '';
+        canonical = `${siteUrl}${base}${pathInfo.path}`;
+    }
+
     if (title) {
         tags.push(`<title>${escapeHtml(title)}</title>`);
     }
-
-    // Description
-    const description = meta.description || config.site?.description;
     if (description) {
         tags.push(`<meta name="description" content="${escapeHtml(description)}">`);
     }
+    if (canonical) {
+        tags.push(`<link rel="canonical" href="${escapeHtml(canonical)}">`);
+    }
 
-    // Canonical URL
-    if (config.site?.url) {
-        const canonical = new URL(pathInfo.path, config.site.url).href;
-        tags.push(`<link rel="canonical" href="${canonical}">`);
+    if (canonical || ogImage) {
+        tags.push(`<meta property="og:type" content="website">`);
+        if (title) {
+            tags.push(`<meta property="og:title" content="${escapeHtml(title)}">`);
+        }
+        if (description) {
+            tags.push(`<meta property="og:description" content="${escapeHtml(description)}">`);
+        }
+        if (canonical) {
+            tags.push(`<meta property="og:url" content="${escapeHtml(canonical)}">`);
+        }
+        if (ogImage) {
+            tags.push(`<meta property="og:image" content="${escapeHtml(ogImage)}">`);
+        }
+    }
+
+    if (twitter || ogImage) {
+        tags.push(`<meta name="twitter:card" content="${ogImage ? 'summary_large_image' : 'summary'}">`);
+        if (twitter) {
+            tags.push(`<meta name="twitter:site" content="@${escapeHtml(twitter)}">`);
+        }
+        if (title) {
+            tags.push(`<meta name="twitter:title" content="${escapeHtml(title)}">`);
+        }
+        if (description) {
+            tags.push(`<meta name="twitter:description" content="${escapeHtml(description)}">`);
+        }
+        if (ogImage) {
+            tags.push(`<meta name="twitter:image" content="${escapeHtml(ogImage)}">`);
+        }
     }
 
     return tags.join('\n    ');
