@@ -71,7 +71,7 @@ src/pages/
 - [`signalxjs/ssr-islands`](https://github.com/signalxjs/ssr-islands) — `@sigx/ssr-islands`
 - [`signalxjs/cli`](https://github.com/signalxjs/cli) — `@sigx/cli` (sigx-cli plugin host)
 - [`signalxjs/lynx`](https://github.com/signalxjs/lynx) — Lynx native runtime + modules
-- [`signalxjs/docs`](https://github.com/signalxjs/docs) — Docs site (consumes this repo's `@sigx/ssg`)
+- [Docs site](https://signalxjs.github.io/) — main SignalX documentation (consumes this repo's `@sigx/ssg`)
 
 ## Contributing
 

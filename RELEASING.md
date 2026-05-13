@@ -51,7 +51,7 @@ Every release lands on `@beta` first, never directly on `@latest`. This lets us:
 Workflow per release:
 
 1. Bump versions, tag, push — release workflow publishes under `@beta`.
-2. Run smoke tests against `signalxjs/docs` checked out locally with the new versions installed.
+2. Run smoke tests against `signalxjs/signalxjs.github.io` checked out locally with the new versions installed.
 3. Soak ≥ 24 h. Watch for issues.
 4. Promote: `npm dist-tag add <pkg>@<version> latest` for each package.
 5. Update `CHANGELOG.md`, draft GitHub Release notes.
