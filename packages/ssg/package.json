@@ -61,6 +61,7 @@
         "url": "https://github.com/signalxjs/ssg/issues"
     },
     "dependencies": {
+        "@mdx-js/rollup": "^3.1.0",
         "@sigx/router": "^0.4.5",
         "@sigx/server-renderer": "^0.4.3",
         "esbuild": "^0.28.0",
@@ -91,7 +92,6 @@
         }
     },
     "devDependencies": {
-        "@mdx-js/rollup": "^3.1.0",
         "@sigx/vite": "^0.4.3",
         "@types/node": "^25.7.0",
         "tsx": "^4.19.0",
