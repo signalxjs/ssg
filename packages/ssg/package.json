@@ -63,7 +63,7 @@
     "dependencies": {
         "@mdx-js/rollup": "^3.1.0",
         "@sigx/router": "^0.4.5",
-        "@sigx/server-renderer": "^0.4.3",
+        "@sigx/server-renderer": "^0.4.8",
         "esbuild": "^0.28.0",
         "fast-glob": "^3.3.2",
         "gray-matter": "^4.0.3",
