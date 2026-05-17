@@ -42,11 +42,11 @@
     },
     "peerDependencies": {
         "daisyui": ">=5.0.0",
-        "sigx": "^0.4.3",
+        "sigx": "^0.4.8",
         "tailwindcss": ">=4.0.0"
     },
     "devDependencies": {
-        "sigx": "^0.4.3",
+        "sigx": "^0.4.8",
         "typescript": "^6.0.3"
     },
     "publishConfig": {
