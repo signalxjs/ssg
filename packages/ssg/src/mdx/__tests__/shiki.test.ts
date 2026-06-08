@@ -34,6 +34,15 @@ describe('highlightCode — live trigger label', () => {
         expect(html).toContain('>⚡ Run</button>');
     });
 
+    it('omits the island SSR trigger button when the block is not live', async () => {
+        const html = await highlightCode(LIVE_CODE, 'tsx', { triggerLabel: '⚡ Run' }, {
+            live: false,
+            tabs: ['preview', 'code'],
+        });
+        expect(html).toContain('class="live-preview-island"');
+        expect(html).not.toContain('code-window-try-live');
+    });
+
     it('escapes a configured label', async () => {
         const html = await highlightCode(LIVE_CODE, 'tsx', { triggerLabel: 'Run <now>' }, { live: true });
         expect(html).toContain('Run &lt;now&gt;</button>');
@@ -89,5 +98,10 @@ describe('rehypeShiki — per-fence label meta', () => {
 
     it('defaults when neither per-fence nor config label is set', async () => {
         expect(await triggerLabelFor('live')).toBe('⚡ Try Live');
+    });
+
+    it('does not match the label key as a substring of another token', async () => {
+        // `data-label="x"` must not be read as `label`; falls back to the default.
+        expect(await triggerLabelFor('live data-label="x"')).toBe('⚡ Try Live');
     });
 });

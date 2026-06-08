@@ -121,7 +121,7 @@ export async function highlightCode(
             <div class="code-window-tabs">
                 ${tabButtonsHtml}
             </div>
-            <button class="code-window-try-live" disabled>${triggerLabel}</button>
+            ${isLive ? `<button class="code-window-try-live" disabled>${triggerLabel}</button>` : ''}
         </div>
         <div class="code-window-preview-pane"${firstTab !== 'preview' ? ' style="display:none;"' : ''}>
             <div class="code-window-preview-loading">
@@ -315,7 +315,9 @@ function extractMeta(metaString: string, key: string): string | null {
 
     // Match: key="value with spaces" or key='value' or key=value (single token).
     // Quoted forms preserve internal spaces (e.g. label="⚡ Run", filename="My File.tsx").
-    const regex = new RegExp(`${key}=(?:"([^"]*)"|'([^']*)'|(\\S+))`, 'i');
+    // The leading (^|\s) anchors the key so it can't match a substring of another
+    // token (e.g. `data-label="x"` must not be read as `label`).
+    const regex = new RegExp(`(?:^|\\s)${key}=(?:"([^"]*)"|'([^']*)'|(\\S+))`, 'i');
     const match = metaString.match(regex);
     if (!match) return null;
     return match[1] ?? match[2] ?? match[3] ?? null;

@@ -346,10 +346,10 @@ export interface ShikiConfig {
     langs?: string[];
 
     /**
-     * Label for the live code "Try Live" trigger button rendered on
-     * ```lang live fences. A ```lang live label="…" fence overrides this
-     * per-block. Mirrors `@sigx/live-code`'s `configurePlayground({ triggerLabel })`,
-     * which covers the runtime LivePreview islands.
+     * Label for the live code "Try Live" trigger button rendered on live
+     * fences. A per-fence `label="…"` meta overrides this for a single block.
+     * Mirrors `@sigx/live-code`'s `configurePlayground({ triggerLabel })`, which
+     * covers the runtime LivePreview islands.
      * @default '⚡ Try Live'
      */
     triggerLabel?: string;
