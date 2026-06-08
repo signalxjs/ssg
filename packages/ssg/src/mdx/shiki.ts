@@ -316,8 +316,10 @@ function extractMeta(metaString: string, key: string): string | null {
     // Match: key="value with spaces" or key='value' or key=value (single token).
     // Quoted forms preserve internal spaces (e.g. label="⚡ Run", filename="My File.tsx").
     // The leading (^|\s) anchors the key so it can't match a substring of another
-    // token (e.g. `data-label="x"` must not be read as `label`).
-    const regex = new RegExp(`(?:^|\\s)${key}=(?:"([^"]*)"|'([^']*)'|(\\S+))`, 'i');
+    // token (e.g. `data-label="x"` must not be read as `label`). `key` is escaped
+    // so any regex metacharacters in it are treated literally.
+    const safeKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(?:^|\\s)${safeKey}=(?:"([^"]*)"|'([^']*)'|(\\S+))`, 'i');
     const match = metaString.match(regex);
     if (!match) return null;
     return match[1] ?? match[2] ?? match[3] ?? null;
