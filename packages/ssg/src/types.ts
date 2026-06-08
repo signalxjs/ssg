@@ -344,6 +344,15 @@ export interface ShikiConfig {
      * Additional languages to load
      */
     langs?: string[];
+
+    /**
+     * Label for the live code "Try Live" trigger button rendered on
+     * ```lang live fences. A ```lang live label="…" fence overrides this
+     * per-block. Mirrors `@sigx/live-code`'s `configurePlayground({ triggerLabel })`,
+     * which covers the runtime LivePreview islands.
+     * @default '⚡ Try Live'
+     */
+    triggerLabel?: string;
 }
 
 // ============================================================================

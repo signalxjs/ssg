@@ -19,6 +19,7 @@ const DEFAULT_CONFIG: Required<ShikiConfig> = {
     light: 'github-light',
     dark: 'github-dark',
     langs: ['javascript', 'typescript', 'jsx', 'tsx', 'json', 'css', 'html', 'markdown', 'bash', 'shell'],
+    triggerLabel: '⚡ Try Live',
 };
 
 /**
@@ -49,7 +50,7 @@ export async function highlightCode(
     code: string,
     lang: string,
     config?: ShikiConfig,
-    meta?: { filename?: string; live?: boolean; tabs?: TabType[] }
+    meta?: { filename?: string; live?: boolean; tabs?: TabType[]; triggerLabel?: string }
 ): Promise<string> {
     const highlighter = await getHighlighter(config);
     const mergedConfig = { ...DEFAULT_CONFIG, ...config };
@@ -72,6 +73,9 @@ export async function highlightCode(
     const isLive = meta?.live ?? false;
     const tabs = meta?.tabs;  // undefined means no tabbed view, just code
     const hasTabs = tabs && tabs.length > 0;
+
+    // Per-block `label="…"` overrides the global `shiki.triggerLabel` config.
+    const triggerLabel = escapeHtml(meta?.triggerLabel ?? mergedConfig.triggerLabel);
     
     const filenameHtml = filename 
         ? `<span class="code-window-filename">${escapeHtml(filename)}</span>`
@@ -117,7 +121,7 @@ export async function highlightCode(
             <div class="code-window-tabs">
                 ${tabButtonsHtml}
             </div>
-            <button class="code-window-try-live" disabled>⚡ Try Live</button>
+            <button class="code-window-try-live" disabled>${triggerLabel}</button>
         </div>
         <div class="code-window-preview-pane"${firstTab !== 'preview' ? ' style="display:none;"' : ''}>
             <div class="code-window-preview-loading">
@@ -137,8 +141,8 @@ export async function highlightCode(
     }
 
     // Add "Try Live" button for live code blocks
-    const tryLiveButton = isLive 
-        ? `<button class="code-window-try-live" data-live-code="${escapeHtml(encodeBase64(code))}" data-lang="${effectiveLang}" data-filename="${escapeHtml(filename)}" title="Open in Live Playground">⚡ Try Live</button>`
+    const tryLiveButton = isLive
+        ? `<button class="code-window-try-live" data-live-code="${escapeHtml(encodeBase64(code))}" data-lang="${effectiveLang}" data-filename="${escapeHtml(filename)}" title="Open in Live Playground">${triggerLabel}</button>`
         : '';
 
     const html = `<div class="code-window${isLive ? ' code-window-live' : ''}">
@@ -246,7 +250,10 @@ export function rehypeShiki(config?: ShikiConfig) {
                 // Supports: ```tsx filename="Counter.tsx" or ```tsx title="Counter.tsx"
                 const metaString = codeNode.data?.meta || codeNode.properties?.metastring || '';
                 const filename = extractMeta(metaString, 'filename') || extractMeta(metaString, 'title') || '';
-                
+
+                // Per-block override for the live trigger label: ```tsx live label="Run"
+                const triggerLabel = extractMeta(metaString, 'label') || undefined;
+
                 // Check for "live" flag in meta string (e.g., ```tsx live)
                 const isLive = /\blive\b/i.test(metaString);
                 
@@ -279,10 +286,11 @@ export function rehypeShiki(config?: ShikiConfig) {
 
                 // Highlight with Shiki (with meta info)
                 // Only pass tabs if at least one tab keyword was found
-                const html = await highlightCode(code.trim(), lang, config, { 
-                    filename, 
-                    live: isLive, 
-                    tabs: tabs.length > 0 ? tabs : undefined 
+                const html = await highlightCode(code.trim(), lang, config, {
+                    filename,
+                    live: isLive,
+                    tabs: tabs.length > 0 ? tabs : undefined,
+                    triggerLabel,
                 });
 
                 // Parse the HTML string into HAST nodes
@@ -304,11 +312,13 @@ export function rehypeShiki(config?: ShikiConfig) {
  */
 function extractMeta(metaString: string, key: string): string | null {
     if (!metaString) return null;
-    
-    // Match: key="value" or key='value' or key=value
-    const regex = new RegExp(`${key}=["']?([^"'\\s]+)["']?`, 'i');
+
+    // Match: key="value with spaces" or key='value' or key=value (single token).
+    // Quoted forms preserve internal spaces (e.g. label="⚡ Run", filename="My File.tsx").
+    const regex = new RegExp(`${key}=(?:"([^"]*)"|'([^']*)'|(\\S+))`, 'i');
     const match = metaString.match(regex);
-    return match ? match[1] : null;
+    if (!match) return null;
+    return match[1] ?? match[2] ?? match[3] ?? null;
 }
 
 /**
