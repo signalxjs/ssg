@@ -99,6 +99,25 @@ describe('generateHeadTags — custom head tags', () => {
         expect(html).toContain('content="&quot;&lt;&gt;&amp;"');
     });
 
+    it('keeps repeated custom tags (no custom-vs-custom dedup)', () => {
+        const html = gen({
+            head: [
+                { tag: 'link', attrs: { rel: 'preload', href: '/a.woff2' } },
+                { tag: 'link', attrs: { rel: 'preload', href: '/b.woff2' } },
+            ],
+        });
+        expect(html).toContain('<link rel="preload" href="/a.woff2">');
+        expect(html).toContain('<link rel="preload" href="/b.woff2">');
+        expect((html.match(/rel="preload"/g) || [])).toHaveLength(2);
+    });
+
+    it('normalizes an upper-cased tag name and treats it as void', () => {
+        const html = gen({ head: [{ tag: 'META', attrs: { name: 'author', content: 'Jane' } }] });
+        expect(html).toContain('<meta name="author" content="Jane">');
+        expect(html).not.toContain('</META>');
+        expect(html).not.toContain('</meta>');
+    });
+
     it('applies site-wide head tags to every page', () => {
         const config: SSGConfig = {
             ...SITE,
@@ -153,5 +172,14 @@ describe('generateHeadTags — dedup', () => {
         const descs = html.match(/name="description"/g) || [];
         expect(descs).toHaveLength(1);
         expect(html).toContain('content="Real"');
+    });
+
+    it('dedupes case-insensitively against the auto canonical', () => {
+        const html = gen({
+            canonical: 'https://example.com/custom',
+            head: [{ tag: 'link', attrs: { rel: 'Canonical', href: 'https://example.com/dupe' } }],
+        });
+        expect(html).not.toContain('https://example.com/dupe');
+        expect(html).toContain('href="https://example.com/custom"');
     });
 });

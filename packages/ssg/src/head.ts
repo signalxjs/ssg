@@ -115,12 +115,13 @@ export function generateHeadTags(pathInfo: HeadPathInfo, config: SSGConfig): str
         }
     }
 
-    // Custom <head> tags: site-wide first, then per-page. Skipped if they would
-    // duplicate an already-emitted auto tag (e.g. an overridden canonical).
+    // Custom <head> tags: site-wide first, then per-page. Skipped only if they
+    // would duplicate an auto-emitted tag (e.g. an overridden canonical). We do
+    // NOT add custom keys to `emitted`, so custom tags are never deduped against
+    // each other (multiple `rel="preload"`/`rel="icon"` links are all kept).
     for (const tag of [...(site.head || []), ...(meta.head || [])]) {
         const key = headTagKey(tag);
         if (key && emitted.has(key)) continue;
-        if (key) emitted.add(key);
         tags.push(renderHeadTag(tag));
     }
 
@@ -140,15 +141,18 @@ const VOID_TAGS = new Set(['meta', 'link', 'base', 'br', 'hr', 'img', 'input', '
  * is emitted verbatim (so inline `<script>`/`<style>` content is preserved).
  */
 function renderHeadTag(tag: HeadTag): string {
+    // Normalize the tag name once so void-tag detection and rendering agree
+    // regardless of the caller's casing (e.g. 'META' must not emit '</META>').
+    const name = tag.tag.toLowerCase();
     const attrs = tag.attrs
         ? Object.entries(tag.attrs)
               .map(([k, v]) => ` ${k}="${escapeHtml(String(v))}"`)
               .join('')
         : '';
-    if (VOID_TAGS.has(tag.tag) || tag.children == null) {
-        return `<${tag.tag}${attrs}>`;
+    if (VOID_TAGS.has(name) || tag.children == null) {
+        return `<${name}${attrs}>`;
     }
-    return `<${tag.tag}${attrs}>${tag.children}</${tag.tag}>`;
+    return `<${name}${attrs}>${tag.children}</${name}>`;
 }
 
 /**
@@ -158,12 +162,14 @@ function renderHeadTag(tag: HeadTag): string {
 function headTagKey(tag: HeadTag): string | null {
     const name = tag.tag.toLowerCase();
     const attrs = tag.attrs || {};
+    // Attribute values are lowercased so e.g. rel="Canonical" / name="Description"
+    // dedupe against the (lowercase) auto-emitted keys case-insensitively.
     if (name === 'title') return 'title';
     if (name === 'meta') {
-        if (attrs.name) return `meta:name:${attrs.name}`;
-        if (attrs.property) return `meta:property:${attrs.property}`;
+        if (attrs.name) return `meta:name:${attrs.name.toLowerCase()}`;
+        if (attrs.property) return `meta:property:${attrs.property.toLowerCase()}`;
     }
-    if (name === 'link' && attrs.rel) return `link:rel:${attrs.rel}`;
+    if (name === 'link' && attrs.rel) return `link:rel:${attrs.rel.toLowerCase()}`;
     return null;
 }
 
@@ -174,8 +180,9 @@ function normalizeJsonLd(value: object | object[] | undefined): object[] {
 }
 
 /**
- * Render a JSON-LD object as a `<script type="application/ld+json">`. Escapes
- * `<` to `<` to prevent a `</script>` breakout from the serialized data.
+ * Render a JSON-LD object as a `<script type="application/ld+json">`. Each `<`
+ * in the serialized JSON is replaced with its JSON unicode escape (a backslash
+ * followed by u003c), so the data cannot break out via a literal `</script>`.
  */
 function renderJsonLd(data: object): string {
     const json = JSON.stringify(data).replace(/</g, '\\u003c');
