@@ -104,7 +104,9 @@ export function parse(raw: string): Parsed | null {
         case 'uninstall':
         case 'remove':
         case 'rm':
-            return finalize('remove', rest, comment);
+            // Carry the yarn-classic `global` prefix through so global removals
+            // round-trip (`-g` removals are picked up from flags by stripFlags).
+            return finalize('remove', rest, comment, global);
         case 'dlx':
             return finalize('dlx', rest, comment);
         case 'create':
@@ -139,9 +141,15 @@ export function render(p: Parsed, target: Pm): string {
         case 'install':
             cmd = `${target} install`;
             break;
-        case 'remove':
-            cmd = `${target} ${target === 'npm' ? 'uninstall' : 'remove'} ${args}`;
+        case 'remove': {
+            if (global && target === 'yarn') {
+                cmd = `yarn global remove ${args}`;
+                break;
+            }
+            const verb = target === 'npm' ? 'uninstall' : 'remove';
+            cmd = `${target} ${verb}${global ? ' -g' : ''} ${args}`;
             break;
+        }
         case 'dlx':
             cmd =
                 target === 'npm' ? `npx ${args}`

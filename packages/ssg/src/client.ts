@@ -163,7 +163,10 @@ export function installPackageManagerSwitcher(): void {
 
     // Switch on tab click — delegated, so windows added later work too.
     document.addEventListener('click', (e) => {
-        const tab = (e.target as Element).closest<HTMLElement>('.code-window-pm-tab');
+        // `e.target` can be a non-Element (e.g. a Text node); `.closest` only
+        // exists on Elements, so guard before calling it.
+        if (!(e.target instanceof Element)) return;
+        const tab = e.target.closest<HTMLElement>('.code-window-pm-tab');
         const pm = tab?.dataset.pm;
         if (!pm || !VALID_PMS.includes(pm)) return;
         applyPm(pm);

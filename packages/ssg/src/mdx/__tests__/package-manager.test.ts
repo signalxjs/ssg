@@ -69,6 +69,17 @@ describe('render', () => {
         expect(render(dlx, 'pnpm')).toBe('pnpm dlx create-app');
     });
 
+    it('preserves global intent on removals across managers', () => {
+        const g = parse('npm uninstall -g foo')!;
+        expect(g.global).toBe(true);
+        expect(render(g, 'npm')).toBe('npm uninstall -g foo');
+        expect(render(g, 'pnpm')).toBe('pnpm remove -g foo');
+        expect(render(g, 'yarn')).toBe('yarn global remove foo');
+        expect(render(g, 'bun')).toBe('bun remove -g foo');
+        // The yarn-classic `global` prefix also round-trips.
+        expect(render(parse('yarn global remove foo')!, 'npm')).toBe('npm uninstall -g foo');
+    });
+
     it('keeps the comment', () => {
         expect(render(parse('pnpm add foo # needed')!, 'npm')).toBe('npm install foo # needed');
     });
@@ -81,6 +92,8 @@ describe('round-trip — parse is total over render output', () => {
         'npm install -g @sigx/cli',
         'yarn global add @sigx/cli',
         'pnpm remove foo',
+        'npm uninstall -g foo',
+        'yarn global remove foo',
         'pnpm dlx create-sigx',
         'npm install',
     ];

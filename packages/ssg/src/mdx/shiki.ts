@@ -151,12 +151,24 @@ export async function highlightCode(
     // else (e.g. `sigx prebuild`, comments, blanks) is preserved verbatim. The
     // client switcher only toggles which `[data-pm-variant]` is visible — it
     // never rewrites line text, so it can't fight framework hydration.
-    if (!hasTabs && SHELL_LANGS.has(effectiveLang)) {
+    // Detect on the *raw* lang, not `effectiveLang`: `sh`/`zsh` aren't in the
+    // default loaded Shiki languages, so they collapse to `text` above — but
+    // they're still shell install fences. Variants are highlighted as a loaded
+    // shell grammar (the resolved one if it's already a shell lang, else
+    // `bash`) so `sh`/`zsh` fences get the tabs and proper highlighting too.
+    const isShellFence = SHELL_LANGS.has(lang.toLowerCase()) || SHELL_LANGS.has(effectiveLang);
+    if (!hasTabs && isShellFence) {
         const codeLines = code.split('\n');
         if (codeLines.some((line) => parse(line) !== null)) {
             const defaultPm: Pm = PMS.includes(mergedConfig.defaultPackageManager as Pm)
                 ? (mergedConfig.defaultPackageManager as Pm)
                 : DEFAULT_PM;
+
+            const pmLang: BundledLanguage = (SHELL_LANGS.has(effectiveLang)
+                ? effectiveLang
+                : loadedLangs.includes('bash' as BundledLanguage)
+                  ? 'bash'
+                  : effectiveLang) as BundledLanguage;
 
             const highlightFor = (pm: Pm): string => {
                 const variantCode = codeLines
@@ -166,7 +178,7 @@ export async function highlightCode(
                     })
                     .join('\n');
                 return highlighter.codeToHtml(variantCode, {
-                    lang: effectiveLang as BundledLanguage,
+                    lang: pmLang,
                     themes: {
                         light: mergedConfig.light as BundledTheme,
                         dark: mergedConfig.dark as BundledTheme,

@@ -153,6 +153,14 @@ describe('highlightCode — package-manager install fences', () => {
         const html = await highlightCode("import * as Video from '@sigx/lynx-video';", 'tsx');
         expect(html).not.toContain('code-window-pm');
     });
+
+    it('also handles `sh`/`zsh` fences (not in the default loaded langs)', async () => {
+        for (const lang of ['sh', 'zsh']) {
+            const html = await highlightCode('pnpm add foo', lang);
+            expect(html, lang).toContain('class="code-window code-window-pm"');
+            expect(plainText(html), lang).toContain('npm install foo');
+        }
+    });
 });
 
 describe('rehypeShiki — per-fence label meta', () => {

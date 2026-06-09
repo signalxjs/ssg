@@ -156,8 +156,11 @@ pnpm add @sigx/lynx-video
 ```
 ````
 
-The default manager (shown first) is `pnpm`; set `shiki.defaultPackageManager` to
-change it. No MDX changes or imports are needed — it applies to every site.
+The default manager (shown first) is `pnpm`; set
+`markdown.shiki.defaultPackageManager` to change it. No MDX changes are needed.
+The switcher is wired in automatically when you use the generated client entry;
+if you supply a **custom** client entry, call `installPackageManagerSwitcher()`
+from `@sigx/ssg/client` yourself (after hydration).
 
 ## Themes
 
