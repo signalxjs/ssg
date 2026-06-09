@@ -159,6 +159,9 @@ describe('highlightCode — package-manager install fences', () => {
             const html = await highlightCode('pnpm add foo', lang);
             expect(html, lang).toContain('class="code-window code-window-pm"');
             expect(plainText(html), lang).toContain('npm install foo');
+            // Header label is derived from the resolved shell grammar (bash →
+            // "Terminal"), not the collapsed `text` lang, so it isn't blank.
+            expect(html, lang).toContain('<span class="code-window-lang">Terminal</span>');
         }
     });
 });

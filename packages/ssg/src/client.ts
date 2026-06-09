@@ -129,16 +129,24 @@ function injectPmStyles(): void {
  * Mount the package-manager switcher. Idempotent and client-only; a no-op on
  * pages with no install fences. Called from the generated client entry after
  * hydration; custom entries can call it themselves.
+ *
+ * Returns a disposer that removes the listeners and observer (useful for HMR or
+ * teardown); calling it again re-enables installation.
  */
-export function installPackageManagerSwitcher(): void {
-    if (pmSwitcherInstalled || typeof document === 'undefined') return;
+export function installPackageManagerSwitcher(): () => void {
+    const noop = () => {};
+    if (pmSwitcherInstalled || typeof document === 'undefined') return noop;
     pmSwitcherInstalled = true;
 
     injectPmStyles();
 
+    // The active selection, cached so the MutationObserver never has to touch
+    // localStorage on the hydration / navigation hot path. Updated on clicks
+    // and cross-tab storage events.
+    let currentPm = readStoredPm();
+
     const sync = () => {
-        const pref = readStoredPm();
-        if (pref) applyPm(pref);
+        if (currentPm) applyPm(currentPm);
     };
 
     if (document.readyState === 'loading') {
@@ -152,35 +160,47 @@ export function installPackageManagerSwitcher(): void {
     // style writes `applyPm` makes don't re-trigger it, and the `data-pm`
     // guard makes rescans cheap.
     let scheduled = false;
-    new MutationObserver(() => {
-        if (scheduled || !readStoredPm()) return;
+    const observer = new MutationObserver(() => {
+        if (scheduled || !currentPm) return;
         scheduled = true;
         queueMicrotask(() => {
             scheduled = false;
             sync();
         });
-    }).observe(document.documentElement, { childList: true, subtree: true });
+    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
 
     // Switch on tab click — delegated, so windows added later work too.
-    document.addEventListener('click', (e) => {
+    const onClick = (e: MouseEvent) => {
         // `e.target` can be a non-Element (e.g. a Text node); `.closest` only
         // exists on Elements, so guard before calling it.
         if (!(e.target instanceof Element)) return;
         const tab = e.target.closest<HTMLElement>('.code-window-pm-tab');
         const pm = tab?.dataset.pm;
         if (!pm || !VALID_PMS.includes(pm)) return;
+        currentPm = pm;
         applyPm(pm);
         try {
             localStorage.setItem(PM_STORAGE_KEY, pm);
         } catch {
             /* storage unavailable — selection still applies for this session */
         }
-    });
+    };
+    document.addEventListener('click', onClick);
 
     // Cross-tab / cross-page sync.
-    window.addEventListener('storage', (e) => {
+    const onStorage = (e: StorageEvent) => {
         if (e.key === PM_STORAGE_KEY && e.newValue && VALID_PMS.includes(e.newValue)) {
+            currentPm = e.newValue;
             applyPm(e.newValue);
         }
-    });
+    };
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+        observer.disconnect();
+        document.removeEventListener('click', onClick);
+        window.removeEventListener('storage', onStorage);
+        pmSwitcherInstalled = false;
+    };
 }

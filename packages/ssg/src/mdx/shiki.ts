@@ -170,6 +170,12 @@ export async function highlightCode(
                   ? 'bash'
                   : effectiveLang) as BundledLanguage;
 
+            // Derive the header label from `pmLang`, not `effectiveLang` — the
+            // latter is `text` for `sh`/`zsh` and would render a blank label.
+            const pmFilenameHtml = filename
+                ? `<span class="code-window-filename">${escapeHtml(filename)}</span>`
+                : `<span class="code-window-lang">${getLanguageLabel(pmLang)}</span>`;
+
             const highlightFor = (pm: Pm): string => {
                 const variantCode = codeLines
                     .map((line) => {
@@ -207,7 +213,7 @@ export async function highlightCode(
                     <span class="code-window-dot dot-yellow"></span>
                     <span class="code-window-dot dot-green"></span>
                 </div>
-                ${filenameHtml}
+                ${pmFilenameHtml}
             </div>
             <div class="code-window-tabs code-window-pm-tabs">
                 ${tabButtonsHtml}
@@ -272,6 +278,7 @@ function getLanguageLabel(lang: string): string {
         'bash': 'Terminal',
         'shell': 'Terminal',
         'sh': 'Terminal',
+        'zsh': 'Terminal',
         'md': 'Markdown',
         'markdown': 'Markdown',
         'python': 'Python',

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Server-rendered markup for an install fence (see `mdx/shiki.ts`): a
 // `.code-window-pm` window with a tab strip and all four variants, non-default
@@ -28,12 +28,15 @@ function variantDisplay(pm: string): string {
     return el.style.display;
 }
 
+let dispose: () => void = () => {};
+
 async function install(): Promise<void> {
     // Fresh module each test so the one-shot install guard and load-time sync
-    // run cleanly. (Delegated listeners on the shared document are idempotent.)
+    // run cleanly. The returned disposer is torn down in afterEach so a prior
+    // test's MutationObserver can't mutate the next test's DOM.
     vi.resetModules();
     const { installPackageManagerSwitcher } = await import('../client');
-    installPackageManagerSwitcher();
+    dispose = installPackageManagerSwitcher();
 }
 
 describe('installPackageManagerSwitcher', () => {
@@ -41,6 +44,11 @@ describe('installPackageManagerSwitcher', () => {
         document.head.innerHTML = '';
         document.body.innerHTML = '';
         localStorage.clear();
+    });
+
+    afterEach(() => {
+        dispose();
+        dispose = () => {};
     });
 
     it('switches the visible variant + active tab on tab click', async () => {
