@@ -186,7 +186,12 @@ export async function highlightCode(
                 const variantCode = codeLines
                     .map((line, i) => {
                         const parsed = parsedLines[i];
-                        return parsed ? render(parsed, pm) : line;
+                        if (!parsed) return line;
+                        // `render()` returns a trimmed command; re-apply the
+                        // line's original leading indentation so indented script
+                        // blocks keep their shape across variants.
+                        const indent = line.match(/^\s*/)?.[0] ?? '';
+                        return indent + render(parsed, pm);
                     })
                     .join('\n');
                 return highlight(variantCode, pmLang);

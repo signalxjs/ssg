@@ -145,6 +145,14 @@ describe('highlightCode — package-manager install fences', () => {
         expect(plainText(html)).toContain('npm install foo');
     });
 
+    it('preserves leading indentation of translated lines', async () => {
+        const html = await highlightCode('  pnpm add foo', 'bash');
+        const text = plainText(html);
+        // The indent survives in every variant (default and translated).
+        expect(text).toContain('  pnpm add foo');
+        expect(text).toContain('  npm install foo');
+    });
+
     it('leaves a shell fence with no install command untouched', async () => {
         const html = await highlightCode('sigx prebuild', 'bash');
         expect(html).not.toContain('code-window-pm');
