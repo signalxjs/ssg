@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Per-page custom `<head>` tags and JSON-LD structured-data injection API ([#36](https://github.com/signalxjs/ssg/issues/36)).
 - Package-manager switcher on shell fences. `bash`/`shell`/`sh`/`zsh` fences whose lines are `npm`/`pnpm`/`yarn`/`bun` commands (`add`/`install`, `run`, `dlx`, `create`, `remove`, …) now render an npm/pnpm/yarn/bun tab strip with all four command variants generated server-side; the client switcher (auto-wired into the generated client entry; it registers a few cheap page-wide listeners and does no visible work when a page has no install fences) only toggles which variant is visible and persists the choice (localStorage, synced across blocks/tabs/pages). It never rewrites highlighted line text, so it can't race framework hydration. Configurable default via `markdown.shiki.defaultPackageManager` (default `'pnpm'`). Non-install lines (e.g. `sigx prebuild`) are left untouched. Replaces the docs-side DOM enhancer that broke on markup changes ([#40](https://github.com/signalxjs/ssg/issues/40)).
 
+## [0.5.0] - 2026-06-08
+
+### Added
+
+- Configurable live-code "Try Live" trigger label via `markdown.shiki.triggerLabel`, with a per-fence `label="…"` override ([#29](https://github.com/signalxjs/ssg/issues/29)).
+
 ## [0.4.8] - 2026-05-14
 
 ### Fixed
