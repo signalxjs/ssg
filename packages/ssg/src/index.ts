@@ -10,6 +10,7 @@ export type {
     SSGRoute,
     SSGContext,
     SiteConfig,
+    HeadTag,
     PageMeta,
     PageModule,
     LayoutModule,

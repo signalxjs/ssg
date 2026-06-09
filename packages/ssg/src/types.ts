@@ -280,6 +280,21 @@ export interface NavItem {
 /**
  * Site-wide configuration
  */
+/**
+ * A raw tag to inject into the document `<head>`.
+ *
+ * `attrs` values are HTML-escaped; `children` is emitted verbatim (not escaped),
+ * so it can hold inline JSON, CSS, or script content.
+ */
+export interface HeadTag {
+    /** Tag name, e.g. 'meta' | 'link' | 'script' | 'style' */
+    tag: string;
+    /** Attributes (values are HTML-escaped) */
+    attrs?: Record<string, string>;
+    /** Raw inner content for non-void tags (emitted verbatim) */
+    children?: string;
+}
+
 export interface SiteConfig {
     /** Site title */
     title?: string;
@@ -301,6 +316,13 @@ export interface SiteConfig {
     fonts?: string[];
     /** Theme color for mobile browsers */
     themeColor?: string;
+    /**
+     * Global JSON-LD structured data applied to every page.
+     * Each object is emitted as a separate `<script type="application/ld+json">`.
+     */
+    jsonLd?: object | object[];
+    /** Extra `<head>` tags appended to every page */
+    head?: HeadTag[];
 }
 
 /**
@@ -496,6 +518,36 @@ export interface PageMeta {
      * Extracted headings for table of contents (auto-generated at build time)
      */
     headings?: TocHeading[];
+
+    // ========================================================================
+    // SEO Fields
+    // ========================================================================
+
+    /**
+     * Per-page JSON-LD structured data.
+     * Each object is emitted as a separate `<script type="application/ld+json">`.
+     */
+    jsonLd?: object | object[];
+
+    /**
+     * Arbitrary extra `<head>` tags for this page (e.g. `<meta>`, `<link>`).
+     */
+    head?: HeadTag[];
+
+    /**
+     * `robots` directive (e.g. 'noindex, nofollow'). No tag is emitted unless set.
+     */
+    robots?: string;
+
+    /**
+     * Override the auto-derived canonical URL for this page.
+     */
+    canonical?: string;
+
+    /**
+     * Keywords for `<meta name="keywords">` (arrays are joined with ', ').
+     */
+    keywords?: string | string[];
 
     /**
      * Additional custom metadata

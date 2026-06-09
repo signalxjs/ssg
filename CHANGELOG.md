@@ -4,6 +4,8 @@ All notable changes to packages in this repo. Each package may also keep its own
 
 ## [Unreleased]
 
+- `@sigx/ssg`: **Feature** — per-page custom `<head>` + JSON-LD injection API ([#36](https://github.com/signalxjs/ssg/issues/36)). `PageMeta` gains `jsonLd`, `head`, `robots`, `canonical`, and `keywords`; `SiteConfig` gains site-wide `jsonLd` and `head`. JSON-LD is emitted as `<script type="application/ld+json">` (one per object, with `<` escaped to prevent `</script>` breakout); custom tags are injected after the auto-generated tags and deduped against them (an overridden `canonical`/`description` is not double-emitted). Output is unchanged when none of the new fields are set. Head generation moved to a dedicated `head.ts` module.
+
 ## 0.4.6 — 2026-05-12
 
 - `@sigx/ssg`: **Fix** — generated client entry now calls `createWebHistory({ base })` instead of `createWebHistory(base)`. `@sigx/router` 0.4.x takes an options object; the old positional-string call silently passed `base = undefined`, so the router never stripped the base prefix from `window.location.pathname`. The result was that any deployment with a non-root `base` (e.g. GitHub Pages at `/docs/`) failed to match any routes — `LayoutRouter` rendered `null`, no page components hydrated, all `onMounted` hooks (typewriter, scroll-reveal, theme init, etc.) never fired, and the start page appeared "broken" (SSR HTML visible, but no interactivity). Verified end-to-end against signalxjs/docs.
