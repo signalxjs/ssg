@@ -28,6 +28,14 @@ const DEFAULT_CONFIG: Required<ShikiConfig> = {
 const SHELL_LANGS = new Set(['bash', 'shell', 'sh', 'zsh']);
 
 /**
+ * Monotonic counter for per-window unique ids on the package-manager tab strip
+ * (wires `aria-controls`/`aria-labelledby` between tabs and panels). Only needs
+ * to be unique within a rendered page; ids are server-only markup the client
+ * never regenerates, so the running count is harmless.
+ */
+let pmWindowSeq = 0;
+
+/**
  * Initialize or get the Shiki highlighter
  */
 export async function getHighlighter(config?: ShikiConfig): Promise<Highlighter> {
@@ -162,7 +170,9 @@ export async function highlightCode(
     // `bash`) so `sh`/`zsh` fences get the tabs and proper highlighting too.
     const isShellFence = SHELL_LANGS.has(lang.toLowerCase()) || SHELL_LANGS.has(effectiveLang);
     if (!hasTabs && isShellFence) {
-        const codeLines = code.split('\n');
+        // Split on CRLF or LF so a trailing `\r` doesn't defeat `parse()` on
+        // Windows-authored fences (`pnpm add foo\r`).
+        const codeLines = code.split(/\r?\n/);
         // Parse each line once and reuse the result across all four variants.
         const parsedLines = codeLines.map((line) => parse(line));
         if (parsedLines.some((parsed) => parsed !== null)) {
@@ -197,17 +207,22 @@ export async function highlightCode(
                 return highlight(variantCode, pmLang);
             };
 
+            // Unique id base so tabs and panels can reference each other (ARIA
+            // tab pattern). `tab-<pm>` / `panel-<pm>` ids are paired below.
+            const uid = `pm-window-${pmWindowSeq++}`;
+
             const tabButtonsHtml = PMS.map(
                 (pm) =>
-                    `<button type="button" role="tab" class="code-window-tab code-window-pm-tab${pm === defaultPm ? ' code-window-tab-active' : ''}" data-pm="${pm}" aria-selected="${pm === defaultPm}">${pm}</button>`,
+                    `<button type="button" role="tab" id="${uid}-tab-${pm}" aria-controls="${uid}-panel-${pm}" class="code-window-tab code-window-pm-tab${pm === defaultPm ? ' code-window-tab-active' : ''}" data-pm="${pm}" aria-selected="${pm === defaultPm}">${pm}</button>`,
             ).join('\n                ');
 
             // Non-default variants are hidden with an inline style (beats theme
             // rules without `!important`, and shows the right one on first paint
             // before any JS runs). The client switcher flips `style.display`.
+            // Each is a `tabpanel` linked back to its tab for assistive tech.
             const variantsHtml = PMS.map(
                 (pm) =>
-                    `<div class="code-window-content" data-pm-variant="${pm}"${pm === defaultPm ? '' : ' style="display:none"'}>${highlightFor(pm)}</div>`,
+                    `<div class="code-window-content" role="tabpanel" id="${uid}-panel-${pm}" aria-labelledby="${uid}-tab-${pm}" data-pm-variant="${pm}"${pm === defaultPm ? '' : ' style="display:none"'}>${highlightFor(pm)}</div>`,
             ).join('\n        ');
 
             return `<div class="code-window code-window-pm" data-pm="${defaultPm}">

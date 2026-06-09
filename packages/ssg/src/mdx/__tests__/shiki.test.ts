@@ -98,9 +98,13 @@ describe('highlightCode — package-manager install fences', () => {
 
         expect(html).toContain('class="code-window code-window-pm"');
         expect(html).toContain('class="code-window-tabs code-window-pm-tabs"');
-        // ARIA tab semantics for the strip.
+        // ARIA tab semantics for the strip: a tablist, four tabs, four panels,
+        // each tab wired to its panel via aria-controls.
         expect(html).toContain('role="tablist"');
         expect((html.match(/role="tab"/g) ?? []).length).toBe(4);
+        expect((html.match(/role="tabpanel"/g) ?? []).length).toBe(4);
+        expect(html).toMatch(/role="tab"[^>]*aria-controls="pm-window-\d+-panel-pnpm"/);
+        expect(html).toMatch(/role="tabpanel"[^>]*aria-labelledby="pm-window-\d+-tab-pnpm"/);
         for (const pm of ['pnpm', 'npm', 'yarn', 'bun']) {
             expect(html).toContain(`data-pm="${pm}"`);
             expect(html).toContain(`data-pm-variant="${pm}"`);
