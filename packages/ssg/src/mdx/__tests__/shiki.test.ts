@@ -98,6 +98,9 @@ describe('highlightCode — package-manager install fences', () => {
 
         expect(html).toContain('class="code-window code-window-pm"');
         expect(html).toContain('class="code-window-tabs code-window-pm-tabs"');
+        // ARIA tab semantics for the strip.
+        expect(html).toContain('role="tablist"');
+        expect((html.match(/role="tab"/g) ?? []).length).toBe(4);
         for (const pm of ['pnpm', 'npm', 'yarn', 'bun']) {
             expect(html).toContain(`data-pm="${pm}"`);
             expect(html).toContain(`data-pm-variant="${pm}"`);

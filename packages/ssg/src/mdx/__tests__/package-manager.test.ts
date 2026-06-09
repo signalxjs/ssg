@@ -44,6 +44,14 @@ describe('parse', () => {
     it('preserves a trailing comment verbatim', () => {
         expect(parse('pnpm add foo # needed')).toMatchObject({ args: 'foo', comment: ' # needed' });
     });
+
+    it('recognizes a tab before the comment hash', () => {
+        expect(parse('pnpm add foo\t# needed')).toMatchObject({ args: 'foo', comment: '\t# needed' });
+    });
+
+    it('does not treat a `#` inside an argument as a comment', () => {
+        expect(parse('pnpm add foo#bar')).toMatchObject({ args: 'foo#bar', comment: '' });
+    });
 });
 
 describe('render', () => {

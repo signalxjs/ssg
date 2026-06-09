@@ -144,10 +144,11 @@ Fenced code is highlighted with [Shiki](https://shiki.style) and wrapped in a
 terminal-style `.code-window`.
 
 **Package-manager switcher.** Shell fences (` ```bash `, `sh`, `zsh`) whose lines
-are package-manager install commands automatically get an npm/pnpm/yarn/bun tab
-strip. All four variants are rendered server-side and the client just toggles
-which is visible — so the choice persists across reloads and syncs across blocks
-and tabs, with no flash or hydration glitches. Lines that aren't install commands
+are `npm`/`pnpm`/`yarn`/`bun` commands — `add`/`install`, plus `run`, `dlx`,
+`create`, `remove`, … — automatically get an npm/pnpm/yarn/bun tab strip. All
+four variants are rendered server-side and the client just toggles which is
+visible — so the choice persists across reloads and syncs across blocks and tabs,
+with no flash or hydration glitches. Lines that aren't package-manager commands
 (e.g. `sigx prebuild`) are left untouched.
 
 ````mdx

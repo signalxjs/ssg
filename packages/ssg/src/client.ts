@@ -137,7 +137,11 @@ function injectPmStyles(): void {
  */
 export function installPackageManagerSwitcher(): () => void {
     const noop = () => {};
-    if (pmSwitcherInstalled || typeof document === 'undefined') return noop;
+    // Needs both `document` and `window` (storage events / localStorage); some
+    // non-browser runtimes shim one without the other.
+    if (pmSwitcherInstalled || typeof document === 'undefined' || typeof window === 'undefined') {
+        return noop;
+    }
     pmSwitcherInstalled = true;
 
     injectPmStyles();

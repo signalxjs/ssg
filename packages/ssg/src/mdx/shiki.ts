@@ -194,7 +194,7 @@ export async function highlightCode(
 
             const tabButtonsHtml = PMS.map(
                 (pm) =>
-                    `<button type="button" class="code-window-tab code-window-pm-tab${pm === defaultPm ? ' code-window-tab-active' : ''}" data-pm="${pm}" aria-selected="${pm === defaultPm}">${pm}</button>`,
+                    `<button type="button" role="tab" class="code-window-tab code-window-pm-tab${pm === defaultPm ? ' code-window-tab-active' : ''}" data-pm="${pm}" aria-selected="${pm === defaultPm}">${pm}</button>`,
             ).join('\n                ');
 
             // Non-default variants are hidden with an inline style (beats theme
@@ -215,7 +215,7 @@ export async function highlightCode(
                 </div>
                 ${pmFilenameHtml}
             </div>
-            <div class="code-window-tabs code-window-pm-tabs">
+            <div class="code-window-tabs code-window-pm-tabs" role="tablist" aria-label="Package manager">
                 ${tabButtonsHtml}
             </div>
         </div>
