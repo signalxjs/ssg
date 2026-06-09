@@ -49,6 +49,10 @@ describe('parse', () => {
         expect(parse('pnpm add foo\t# needed')).toMatchObject({ args: 'foo', comment: '\t# needed' });
     });
 
+    it('preserves the full whitespace run before the comment', () => {
+        expect(parse('pnpm add foo  # needed')).toMatchObject({ args: 'foo', comment: '  # needed' });
+    });
+
     it('does not treat a `#` inside an argument as a comment', () => {
         expect(parse('pnpm add foo#bar')).toMatchObject({ args: 'foo#bar', comment: '' });
     });

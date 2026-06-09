@@ -61,10 +61,11 @@ function finalize(
  * line is not a recognized package-manager command.
  */
 export function parse(raw: string): Parsed | null {
-    // A trailing comment starts at the first whitespace-then-`#` (space or tab),
-    // so `pnpm add foo\t# note` is handled too; a bare `#` inside an argument
-    // (no preceding whitespace) is not treated as a comment.
-    const hashMatch = raw.match(/\s#/);
+    // A trailing comment starts at the first whitespace-run-then-`#` (spaces or
+    // tabs), so `pnpm add foo\t# note` is handled and the whole run before `#`
+    // is preserved verbatim; a bare `#` inside an argument (no preceding
+    // whitespace) is not treated as a comment.
+    const hashMatch = raw.match(/\s+#/);
     const hashIdx = hashMatch?.index ?? -1;
     const comment = hashIdx === -1 ? '' : raw.slice(hashIdx);
     const body = (hashIdx === -1 ? raw : raw.slice(0, hashIdx)).trim();
