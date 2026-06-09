@@ -163,11 +163,25 @@ export function installPackageManagerSwitcher(): () => void {
 
     // Re-apply to windows mounted after first paint (SPA navigation, late
     // hydration). Coalesced; only `childList` is observed, so the attribute /
-    // style writes `applyPm` makes don't re-trigger it, and the `data-pm`
-    // guard makes rescans cheap.
+    // style writes `applyPm` makes don't re-trigger it. We resync only when an
+    // added node actually is/contains a `.code-window-pm`, so unrelated DOM
+    // churn on interactive pages stays cheap even after a manager is chosen.
     let scheduled = false;
-    const observer = new MutationObserver(() => {
-        if (scheduled || !currentPm) return;
+    const addsPmWindow = (records: MutationRecord[]): boolean => {
+        for (const rec of records) {
+            for (const node of rec.addedNodes) {
+                if (
+                    node instanceof Element &&
+                    (node.matches('.code-window-pm') || node.querySelector('.code-window-pm'))
+                ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    const observer = new MutationObserver((records) => {
+        if (scheduled || !currentPm || !addsPmWindow(records)) return;
         scheduled = true;
         queueMicrotask(() => {
             scheduled = false;

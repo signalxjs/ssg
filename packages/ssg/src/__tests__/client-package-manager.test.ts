@@ -83,6 +83,20 @@ describe('installPackageManagerSwitcher', () => {
         expect(variantDisplay('pnpm')).toBe('none');
     });
 
+    it('applies the stored manager to windows added later (SPA navigation)', async () => {
+        localStorage.setItem('sigx-pm', 'npm');
+        document.body.innerHTML = '';
+        await install(); // currentPm = 'npm', but no windows on the page yet
+
+        // Simulate a navigation that injects a new install window (default pnpm);
+        // the MutationObserver should resync it to the stored manager.
+        mountInstallWindow();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(document.querySelector<HTMLElement>('.code-window-pm')!.dataset.pm).toBe('npm');
+        expect(variantDisplay('npm')).toBe('');
+    });
+
     it('syncs across tabs via storage events', async () => {
         mountInstallWindow();
         await install();
