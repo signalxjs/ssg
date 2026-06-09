@@ -138,6 +138,31 @@ This is **markdown** with SignalX components mixed in:
 <Counter initial={5} />
 ```
 
+## Code blocks
+
+Fenced code is highlighted with [Shiki](https://shiki.style) and wrapped in a
+terminal-style `.code-window`.
+
+**Package-manager switcher.** Shell fences (`bash`, `shell`, `sh`, `zsh`) whose
+lines are `npm`/`pnpm`/`yarn`/`bun` commands — `add`/`install`, plus `run`, `dlx`,
+`create`, `remove`, … — automatically get an npm/pnpm/yarn/bun tab strip. All
+four variants are rendered server-side and the client just toggles which is
+visible — so the choice persists across reloads and syncs across blocks and tabs,
+with no flash or hydration glitches. Lines that aren't package-manager commands
+(e.g. `sigx prebuild`) are left untouched.
+
+````mdx
+```bash
+pnpm add @sigx/lynx-video
+```
+````
+
+The default manager (shown first) is `pnpm`; set
+`markdown.shiki.defaultPackageManager` to change it. No MDX changes are needed.
+The switcher is wired in automatically when you use the generated client entry;
+if you supply a **custom** client entry, call `installPackageManagerSwitcher()`
+from `@sigx/ssg/client` yourself (after hydration).
+
 ## Themes
 
 Install a theme:
@@ -189,6 +214,7 @@ defineSSGConfig({
         shiki: {
             light: 'github-light',
             dark: 'github-dark',
+            defaultPackageManager: 'pnpm', // npm/pnpm/yarn/bun shown first on install fences
         },
     },
 });

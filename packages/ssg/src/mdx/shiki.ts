@@ -6,6 +6,7 @@
 
 import { createHighlighter, type Highlighter, type BundledLanguage, type BundledTheme } from 'shiki';
 import type { ShikiConfig } from '../types';
+import { type Pm, PMS, DEFAULT_PM, parse, render } from './package-manager';
 
 /**
  * Cached highlighter instance
@@ -20,7 +21,19 @@ const DEFAULT_CONFIG: Required<ShikiConfig> = {
     dark: 'github-dark',
     langs: ['javascript', 'typescript', 'jsx', 'tsx', 'json', 'css', 'html', 'markdown', 'bash', 'shell'],
     triggerLabel: '⚡ Try Live',
+    defaultPackageManager: DEFAULT_PM,
 };
+
+/** Shell-ish languages whose fences may carry package-manager install commands. */
+const SHELL_LANGS = new Set(['bash', 'shell', 'sh', 'zsh']);
+
+/**
+ * Monotonic counter for per-window unique ids on the package-manager tab strip
+ * (wires `aria-controls`/`aria-labelledby` between tabs and panels). Only needs
+ * to be unique within a rendered page; ids are server-only markup the client
+ * never regenerates, so the running count is harmless.
+ */
+let pmWindowSeq = 0;
 
 /**
  * Initialize or get the Shiki highlighter
@@ -59,14 +72,17 @@ export async function highlightCode(
     const loadedLangs = highlighter.getLoadedLanguages();
     const effectiveLang = loadedLangs.includes(lang as BundledLanguage) ? lang : 'text';
 
-    // Generate HTML with both themes for CSS-based switching
-    const codeHtml = highlighter.codeToHtml(code, {
-        lang: effectiveLang as BundledLanguage,
-        themes: {
-            light: mergedConfig.light as BundledTheme,
-            dark: mergedConfig.dark as BundledTheme,
-        },
-    });
+    // Highlight `src` with both themes (CSS picks light/dark). A helper rather
+    // than an eager `codeHtml`, so the package-manager path — which re-highlights
+    // each manager variant — doesn't pay for an unused highlight of the original.
+    const highlight = (src: string, language: BundledLanguage): string =>
+        highlighter.codeToHtml(src, {
+            lang: language,
+            themes: {
+                light: mergedConfig.light as BundledTheme,
+                dark: mergedConfig.dark as BundledTheme,
+            },
+        });
 
     // Wrap in code-window structure
     const filename = meta?.filename ?? '';
@@ -84,7 +100,8 @@ export async function highlightCode(
     // For preview blocks (has tabs), render a LivePreview island component
     if (hasTabs) {
         const base64Code = encodeBase64(code);
-        
+        const codeHtml = highlight(code, effectiveLang as BundledLanguage);
+
         // Generate tab buttons HTML based on tabs array
         const firstTab = tabs[0];
         const tabButtonsHtml = tabs.map((tab, i) => {
@@ -140,10 +157,99 @@ export async function highlightCode(
         return html;
     }
 
+    // Shell install fences (`pnpm add …`, `npm i …`, etc.) get an
+    // npm/pnpm/yarn/bun tab strip with all four variants pre-rendered. Only
+    // lines that parse as a package-manager command are translated; everything
+    // else (e.g. `sigx prebuild`, comments, blanks) is preserved verbatim. The
+    // client switcher only toggles which `[data-pm-variant]` is visible — it
+    // never rewrites line text, so it can't fight framework hydration.
+    // Detect on the *raw* lang, not `effectiveLang`: `sh`/`zsh` aren't in the
+    // default loaded Shiki languages, so they collapse to `text` above — but
+    // they're still shell install fences. Variants are highlighted as a loaded
+    // shell grammar (the resolved one if it's already a shell lang, else
+    // `bash`) so `sh`/`zsh` fences get the tabs and proper highlighting too.
+    const isShellFence = SHELL_LANGS.has(lang.toLowerCase()) || SHELL_LANGS.has(effectiveLang);
+    if (!hasTabs && isShellFence) {
+        // Split on CRLF or LF so a trailing `\r` doesn't defeat `parse()` on
+        // Windows-authored fences (`pnpm add foo\r`).
+        const codeLines = code.split(/\r?\n/);
+        // Parse each line once and reuse the result across all four variants.
+        const parsedLines = codeLines.map((line) => parse(line));
+        if (parsedLines.some((parsed) => parsed !== null)) {
+            const defaultPm: Pm = PMS.includes(mergedConfig.defaultPackageManager as Pm)
+                ? (mergedConfig.defaultPackageManager as Pm)
+                : DEFAULT_PM;
+
+            const pmLang: BundledLanguage = (SHELL_LANGS.has(effectiveLang)
+                ? effectiveLang
+                : loadedLangs.includes('bash' as BundledLanguage)
+                  ? 'bash'
+                  : effectiveLang) as BundledLanguage;
+
+            // Derive the header label from `pmLang`, not `effectiveLang` — the
+            // latter is `text` for `sh`/`zsh` and would render a blank label.
+            const pmFilenameHtml = filename
+                ? `<span class="code-window-filename">${escapeHtml(filename)}</span>`
+                : `<span class="code-window-lang">${getLanguageLabel(pmLang)}</span>`;
+
+            const highlightFor = (pm: Pm): string => {
+                const variantCode = codeLines
+                    .map((line, i) => {
+                        const parsed = parsedLines[i];
+                        if (!parsed) return line;
+                        // `render()` returns a trimmed command; re-apply the
+                        // line's original leading indentation so indented script
+                        // blocks keep their shape across variants.
+                        const indent = line.match(/^\s*/)?.[0] ?? '';
+                        return indent + render(parsed, pm);
+                    })
+                    .join('\n');
+                return highlight(variantCode, pmLang);
+            };
+
+            // Unique id base so tabs and panels can reference each other (ARIA
+            // tab pattern). `tab-<pm>` / `panel-<pm>` ids are paired below.
+            const uid = `pm-window-${pmWindowSeq++}`;
+
+            const tabButtonsHtml = PMS.map(
+                (pm) =>
+                    `<button type="button" role="tab" id="${uid}-tab-${pm}" aria-controls="${uid}-panel-${pm}" class="code-window-tab code-window-pm-tab${pm === defaultPm ? ' code-window-tab-active' : ''}" data-pm="${pm}" aria-selected="${pm === defaultPm}">${pm}</button>`,
+            ).join('\n                ');
+
+            // Non-default variants are hidden with an inline style (beats theme
+            // rules without `!important`, and shows the right one on first paint
+            // before any JS runs). The client switcher flips `style.display`.
+            // Each is a `tabpanel` linked back to its tab for assistive tech.
+            const variantsHtml = PMS.map(
+                (pm) =>
+                    `<div class="code-window-content" role="tabpanel" id="${uid}-panel-${pm}" aria-labelledby="${uid}-tab-${pm}" data-pm-variant="${pm}"${pm === defaultPm ? '' : ' style="display:none"'}>${highlightFor(pm)}</div>`,
+            ).join('\n        ');
+
+            return `<div class="code-window code-window-pm" data-pm="${defaultPm}">
+        <div class="code-window-header">
+            <div class="code-window-header-left">
+                <div class="code-window-dots">
+                    <span class="code-window-dot dot-red"></span>
+                    <span class="code-window-dot dot-yellow"></span>
+                    <span class="code-window-dot dot-green"></span>
+                </div>
+                ${pmFilenameHtml}
+            </div>
+            <div class="code-window-tabs code-window-pm-tabs" role="tablist" aria-label="Package manager">
+                ${tabButtonsHtml}
+            </div>
+        </div>
+        ${variantsHtml}
+    </div>`;
+        }
+    }
+
     // Add "Try Live" button for live code blocks
     const tryLiveButton = isLive
         ? `<button class="code-window-try-live" data-live-code="${escapeHtml(encodeBase64(code))}" data-lang="${effectiveLang}" data-filename="${escapeHtml(filename)}" title="Open in Live Playground">${triggerLabel}</button>`
         : '';
+
+    const codeHtml = highlight(code, effectiveLang as BundledLanguage);
 
     const html = `<div class="code-window${isLive ? ' code-window-live' : ''}">
         <div class="code-window-header">
@@ -194,6 +300,7 @@ function getLanguageLabel(lang: string): string {
         'bash': 'Terminal',
         'shell': 'Terminal',
         'sh': 'Terminal',
+        'zsh': 'Terminal',
         'md': 'Markdown',
         'markdown': 'Markdown',
         'python': 'Python',
