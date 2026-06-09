@@ -64,14 +64,17 @@ export async function highlightCode(
     const loadedLangs = highlighter.getLoadedLanguages();
     const effectiveLang = loadedLangs.includes(lang as BundledLanguage) ? lang : 'text';
 
-    // Generate HTML with both themes for CSS-based switching
-    const codeHtml = highlighter.codeToHtml(code, {
-        lang: effectiveLang as BundledLanguage,
-        themes: {
-            light: mergedConfig.light as BundledTheme,
-            dark: mergedConfig.dark as BundledTheme,
-        },
-    });
+    // Highlight `src` with both themes (CSS picks light/dark). A helper rather
+    // than an eager `codeHtml`, so the package-manager path — which re-highlights
+    // each manager variant — doesn't pay for an unused highlight of the original.
+    const highlight = (src: string, language: BundledLanguage): string =>
+        highlighter.codeToHtml(src, {
+            lang: language,
+            themes: {
+                light: mergedConfig.light as BundledTheme,
+                dark: mergedConfig.dark as BundledTheme,
+            },
+        });
 
     // Wrap in code-window structure
     const filename = meta?.filename ?? '';
@@ -89,7 +92,8 @@ export async function highlightCode(
     // For preview blocks (has tabs), render a LivePreview island component
     if (hasTabs) {
         const base64Code = encodeBase64(code);
-        
+        const codeHtml = highlight(code, effectiveLang as BundledLanguage);
+
         // Generate tab buttons HTML based on tabs array
         const firstTab = tabs[0];
         const tabButtonsHtml = tabs.map((tab, i) => {
@@ -159,7 +163,9 @@ export async function highlightCode(
     const isShellFence = SHELL_LANGS.has(lang.toLowerCase()) || SHELL_LANGS.has(effectiveLang);
     if (!hasTabs && isShellFence) {
         const codeLines = code.split('\n');
-        if (codeLines.some((line) => parse(line) !== null)) {
+        // Parse each line once and reuse the result across all four variants.
+        const parsedLines = codeLines.map((line) => parse(line));
+        if (parsedLines.some((parsed) => parsed !== null)) {
             const defaultPm: Pm = PMS.includes(mergedConfig.defaultPackageManager as Pm)
                 ? (mergedConfig.defaultPackageManager as Pm)
                 : DEFAULT_PM;
@@ -178,18 +184,12 @@ export async function highlightCode(
 
             const highlightFor = (pm: Pm): string => {
                 const variantCode = codeLines
-                    .map((line) => {
-                        const parsed = parse(line);
+                    .map((line, i) => {
+                        const parsed = parsedLines[i];
                         return parsed ? render(parsed, pm) : line;
                     })
                     .join('\n');
-                return highlighter.codeToHtml(variantCode, {
-                    lang: pmLang,
-                    themes: {
-                        light: mergedConfig.light as BundledTheme,
-                        dark: mergedConfig.dark as BundledTheme,
-                    },
-                });
+                return highlight(variantCode, pmLang);
             };
 
             const tabButtonsHtml = PMS.map(
@@ -228,6 +228,8 @@ export async function highlightCode(
     const tryLiveButton = isLive
         ? `<button class="code-window-try-live" data-live-code="${escapeHtml(encodeBase64(code))}" data-lang="${effectiveLang}" data-filename="${escapeHtml(filename)}" title="Open in Live Playground">${triggerLabel}</button>`
         : '';
+
+    const codeHtml = highlight(code, effectiveLang as BundledLanguage);
 
     const html = `<div class="code-window${isLive ? ' code-window-live' : ''}">
         <div class="code-window-header">

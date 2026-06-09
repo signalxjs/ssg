@@ -126,9 +126,11 @@ function injectPmStyles(): void {
 }
 
 /**
- * Mount the package-manager switcher. Idempotent and client-only; a no-op on
- * pages with no install fences. Called from the generated client entry after
- * hydration; custom entries can call it themselves.
+ * Mount the package-manager switcher. Idempotent and client-only; called from
+ * the generated client entry after hydration (custom entries can call it
+ * themselves). It registers a few page-wide listeners (a delegated click
+ * handler, a `storage` listener, and a coalesced `MutationObserver`) once;
+ * pages with no install fences keep these but do no visible work.
  *
  * Returns a disposer that removes the listeners and observer (useful for HMR or
  * teardown); calling it again re-enables installation.

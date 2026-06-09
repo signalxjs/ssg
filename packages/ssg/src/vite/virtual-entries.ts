@@ -188,8 +188,9 @@ defineApp(<App />)
     .use(ssrClientPlugin)
     .hydrate('#app');
 
-// Enable the npm/pnpm/yarn/bun switcher on install code blocks (no-op when
-// there are none). Runs after hydration so it never races the framework.
+// Enable the npm/pnpm/yarn/bun switcher on install code blocks. Runs after
+// hydration so it never races the framework; on pages with no install fences it
+// just registers its (cheap) page-wide listeners and does no visible work.
 installPackageManagerSwitcher();
 
 ${prefetchEnabled ? `// Enable link prefetching for faster navigation
