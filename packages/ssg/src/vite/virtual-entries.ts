@@ -158,7 +158,7 @@ export function generateClientEntry(config: SSGConfig, detection: EntryDetection
 ${cssImport}${additionalImportsBlock}
 import { defineApp, component } from 'sigx';
 import { createRouter, createWebHistory } from '@sigx/router';
-import { ssrClientPlugin } from '@sigx/ssg/client';
+import { ssrClientPlugin, installPackageManagerSwitcher } from '@sigx/ssg/client';
 import routes from 'virtual:ssg-routes';
 import { setupLayouts, LayoutRouter } from 'virtual:generated-layouts';
 ${prefetchEnabled ? `import { setupPrefetch } from '@sigx/ssg/client';` : ''}
@@ -187,6 +187,10 @@ defineApp(<App />)
     .use(router)
     .use(ssrClientPlugin)
     .hydrate('#app');
+
+// Enable the npm/pnpm/yarn/bun switcher on install code blocks (no-op when
+// there are none). Runs after hydration so it never races the framework.
+installPackageManagerSwitcher();
 
 ${prefetchEnabled ? `// Enable link prefetching for faster navigation
 setupPrefetch({ delay: ${prefetchDelay} });` : ''}

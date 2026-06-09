@@ -375,6 +375,16 @@ export interface ShikiConfig {
      * @default '⚡ Try Live'
      */
     triggerLabel?: string;
+
+    /**
+     * Default package manager shown first on shell install fences (those whose
+     * lines parse as `npm`/`pnpm`/`yarn`/`bun` commands). Such fences are
+     * rendered with an npm/pnpm/yarn/bun tab strip and all four variants
+     * pre-rendered server-side; the client switcher (`@sigx/ssg/client`) only
+     * flips which variant is visible. A visitor's saved choice overrides this.
+     * @default 'pnpm'
+     */
+    defaultPackageManager?: 'pnpm' | 'npm' | 'yarn' | 'bun';
 }
 
 // ============================================================================

@@ -87,6 +87,74 @@ async function triggerLabelFor(meta: string, config?: Parameters<typeof rehypeSh
     return btn ? toString(btn) : null;
 }
 
+/** Strip Shiki span markup to recover the plain text of a rendered window. */
+function plainText(html: string): string {
+    return html.replace(/<[^>]+>/g, '');
+}
+
+describe('highlightCode — package-manager install fences', () => {
+    it('renders a tab strip + all four variants for a shell install fence', async () => {
+        const html = await highlightCode('pnpm add @sigx/lynx-video', 'bash');
+
+        expect(html).toContain('class="code-window code-window-pm"');
+        expect(html).toContain('class="code-window-tabs code-window-pm-tabs"');
+        for (const pm of ['pnpm', 'npm', 'yarn', 'bun']) {
+            expect(html).toContain(`data-pm="${pm}"`);
+            expect(html).toContain(`data-pm-variant="${pm}"`);
+        }
+    });
+
+    it('renders the correct command per manager, with no doubling', async () => {
+        // Reproduces issue #40's input. The old client enhancer produced
+        // "pnpmpnpm add … add …"; server rendering yields one clean command each.
+        const html = await highlightCode('pnpm add @sigx/lynx-video', 'bash');
+        const text = plainText(html);
+
+        expect(text).toContain('pnpm add @sigx/lynx-video');
+        expect(text).toContain('npm install @sigx/lynx-video');
+        expect(text).toContain('yarn add @sigx/lynx-video');
+        expect(text).toContain('bun add @sigx/lynx-video');
+        expect(text).not.toContain('pnpmpnpm');
+    });
+
+    it('defaults to pnpm and hides the other variants inline', async () => {
+        const html = await highlightCode('pnpm add foo', 'bash');
+        // Container default + active tab on pnpm.
+        expect(html).toContain('class="code-window code-window-pm" data-pm="pnpm"');
+        expect(html).toMatch(/data-pm="pnpm"[^>]*aria-selected="true"/);
+        // Non-default variants hidden; the default one is not.
+        expect(html).toContain('data-pm-variant="npm" style="display:none"');
+        expect(html).not.toContain('data-pm-variant="pnpm" style="display:none"');
+    });
+
+    it('honors shiki.defaultPackageManager', async () => {
+        const html = await highlightCode('pnpm add foo', 'bash', { defaultPackageManager: 'npm' });
+        expect(html).toContain('class="code-window code-window-pm" data-pm="npm"');
+        expect(html).toContain('data-pm-variant="pnpm" style="display:none"');
+        expect(html).not.toContain('data-pm-variant="npm" style="display:none"');
+    });
+
+    it('translates only the install line, leaving other lines identical', async () => {
+        const html = await highlightCode('pnpm add foo\nsigx prebuild', 'bash');
+        // The non-install line is preserved verbatim in every variant.
+        const prebuildCount = plainText(html).split('sigx prebuild').length - 1;
+        expect(prebuildCount).toBe(4);
+        expect(plainText(html)).toContain('npm install foo');
+    });
+
+    it('leaves a shell fence with no install command untouched', async () => {
+        const html = await highlightCode('sigx prebuild', 'bash');
+        expect(html).not.toContain('code-window-pm');
+        expect(html).not.toContain('data-pm-variant');
+        expect(html).toContain('class="code-window"');
+    });
+
+    it('does not touch non-shell fences', async () => {
+        const html = await highlightCode("import * as Video from '@sigx/lynx-video';", 'tsx');
+        expect(html).not.toContain('code-window-pm');
+    });
+});
+
 describe('rehypeShiki — per-fence label meta', () => {
     it('reads a quoted label with spaces from the fence meta', async () => {
         expect(await triggerLabelFor('live label="⚡ Run"')).toBe('⚡ Run');

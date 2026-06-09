@@ -6,6 +6,7 @@
 
 import { createHighlighter, type Highlighter, type BundledLanguage, type BundledTheme } from 'shiki';
 import type { ShikiConfig } from '../types';
+import { type Pm, PMS, DEFAULT_PM, parse, render } from './package-manager';
 
 /**
  * Cached highlighter instance
@@ -20,7 +21,11 @@ const DEFAULT_CONFIG: Required<ShikiConfig> = {
     dark: 'github-dark',
     langs: ['javascript', 'typescript', 'jsx', 'tsx', 'json', 'css', 'html', 'markdown', 'bash', 'shell'],
     triggerLabel: '⚡ Try Live',
+    defaultPackageManager: DEFAULT_PM,
 };
+
+/** Shell-ish languages whose fences may carry package-manager install commands. */
+const SHELL_LANGS = new Set(['bash', 'shell', 'sh', 'zsh']);
 
 /**
  * Initialize or get the Shiki highlighter
@@ -138,6 +143,67 @@ export async function highlightCode(
     </div>
 </div>`;
         return html;
+    }
+
+    // Shell install fences (`pnpm add …`, `npm i …`, etc.) get an
+    // npm/pnpm/yarn/bun tab strip with all four variants pre-rendered. Only
+    // lines that parse as a package-manager command are translated; everything
+    // else (e.g. `sigx prebuild`, comments, blanks) is preserved verbatim. The
+    // client switcher only toggles which `[data-pm-variant]` is visible — it
+    // never rewrites line text, so it can't fight framework hydration.
+    if (!hasTabs && SHELL_LANGS.has(effectiveLang)) {
+        const codeLines = code.split('\n');
+        if (codeLines.some((line) => parse(line) !== null)) {
+            const defaultPm: Pm = PMS.includes(mergedConfig.defaultPackageManager as Pm)
+                ? (mergedConfig.defaultPackageManager as Pm)
+                : DEFAULT_PM;
+
+            const highlightFor = (pm: Pm): string => {
+                const variantCode = codeLines
+                    .map((line) => {
+                        const parsed = parse(line);
+                        return parsed ? render(parsed, pm) : line;
+                    })
+                    .join('\n');
+                return highlighter.codeToHtml(variantCode, {
+                    lang: effectiveLang as BundledLanguage,
+                    themes: {
+                        light: mergedConfig.light as BundledTheme,
+                        dark: mergedConfig.dark as BundledTheme,
+                    },
+                });
+            };
+
+            const tabButtonsHtml = PMS.map(
+                (pm) =>
+                    `<button type="button" class="code-window-tab code-window-pm-tab${pm === defaultPm ? ' code-window-tab-active' : ''}" data-pm="${pm}" aria-selected="${pm === defaultPm}">${pm}</button>`,
+            ).join('\n                ');
+
+            // Non-default variants are hidden with an inline style (beats theme
+            // rules without `!important`, and shows the right one on first paint
+            // before any JS runs). The client switcher flips `style.display`.
+            const variantsHtml = PMS.map(
+                (pm) =>
+                    `<div class="code-window-content" data-pm-variant="${pm}"${pm === defaultPm ? '' : ' style="display:none"'}>${highlightFor(pm)}</div>`,
+            ).join('\n        ');
+
+            return `<div class="code-window code-window-pm" data-pm="${defaultPm}">
+        <div class="code-window-header">
+            <div class="code-window-header-left">
+                <div class="code-window-dots">
+                    <span class="code-window-dot dot-red"></span>
+                    <span class="code-window-dot dot-yellow"></span>
+                    <span class="code-window-dot dot-green"></span>
+                </div>
+                ${filenameHtml}
+            </div>
+            <div class="code-window-tabs code-window-pm-tabs">
+                ${tabButtonsHtml}
+            </div>
+        </div>
+        ${variantsHtml}
+    </div>`;
+        }
     }
 
     // Add "Try Live" button for live code blocks
