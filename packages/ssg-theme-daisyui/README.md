@@ -1,18 +1,29 @@
 # @sigx/ssg-theme-daisyui
 
-[daisyUI](https://daisyui.com/) / Tailwind theme for [`@sigx/ssg`](https://github.com/signalxjs/ssg/tree/main/packages/ssg) with pre-built layouts and components.
+[daisyUI](https://daisyui.com/) / Tailwind theme for [`@sigx/ssg`](https://sigx.dev/ssg/) with pre-built layouts and components.
 
-## Installation
+[![npm @sigx/ssg-theme-daisyui](https://img.shields.io/npm/v/@sigx/ssg-theme-daisyui.svg?label=@sigx/ssg-theme-daisyui&color=blue)](https://www.npmjs.com/package/@sigx/ssg-theme-daisyui)
+[![license](https://img.shields.io/npm/l/@sigx/ssg-theme-daisyui.svg)](../../LICENSE)
 
-```bash
-npm install @sigx/ssg-theme-daisyui daisyui
-```
+> 🚧 SignalX is in early public release. The API surface is small and stabilising — feedback is very welcome.
 
-## Usage
+## 📚 Documentation
 
-Configure in your `ssg.config.ts`:
+Full guides, API reference and live examples → **<https://sigx.dev/daisyui/>**
+
+## What is it?
+
+A drop-in theme for [`@sigx/ssg`](https://sigx.dev/ssg/) built on
+[daisyUI](https://daisyui.com/) and Tailwind. It ships ready-made `default`, `docs`
+and `blog` layouts plus the components behind them — header with theme toggle,
+collapsible sidebar, auto-generated table of contents, and footer — so you get a
+polished docs or blog site without hand-rolling any UI. Layouts can be overridden
+locally and every daisyUI theme is available out of the box.
+
+## A taste
 
 ```ts
+// ssg.config.ts
 import { defineSSGConfig } from '@sigx/ssg';
 
 export default defineSSGConfig({
@@ -20,72 +31,14 @@ export default defineSSGConfig({
 });
 ```
 
-## Layouts
+Layout reference, exported components, customization and the full list of daisyUI
+themes are all documented at **<https://sigx.dev/daisyui/>**.
 
-### `default`
-A clean, minimal layout with header and footer. Good for general pages.
+## Part of SignalX
 
-### `docs`
-Documentation layout with:
-- Collapsible sidebar navigation
-- Table of contents (auto-generated from headings)
-- Responsive design with mobile menu
-
-### `blog`
-Blog post layout with:
-- Hero section with title, tags, date
-- Author info
-- Centered content column
-
-## Components
-
-The theme exports components you can use in your pages:
-
-```tsx
-import { Header, Footer, Sidebar, TOC } from '@sigx/ssg-theme-daisyui';
-```
-
-### `Header`
-Site header with navigation and theme toggle.
-
-### `Footer`
-Site footer with links and copyright.
-
-### `Sidebar`
-Collapsible navigation sidebar for docs.
-
-### `TOC`
-Auto-generated table of contents from page headings.
-
-## Customization
-
-### Override layouts locally
-
-Create your own layout in `src/layouts/` with the same name to override the theme's layout:
-
-```tsx
-// src/layouts/default.tsx - overrides theme's default layout
-import { component } from 'sigx';
-
-export default component(({ slots }) => {
-    return () => (
-        <div class="my-custom-layout">
-            {slots.default()}
-        </div>
-    );
-});
-```
-
-### DaisyUI themes
-
-Change the DaisyUI theme by setting `data-theme` on the HTML element:
-
-```ts
-// In a component
-document.documentElement.setAttribute('data-theme', 'dark');
-```
-
-Available themes: `light`, `dark`, `cupcake`, `bumblebee`, `emerald`, `corporate`, `synthwave`, `retro`, `cyberpunk`, `valentine`, `halloween`, `garden`, `forest`, `aqua`, `lofi`, `pastel`, `fantasy`, `wireframe`, `black`, `luxury`, `dracula`, `cmyk`, `autumn`, `business`, `acid`, `lemonade`, `night`, `coffee`, `winter`
+- [`@sigx/ssg`](https://sigx.dev/ssg/) — the static site generator this theme plugs into
+- [SignalX core](https://sigx.dev/core/) — `sigx` and friends
+- [`@sigx/daisyui`](https://sigx.dev/daisyui/) — daisyUI components for SignalX
 
 ## License
 
