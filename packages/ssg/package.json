@@ -56,7 +56,7 @@
         "url": "git+https://github.com/signalxjs/ssg.git",
         "directory": "packages/ssg"
     },
-    "homepage": "https://github.com/signalxjs/ssg/tree/main/packages/ssg",
+    "homepage": "https://sigx.dev/ssg/",
     "bugs": {
         "url": "https://github.com/signalxjs/ssg/issues"
     },

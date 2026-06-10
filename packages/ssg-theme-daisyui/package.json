@@ -32,7 +32,7 @@
         "url": "git+https://github.com/signalxjs/ssg.git",
         "directory": "packages/ssg-theme-daisyui"
     },
-    "homepage": "https://github.com/signalxjs/ssg/tree/main/packages/ssg-theme-daisyui",
+    "homepage": "https://sigx.dev/daisyui/",
     "bugs": {
         "url": "https://github.com/signalxjs/ssg/issues"
     },
