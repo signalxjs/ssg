@@ -92,11 +92,11 @@
         }
     },
     "devDependencies": {
-        "@sigx/vite": "^0.4.3",
-        "@types/node": "^25.7.0",
-        "tsx": "^4.19.0",
+        "@sigx/vite": "^0.4.9",
+        "@types/node": "^25.9.2",
+        "tsx": "^4.22.4",
         "typescript": "^6.0.3",
-        "vite": "^8.0.3"
+        "vite": "^8.0.16"
     },
     "publishConfig": {
         "access": "public"
