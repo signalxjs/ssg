@@ -147,6 +147,10 @@ export default component<TOCProps>(({ props, signal, onMounted }) => {
             return null;
         }
 
+        // Indent relative to the shallowest collected heading, so custom
+        // minLevel never yields negative padding or phantom nesting.
+        const baseLevel = Math.min(...state.items.map((item) => item.level));
+
         return (
             <nav class="toc">
                 <h4 class="text-sm font-semibold mb-4 text-base-content/70">
@@ -155,7 +159,7 @@ export default component<TOCProps>(({ props, signal, onMounted }) => {
                 <ul class="space-y-2 text-sm">
                     {state.items.map((item) => (
                         <li
-                            style={{ paddingLeft: `${(item.level - 2) * 12}px` }}
+                            style={{ paddingLeft: `${(item.level - baseLevel) * 12}px` }}
                         >
                             <a
                                 href={`#${item.id}`}

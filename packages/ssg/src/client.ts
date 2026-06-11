@@ -542,10 +542,16 @@ export function installCodeCopy(): () => void {
         const visible = panes.find((p) => p.style.display !== 'none') ?? panes[0];
         const text = visible?.textContent ?? '';
 
-        void navigator.clipboard?.writeText(text).then(() => {
-            btn.classList.add('code-window-copy-done');
-            setTimeout(() => btn.classList.remove('code-window-copy-done'), 1500);
-        });
+        if (!navigator.clipboard?.writeText) return;
+        navigator.clipboard.writeText(text).then(
+            () => {
+                btn.classList.add('code-window-copy-done');
+                setTimeout(() => btn.classList.remove('code-window-copy-done'), 1500);
+            },
+            () => {
+                /* permission denied / insecure context — nothing to do */
+            }
+        );
     };
 
     document.addEventListener('click', onClick);
