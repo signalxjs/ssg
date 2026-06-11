@@ -12,7 +12,7 @@ import Footer from '../components/Footer.js';
 export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) => {
     return () => (
         <div class="min-h-screen flex flex-col">
-            <Header site={props.site} />
+            <Header site={props.site} search={props.site?.search} />
 
             <main class="flex-1 container mx-auto px-4 py-8">
                 {slots.default()}

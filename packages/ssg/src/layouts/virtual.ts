@@ -253,6 +253,7 @@ export const LayoutRouter = component((ctx) => {
                     return jsx(Layout, { 
                         meta: match.meta, 
                         path: routePath, 
+                        site: __site,
                         key: layoutName,
                         children: jsx(HydrationPlaceholder, {})
                     });
@@ -281,6 +282,7 @@ export const LayoutRouter = component((ctx) => {
             return jsx(Layout, { 
                 meta: match.meta, 
                 path: routePath, 
+                site: __site,
                 key: layoutName,
                 children: PageComponent(pageProps) 
             });
@@ -294,6 +296,7 @@ export const LayoutRouter = component((ctx) => {
             return jsx(Layout, { 
                 meta: match.meta, 
                 path: routePath, 
+                site: __site,
                 key: layoutName,
                 children: PageComponent(pageProps) 
             });

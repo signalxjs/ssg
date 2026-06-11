@@ -441,6 +441,15 @@ export interface HeadTag {
 export interface SiteConfig {
     /** Site title */
     title?: string;
+
+    /**
+     * Ask the theme to show its search UI (#116) — e.g. the daisyui theme's
+     * ⌘K command palette. Pure pass-through to layouts via
+     * `LayoutProps.site`; pair it with the top-level `search: true` so the
+     * index actually exists. `{ base, url }` for subpath deploys / custom
+     * index filenames.
+     */
+    search?: boolean | { base?: string; url?: string };
     /** Site description for meta tags */
     description?: string;
     /** Site author */

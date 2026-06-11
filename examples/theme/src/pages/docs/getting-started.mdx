@@ -1,0 +1,27 @@
+---
+title: Getting started
+description: Install the theme and point your config at it
+category: Guide
+order: 1
+---
+
+# Getting started
+
+Point `theme` at the package and pick layouts per collection.
+
+## Install the theme
+
+```bash
+pnpm add @sigx/ssg-theme-daisyui
+```
+
+## Configure
+
+Set `theme: '@sigx/ssg-theme-daisyui'` in `ssg.config.ts`. The theme
+contributes its layouts, a no-FOUC head script, and chrome that reads your
+`site` config (title, nav, repo, search).
+
+## What you get
+
+The docs layout renders this sidebar, the table of contents on the right,
+and the prev/next links below.

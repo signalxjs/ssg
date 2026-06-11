@@ -110,6 +110,12 @@ To run a package script: `pnpm --filter <package-name> <script>`.
 
 ### Examples
 
+- `examples/theme` — private workspace app built entirely on
+  `@sigx/ssg-theme-daisyui` (theme layouts, ⌘K palette, sidebar/TOC/prev-next,
+  light-dark toggle, Tailwind+daisyUI). Fixture for
+  `packages/ssg/src/__tests__/example-theme-e2e.test.ts` (needs `pnpm build`
+  first). Run with `pnpm --filter @sigx-examples/theme dev` / `build:site`.
+  Keep its pages and the e2e assertions in sync.
 - `examples/basic` — private workspace app exercising the core feature set
   (routing, MDX, a dynamic route, drafts, custom layout/HTML). It doubles as
   the fixture for the e2e build test
