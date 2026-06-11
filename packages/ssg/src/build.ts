@@ -15,6 +15,7 @@ import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
+import type { InlineConfig } from 'vite';
 import type { SSGConfig, BuildOptions, BuildResult, PageBuildResult } from './types';
 import { loadConfig, resolveConfigPaths } from './config';
 import { scanPages } from './routing/index';
@@ -108,35 +109,20 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         // Note: We don't empty the outDir since vite build may have already run
         // Always use HTML as input so Vite outputs index.html properly
         const clientInput = htmlTemplatePath;
-        
-        await vite.build({
+
+        const buildConfigs = createViteBuildConfigs(
+            resolvedConfig,
             root,
-            mode: 'production',
-            build: {
-                outDir: resolvedConfig.outDir,
-                emptyOutDir: false,
-                ssrManifest: true,
-                rollupOptions: {
-                    input: clientInput,
-                },
-            },
-            logLevel: options.verbose ? 'info' : 'warn',
-        });
+            clientInput,
+            ssrEntry,
+            options.verbose
+        );
+
+        await vite.build(buildConfigs.client);
 
         // Build SSR bundle
-        const ssrOutDir = path.join(resolvedConfig.outDir!, '.ssg');
-        await vite.build({
-            root,
-            mode: 'production',
-            build: {
-                outDir: ssrOutDir,
-                ssr: true,
-                rollupOptions: {
-                    input: ssrEntry,
-                },
-            },
-            logLevel: options.verbose ? 'info' : 'warn',
-        });
+        const ssrOutDir = buildConfigs.ssr.build!.outDir!;
+        await vite.build(buildConfigs.ssr);
 
         // Step 6: Collect all paths to render
         console.log('📝 Collecting paths to render...');
@@ -311,6 +297,57 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         pages,
         totalTime,
         warnings,
+    };
+}
+
+/**
+ * Vite configs for the client and SSR production builds.
+ *
+ * `base` must be passed explicitly: the SSG config's base (set in
+ * ssg.config.ts or inherited from vite.config) has to reach the asset URLs
+ * Vite emits, or subpath deploys break (#49). Exported for tests.
+ */
+export function createViteBuildConfigs(
+    config: SSGConfig,
+    root: string,
+    clientInput: string,
+    ssrEntry: string,
+    verbose?: boolean
+): { client: InlineConfig; ssr: InlineConfig } {
+    // Blank base/outDir are treated as unset, matching the inheritance logic
+    // in build() (`!resolvedConfig.base || resolvedConfig.base === '/'`).
+    const base = config.base?.trim() ? config.base : '/';
+    const outDir = config.outDir?.trim() ? config.outDir : 'dist';
+    const logLevel = verbose ? 'info' : 'warn';
+
+    return {
+        client: {
+            root,
+            base,
+            mode: 'production',
+            build: {
+                outDir,
+                emptyOutDir: false,
+                ssrManifest: true,
+                rollupOptions: {
+                    input: clientInput,
+                },
+            },
+            logLevel,
+        },
+        ssr: {
+            root,
+            base,
+            mode: 'production',
+            build: {
+                outDir: path.join(outDir, '.ssg'),
+                ssr: true,
+                rollupOptions: {
+                    input: ssrEntry,
+                },
+            },
+            logLevel,
+        },
     };
 }
 
