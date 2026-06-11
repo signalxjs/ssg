@@ -43,18 +43,102 @@ body {
     padding: 0 1.25rem;
 }
 
-.site > header {
+.site-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
     padding: 1rem 0;
     margin-bottom: 1.5rem;
     border-bottom: 1px solid var(--border);
 }
 
-.site > header a {
+.site-brand {
     font-weight: 650;
     color: var(--fg);
     text-decoration: none;
+}
+
+.site-header nav {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.site-header nav a {
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 6px;
+}
+
+.site-header nav a:hover {
+    color: var(--fg);
+}
+
+.site-header nav a[aria-current='page'] {
+    color: var(--fg);
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+}
+
+/* Docs layout: auto-generated sidebar + content */
+.site-with-sidebar {
+    max-width: 64rem;
+}
+
+.docs-grid {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: 2.5rem;
+}
+
+.docs-sidebar h4 {
+    margin: 1.25rem 0 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fg-muted);
+}
+
+.docs-sidebar section:first-child h4 {
+    margin-top: 0.25rem;
+}
+
+.docs-sidebar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.docs-sidebar li {
+    margin: 0;
+}
+
+.docs-sidebar a {
+    display: block;
+    padding: 0.3rem 0.625rem;
+    border-radius: 6px;
+    color: var(--fg-muted);
+    text-decoration: none;
+    font-size: 0.9375rem;
+}
+
+.docs-sidebar a:hover {
+    color: var(--fg);
+}
+
+.docs-sidebar a[aria-current='page'] {
+    color: var(--link);
+    background: color-mix(in srgb, var(--link) 10%, transparent);
+    font-weight: 550;
+}
+
+@media (max-width: 720px) {
+    .docs-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
 }
 
 .site > footer {

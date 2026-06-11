@@ -1,0 +1,24 @@
+---
+title: Configuration
+description: ssg.config.ts essentials
+category: Basics
+order: 2
+---
+
+# Configuration
+
+Author your config with `defineSSGConfig`:
+
+```ts
+import { defineSSGConfig } from '@sigx/ssg';
+
+export default defineSSGConfig({
+    site: { title: 'My Site', url: 'https://example.com' },
+    collections: {
+        docs: { path: '/docs', layout: 'docs' },
+    },
+});
+```
+
+This page uses the `docs` layout without declaring it — pages under `/docs`
+inherit it from `collections.docs.layout`.
