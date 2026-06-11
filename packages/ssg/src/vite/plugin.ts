@@ -227,7 +227,14 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
             async function urlMatchesRoute(url: string): Promise<boolean> {
                 const pathname = url.split(/[?#]/)[0];
                 const base = ssgConfig.base && ssgConfig.base !== '/' ? ssgConfig.base.replace(/\/+$/, '') : '';
-                let urlPath = base && pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
+                // Strip the base only at a path boundary — `/docsx` under
+                // base `/docs` must NOT become route `/x`.
+                let urlPath = pathname;
+                if (base) {
+                    if (pathname === base) urlPath = '/';
+                    else if (pathname.startsWith(base + '/')) urlPath = pathname.slice(base.length);
+                }
+                if (!urlPath.startsWith('/')) urlPath = '/' + urlPath;
                 urlPath = urlPath !== '/' ? urlPath.replace(/\/+$/, '') : urlPath;
 
                 const routes = routesCache?.routes ?? (await scanPages(ssgConfig, root));
