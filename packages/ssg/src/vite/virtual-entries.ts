@@ -318,6 +318,8 @@ export function generateHtmlTemplate(config: SSGConfig): string {
  * template now only carries truly static head content.
  */
 export function generateProductionHtmlTemplate(config: SSGConfig, clientEntryPath: string): string {
+    // path.join produces backslashes on Windows — never valid in a URL (#54).
+    const entrySrc = clientEntryPath.replace(/\\/g, '/');
     const site = config.site || {};
     const lang = site.lang || 'en';
     const favicon = site.favicon || '/favicon.ico';
@@ -344,7 +346,7 @@ export function generateProductionHtmlTemplate(config: SSGConfig, clientEntryPat
 </head>
 <body>
     <div id="app"><!--app-html--></div>
-    <script type="module" src="${clientEntryPath}"></script>
+    <script type="module" src="${entrySrc}"></script>
 </body>
 </html>
 `;
