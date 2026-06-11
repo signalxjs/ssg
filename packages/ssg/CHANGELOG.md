@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Optional route segments `[[id]]` now parse to `:id?` instead of the garbage pattern `:[id]` (the plain `[id]` branch matched first), and expanding a dynamic route no longer leaks the `?` optional marker into output paths (`/users/x?`) or corrupts paths when one param name is a prefix of another (`:id` vs `:id2`) ([#50](https://github.com/signalxjs/ssg/issues/50)).
+- `markdown.*` (Shiki themes/langs, `triggerLabel`, `defaultPackageManager`, `remarkPlugins`, `rehypePlugins`) and `toc.minLevel`/`maxLevel` from `ssg.config.ts` now actually reach the MDX pipeline — they were silently ignored because the MDX plugin captured its options at construction, before the config file was loaded. The pipeline is now built lazily on first transform from the resolved config, so the config file and `ssgPlugin()` arguments are one config surface ([#47](https://github.com/signalxjs/ssg/issues/47)).
 
 ## [0.6.0] - 2026-06-09
 

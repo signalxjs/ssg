@@ -19,7 +19,7 @@ import { generateRoutesModule, generateLazyRoutesModule, VIRTUAL_ROUTES_ID, RESO
 import { generateNavigationModule, VIRTUAL_NAVIGATION_ID, RESOLVED_VIRTUAL_NAVIGATION_ID } from '../routing/virtual-navigation';
 import { discoverLayouts } from '../layouts/resolver';
 import { generateLayoutsModule, VIRTUAL_LAYOUTS_ID, RESOLVED_VIRTUAL_LAYOUTS_ID } from '../layouts/virtual';
-import { mdxPlugin } from '../mdx/plugin';
+import { mdxPlugin, type MDXPluginOptions } from '../mdx/plugin';
 import { parseFrontmatter } from '../mdx/frontmatter';
 import {
     detectCustomEntries,
@@ -74,6 +74,11 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
     // Cache for frontmatter hashes to detect changes
     const frontmatterHashCache = new Map<string, string>();
 
+    // Shared with the MDX plugin, which reads it lazily on first transform —
+    // configResolved below fills in the config loaded from ssg.config.ts, so
+    // markdown/toc options from the config file actually take effect (#47).
+    const mdxOptions: MDXPluginOptions = { markdown: options.markdown };
+
     const mainPlugin: Plugin = {
         name: 'sigx-ssg',
         enforce: 'pre',
@@ -94,6 +99,11 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                 merged.base = resolvedConfig.base;
             }
             ssgConfig = defineSSGConfig(merged);
+
+            // Hand the resolved config to the MDX plugin. ssgConfig.markdown
+            // already carries the file-config/plugin-options merge.
+            mdxOptions.ssgConfig = ssgConfig;
+            mdxOptions.markdown = ssgConfig.markdown;
 
             // Detect custom entry points
             entryDetection = detectCustomEntries(root, ssgConfig);
@@ -355,15 +365,11 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
 
     // Combine with MDX plugin if enabled (default: true)
     const enableMdx = options.enableMdx !== false;
-    
+
     if (enableMdx) {
-        const mdx = mdxPlugin({
-            markdown: options.markdown,
-            ssgConfig: undefined as any, // Will be set by configResolved
-        });
-        return [mainPlugin, mdx];
+        return [mainPlugin, mdxPlugin(mdxOptions)];
     }
-    
+
     return [mainPlugin];
 }
 
