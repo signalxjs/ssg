@@ -301,8 +301,6 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 }
 
 /**
-<<<<<<< HEAD
-=======
  * Vite configs for the client and SSR production builds.
  *
  * `base` must be passed explicitly: the SSG config's base (set in
@@ -354,79 +352,6 @@ export function createViteBuildConfigs(
 }
 
 /**
- * Path information for rendering
- */
-interface PathToRender {
-    path: string;
-    route: SSGRoute;
-    params: Record<string, string>;
-    props?: Record<string, unknown>;
-}
-
-/**
- * Collect all paths to render, expanding dynamic routes
- */
-async function collectPaths(
-    routes: SSGRoute[],
-    root: string,
-    warnings: string[]
-): Promise<PathToRender[]> {
-    const paths: PathToRender[] = [];
-
-    for (const route of routes) {
-        if (isDynamicRoute(route)) {
-            // Load module and call getStaticPaths
-            try {
-                const moduleUrl = pathToFileURL(route.file).href;
-                const pageModule = (await import(moduleUrl)) as PageModule;
-
-                if (!pageModule.getStaticPaths) {
-                    const params = extractParams(route.path).join(', ');
-                    console.warn(
-                        `\n⚠️  SSG102: Dynamic route missing getStaticPaths()\n` +
-                        `   📁 ${route.file}\n` +
-                        `   Route: ${route.path} (params: ${params})\n` +
-                        `   💡 Export getStaticPaths() to generate static pages:\n\n` +
-                        `      export async function getStaticPaths() {\n` +
-                        `          return [{ params: { ${params.split(', ')[0]}: 'value' } }];\n` +
-                        `      }\n`
-                    );
-                    warnings.push(
-                        `Route ${route.path} has dynamic segments [${params}] but no getStaticPaths() export. Skipping.`
-                    );
-                    continue;
-                }
-
-                const staticPaths = await pageModule.getStaticPaths();
-
-                for (const staticPath of staticPaths) {
-                    const expandedPaths = expandDynamicRoute(route, [staticPath]);
-                    for (const expandedPath of expandedPaths) {
-                        paths.push({
-                            path: expandedPath,
-                            route,
-                            params: staticPath.params,
-                            props: staticPath.props,
-                        });
-                    }
-                }
-            } catch (err) {
-                warnings.push(`Failed to load ${route.file}: ${err}`);
-            }
-        } else {
-            paths.push({
-                path: route.path,
-                route,
-                params: {},
-            });
-        }
-    }
-
-    return paths;
-}
-
-/**
->>>>>>> fix(ssg): propagate base from ssg.config.ts to the production Vite builds
  * Render a page to HTML
  */
 async function renderPage(
