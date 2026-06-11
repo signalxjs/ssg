@@ -233,7 +233,19 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                 const headTags =
                     generateHeadTags(pathInfo, resolvedConfig) +
                     pagePropsScript(pathInfo.path, pathInfo.props);
-                const html = injectIntoTemplate(template, appHtml, headTags);
+                let html = injectIntoTemplate(template, appHtml, headTags);
+
+                // transformHtml hook (#58) — runs inside the try, so a
+                // throwing hook fails the build like a failed render.
+                if (resolvedConfig.hooks?.transformHtml) {
+                    html = await resolvedConfig.hooks.transformHtml(html, {
+                        path: pathInfo.path,
+                        params: pathInfo.params,
+                        props: pathInfo.props,
+                        meta: pathInfo.route.meta,
+                        route: pathInfo.route,
+                    });
+                }
 
                 const outputPath = getOutputPath(pathInfo.path, resolvedConfig.outDir!);
                 const renderTime = Date.now() - renderStart;
@@ -294,13 +306,19 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                 await fs.writeFile(result.outputPath, result.html, 'utf-8');
                 const size = Buffer.byteLength(result.html, 'utf-8');
 
-                pages.push({
+                const pageResult: PageBuildResult = {
                     path: result.pathInfo.path,
                     file: result.outputPath,
                     time: result.renderTime,
                     size,
                     meta: result.pathInfo.route.meta,
-                });
+                };
+                pages.push(pageResult);
+
+                // onPageRendered hook (#58) — page written, final HTML in hand
+                if (resolvedConfig.hooks?.onPageRendered) {
+                    await resolvedConfig.hooks.onPageRendered({ ...pageResult, html: result.html });
+                }
                 
                 if (verbose) {
                     console.log(`   ✓ ${result.pathInfo.path} (${result.renderTime}ms, ${formatBytes(size)})`);
@@ -330,6 +348,16 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                 console.log('   ✓ sitemap.xml');
                 console.log('   ✓ robots.txt');
             }
+        }
+
+        // postBuild hook (#58) — everything is on disk; search indexes,
+        // link checkers, redirects files etc. run here.
+        if (resolvedConfig.hooks?.postBuild) {
+            console.log('🪝 Running postBuild hook...');
+            await resolvedConfig.hooks.postBuild(
+                { pages, warnings },
+                { outDir: resolvedConfig.outDir!, config: resolvedConfig }
+            );
         }
 
     } finally {

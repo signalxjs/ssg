@@ -16,4 +16,23 @@ export default defineSSGConfig({
     // heading anchors). Site typography lives in src/styles/global.css,
     // which zero-config mode auto-imports.
     clientImports: ['@sigx/ssg/styles.css'],
+    // Build pipeline hooks (#58): transform every page's HTML, observe each
+    // rendered page, and run once after the build — the extension points for
+    // search indexing, OG images, link checking, redirects, …
+    hooks: {
+        transformHtml(html) {
+            return html.replace(
+                '</head>',
+                '    <meta name="generator" content="@sigx/ssg">\n</head>'
+            );
+        },
+        async postBuild(result, ctx) {
+            const { writeFile } = await import('node:fs/promises');
+            const { join } = await import('node:path');
+            const manifest = {
+                pages: result.pages.map((page) => ({ path: page.path, size: page.size })),
+            };
+            await writeFile(join(ctx.outDir, 'build-manifest.json'), JSON.stringify(manifest, null, 2));
+        },
+    },
 });
