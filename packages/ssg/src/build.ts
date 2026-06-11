@@ -43,6 +43,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const root = process.cwd();
     const warnings: string[] = [];
     const pages: PageBuildResult[] = [];
+    // Rendered HTML per page, collected only when `search` is enabled (#62) —
+    // the index extracts visible text from the final HTML.
+    const searchDocs: Array<{ page: PageBuildResult; html: string }> = [];
 
     console.log('\n🚀 @sigx/ssg - Building static site...\n');
 
@@ -323,6 +326,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                     meta: result.pathInfo.route.meta,
                 };
                 pages.push(pageResult);
+                if (resolvedConfig.search) searchDocs.push({ page: pageResult, html: result.html });
 
                 // onPageRendered hook (#58) — page written, final HTML in hand
                 if (resolvedConfig.hooks?.onPageRendered) {
@@ -365,6 +369,16 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             const { writeRedirects } = await import('./redirects');
             await writeRedirects(resolvedConfig.redirects, resolvedConfig, resolvedConfig.outDir!);
             console.log(`   ✓ ${Object.keys(resolvedConfig.redirects).length} redirect(s) + _redirects`);
+        }
+
+        // Built-in search index (#62)
+        if (resolvedConfig.search) {
+            console.log('🔍 Writing search index...');
+            const { buildSearchIndex, writeSearchIndex } = await import('./search');
+            const searchOptions = resolvedConfig.search === true ? {} : resolvedConfig.search;
+            const entries = buildSearchIndex(searchDocs, searchOptions);
+            await writeSearchIndex(entries, resolvedConfig.outDir!, searchOptions);
+            console.log(`   ✓ ${searchOptions.output ?? 'search-index.json'} (${entries.length} pages)`);
         }
 
         // postBuild hook (#58) — everything is on disk; search indexes,

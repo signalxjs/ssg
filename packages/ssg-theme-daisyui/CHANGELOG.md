@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `CommandPalette` component ([#62](https://github.com/signalxjs/ssg/issues/62)): ⌘K / Ctrl+K search over the build-time index (`search: true` in ssg.config.ts) — lazy index load, keyboard navigation (arrows/Enter/Escape), heading deep-links. Opt in via the new `Header` prop `search` (`true` or `{ base }` for subpath deploys), or compose `components.CommandPalette` directly.
+
 ## [0.7.1] - 2026-06-11
 
 ### Changed

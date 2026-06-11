@@ -399,3 +399,104 @@ export function installPackageManagerSwitcher(): () => void {
         pmSwitcherInstalled = false;
     };
 }
+
+// ---------------------------------------------------------------------------
+// Client search over the build-time index (#62)
+// ---------------------------------------------------------------------------
+
+export type { SearchIndexEntry } from './types';
+import type { SearchIndexEntry } from './types';
+
+/** One ranked hit from {@link searchPages}. */
+export interface SearchResult {
+    /** URL path of the page (no `base` prefix). */
+    path: string;
+    title: string;
+    /** Relevance — title matches outrank heading matches outrank body text. */
+    score: number;
+    /** Snippet around the first body match, when the body matched. */
+    excerpt?: string;
+    /** `#id` of the best matching heading, for deep links. */
+    anchor?: string;
+}
+
+/**
+ * Rank index entries against a query (#62). Pure and dependency-free: every
+ * whitespace-separated term must match the title, a heading, the
+ * description, or the body (AND semantics); title matches score highest.
+ */
+export function searchPages(
+    entries: SearchIndexEntry[],
+    query: string,
+    options: { limit?: number } = {}
+): SearchResult[] {
+    const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return [];
+    const limit = options.limit ?? 10;
+
+    const results: SearchResult[] = [];
+    for (const entry of entries) {
+        const title = entry.title.toLowerCase();
+        const description = (entry.description ?? '').toLowerCase();
+        const text = entry.text.toLowerCase();
+
+        let score = 0;
+        let anchor: string | undefined;
+        let firstBodyMatch = -1;
+        let everyTermMatched = true;
+
+        for (const term of terms) {
+            let termScore = 0;
+            if (title.includes(term)) termScore += 10;
+            const heading = entry.headings.find((h) => h.text.toLowerCase().includes(term));
+            if (heading) {
+                termScore += 5;
+                if (!anchor) anchor = `#${heading.id}`;
+            }
+            if (description.includes(term)) termScore += 3;
+            const bodyIndex = text.indexOf(term);
+            if (bodyIndex !== -1) {
+                termScore += 1;
+                if (firstBodyMatch === -1) firstBodyMatch = bodyIndex;
+            }
+            if (termScore === 0) {
+                everyTermMatched = false;
+                break;
+            }
+            score += termScore;
+        }
+        if (!everyTermMatched) continue;
+
+        const result: SearchResult = { path: entry.path, title: entry.title, score };
+        if (anchor) result.anchor = anchor;
+        if (firstBodyMatch !== -1) {
+            const start = Math.max(0, firstBodyMatch - 40);
+            const end = Math.min(entry.text.length, firstBodyMatch + 120);
+            result.excerpt =
+                (start > 0 ? '…' : '') + entry.text.slice(start, end).trim() + (end < entry.text.length ? '…' : '');
+        }
+        results.push(result);
+    }
+
+    return results.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path)).slice(0, limit);
+}
+
+/**
+ * Fetch the emitted `search-index.json` (#62). Pass `base` when the site is
+ * deployed under a subpath, or `url` to override the location entirely.
+ */
+export async function loadSearchIndex(
+    options: { base?: string; url?: string } = {}
+): Promise<SearchIndexEntry[]> {
+    const base = (options.base ?? '/').replace(/\/+$/, '');
+    const url = options.url ?? `${base}/search-index.json`;
+    const res = await fetch(url);
+    if (!res.ok) {
+        throw new Error(
+            `Failed to load ${url} (HTTP ${res.status}). ` +
+                `Is search enabled? Set \`search: true\` in ssg.config.ts to emit the index.`
+        );
+    }
+    const data = (await res.json()) as { entries?: SearchIndexEntry[] };
+    return data.entries ?? [];
+}

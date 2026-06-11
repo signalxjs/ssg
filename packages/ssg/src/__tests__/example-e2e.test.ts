@@ -71,6 +71,22 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         expect(second).not.toContain('window.__SSG_PROPS__');
     });
 
+    it('emits a search index over the rendered pages (#62)', () => {
+        const index = JSON.parse(read('search-index.json'));
+        expect(index.version).toBe(1);
+
+        const guide = index.entries.find((e: { path: string }) => e.path === '/guide');
+        expect(guide).toBeDefined();
+        expect(guide.title.length).toBeGreaterThan(0);
+        expect(guide.headings.length).toBeGreaterThan(0);
+        expect(guide.text.length).toBeGreaterThan(0);
+
+        // Visibility convention matches the sitemap: no drafts, no 404.
+        const paths = index.entries.map((e: { path: string }) => e.path);
+        expect(paths).not.toContain('/drafts-demo');
+        expect(paths.some((p: string) => p.startsWith('/404'))).toBe(false);
+    });
+
     it('excludes draft pages from the output and the sitemap (#48)', () => {
         expect(fs.existsSync(path.join(DIST, 'drafts-demo'))).toBe(false);
         expect(read('sitemap.xml')).not.toContain('drafts-demo');

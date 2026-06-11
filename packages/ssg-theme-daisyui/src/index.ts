@@ -16,11 +16,13 @@ import Header from './components/Header.js';
 import Footer from './components/Footer.js';
 import Sidebar from './components/Sidebar.js';
 import TOC from './components/TOC.js';
+import CommandPalette from './components/CommandPalette.js';
 
 // Re-export component types
 export type { HeaderProps } from './components/Header.js';
 export type { SidebarProps } from './components/Sidebar.js';
 export type { TOCProps } from './components/TOC.js';
+export type { CommandPaletteProps } from './components/CommandPalette.js';
 
 /**
  * Theme configuration
@@ -49,6 +51,7 @@ export const components = {
     Footer,
     Sidebar,
     TOC,
+    CommandPalette,
 };
 
 /**
