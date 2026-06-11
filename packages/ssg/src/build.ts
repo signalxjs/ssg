@@ -316,8 +316,10 @@ export function createViteBuildConfigs(
     ssrEntry: string,
     verbose?: boolean
 ): { client: InlineConfig; ssr: InlineConfig } {
-    const base = config.base ?? '/';
-    const outDir = config.outDir ?? 'dist';
+    // Blank base/outDir are treated as unset, matching the inheritance logic
+    // in build() (`!resolvedConfig.base || resolvedConfig.base === '/'`).
+    const base = config.base?.trim() ? config.base : '/';
+    const outDir = config.outDir?.trim() ? config.outDir : 'dist';
     const logLevel = verbose ? 'info' : 'warn';
 
     return {

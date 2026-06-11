@@ -34,4 +34,10 @@ describe('createViteBuildConfigs — base propagation (#49)', () => {
         expect(configs.client.base).toBe('/');
         expect(configs.ssr.base).toBe('/');
     });
+
+    it('normalizes a blank base to /, consistent with the build inheritance logic', () => {
+        const configs = createViteBuildConfigs({ base: '', outDir: '/site/dist' }, '/site', '/site/index.html', '/site/entry.tsx', false);
+        expect(configs.client.base).toBe('/');
+        expect(configs.ssr.base).toBe('/');
+    });
 });
