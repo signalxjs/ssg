@@ -9,6 +9,20 @@ import { definePlugin } from '@sigx/cli/plugin';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+/**
+ * Parse and validate the --concurrency flag: a positive integer, or
+ * undefined when not given. NaN/0/negative values would silently render
+ * nothing or hang the batch loop.
+ */
+function parseConcurrency(value: string | undefined): number | undefined {
+    if (value === undefined) return undefined;
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < 1) {
+        throw new Error(`--concurrency must be a positive integer, got "${value}"`);
+    }
+    return n;
+}
+
 export default definePlugin({
     name: 'ssg',
     detect: (cwd) =>
@@ -50,7 +64,7 @@ export default definePlugin({
                     configPath: ctx.args.config as string | undefined,
                     verbose: ctx.args.verbose as boolean | undefined,
                     drafts: ctx.args.drafts as boolean | undefined,
-                    concurrency: ctx.args.concurrency ? Number(ctx.args.concurrency) : undefined,
+                    concurrency: parseConcurrency(ctx.args.concurrency as string | undefined),
                 });
             },
         },

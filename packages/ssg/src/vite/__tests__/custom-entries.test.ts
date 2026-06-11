@@ -95,3 +95,21 @@ describe('CollectionConfig.layout — route layout resolution (#51)', () => {
         expect(code).toContain("meta2.layout || 'docs'");
     });
 });
+
+describe('fallbackLayout — longest prefix wins (#51 review)', () => {
+    it('nested collections pick the most specific layout', () => {
+        const routes: SSGRoute[] = [
+            { path: '/docs/api/ref', file: '/s/p/docs/api/ref.mdx', name: 'a', meta: {} },
+            { path: '/docs/guide', file: '/s/p/docs/guide.mdx', name: 'b', meta: {} },
+        ];
+        const code = generateRoutesModule(routes, {
+            defaultLayout: 'default',
+            collections: {
+                docs: { path: '/docs', layout: 'docs' },
+                api: { path: '/docs/api', layout: 'api' },
+            },
+        });
+        expect(code).toContain("meta0.layout || 'api'");
+        expect(code).toContain("meta1.layout || 'docs'");
+    });
+});

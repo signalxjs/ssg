@@ -27,14 +27,19 @@ function normalizePath(filePath: string): string {
  * default. Frontmatter/`export const layout` always wins at runtime.
  */
 function fallbackLayout(routePath: string, config: SSGConfig): string {
+    let best: { layout: string; length: number } | undefined;
     for (const collection of Object.values(config.collections ?? {})) {
         if (!collection.layout) continue;
         const prefix = collection.path.replace(/\/+$/, '');
         if (routePath === prefix || routePath.startsWith(prefix + '/')) {
-            return collection.layout;
+            // Longest matching prefix wins — nested collections (/docs/api
+            // inside /docs) must pick the most specific layout.
+            if (!best || prefix.length > best.length) {
+                best = { layout: collection.layout, length: prefix.length };
+            }
         }
     }
-    return config.defaultLayout || 'default';
+    return best?.layout ?? config.defaultLayout ?? 'default';
 }
 
 /**

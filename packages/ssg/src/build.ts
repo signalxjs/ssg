@@ -91,25 +91,27 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // Always write HTML template for the build (either generated or updated from custom)
     // This ensures Vite processes it and outputs index.html
     const htmlTemplatePath = path.join(root, 'index.html');
-    let cleanupHtml = false;
+
+    // Save the original whenever the file EXISTS — even when the build uses
+    // a generated template (e.g. `htmlTemplate: false` with an index.html
+    // present), the user's file must be restored, never deleted (#51).
     let originalHtmlContent: string | null = null;
-    
-    // Save original HTML content if we're modifying a custom one
-    if (!entryDetection.useVirtualHtml && fsSync.existsSync(htmlTemplatePath)) {
+    if (fsSync.existsSync(htmlTemplatePath)) {
         originalHtmlContent = fsSync.readFileSync(htmlTemplatePath, 'utf-8');
     }
-    
+
     const htmlContent = await getHtmlTemplate(resolvedConfig, root, clientEntry);
     fsSync.writeFileSync(htmlTemplatePath, htmlContent, 'utf-8');
-    cleanupHtml = entryDetection.useVirtualHtml; // Only cleanup (delete) if we generated it
 
     // Restore the user's index.html / remove temp entries on SIGINT/SIGTERM
     // too — the `finally` below doesn't run when the process is killed (#52).
     const restoreProjectFiles = () => {
-        if (cleanupHtml) {
-            try { fsSync.unlinkSync(htmlTemplatePath); } catch { /* ignore */ }
-        } else if (originalHtmlContent !== null) {
+        if (originalHtmlContent !== null) {
+            // The file pre-existed (custom template, or forced-virtual) — restore it
             try { fsSync.writeFileSync(htmlTemplatePath, originalHtmlContent, 'utf-8'); } catch { /* ignore */ }
+        } else {
+            // We created it for the build — remove it
+            try { fsSync.unlinkSync(htmlTemplatePath); } catch { /* ignore */ }
         }
         cleanupTempEntriesSync(root);
     };
