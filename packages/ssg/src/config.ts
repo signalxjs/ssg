@@ -63,7 +63,6 @@ export async function loadConfig(configPath?: string): Promise<SSGConfig> {
     const fsPath = await import('node:path');
     const fs = await import('node:fs');
     const { pathToFileURL } = await import('node:url');
-    const os = await import('node:os');
 
     // Find config file
     const cwd = process.cwd();
@@ -89,29 +88,29 @@ export async function loadConfig(configPath?: string): Promise<SSGConfig> {
     }
 
     try {
-        // For TypeScript files, use esbuild to compile them first
+        // For TypeScript files, compile with esbuild first
         if (foundPath.endsWith('.ts')) {
             const esbuild = await import('esbuild');
-            const tempDir = os.tmpdir();
-            const tempFile = fsPath.join(tempDir, `ssg-config-${Date.now()}.mjs`);
-            
-            // Read and transform the TypeScript file
-            const source = fs.readFileSync(foundPath, 'utf-8');
-            
-            // Transform: remove the import and defineSSGConfig wrapper
-            // The config file typically does: export default defineSSGConfig({ ... })
-            // We just need the config object, so we can transform it
-            const result = await esbuild.transform(source, {
-                loader: 'ts',
+
+            // BUNDLE (don't just type-strip): a config importing relative .ts
+            // helpers must work on every supported Node, not only versions
+            // with native type stripping — and non-erasable syntax (enums)
+            // must work everywhere (#96). Package imports stay external and
+            // resolve from the temp file's location next to the config.
+            const result = await esbuild.build({
+                entryPoints: [foundPath],
+                bundle: true,
                 format: 'esm',
+                platform: 'node',
+                packages: 'external',
+                write: false,
+                sourcemap: false,
             });
-            
-            // Write the transformed code to a temp file in the same directory as the config
-            // This ensures relative imports and package resolution work correctly
+
             const configDir = fsPath.dirname(foundPath);
             const localTempFile = fsPath.join(configDir, `.ssg-config-temp-${Date.now()}.mjs`);
-            
-            fs.writeFileSync(localTempFile, result.code);
+
+            fs.writeFileSync(localTempFile, result.outputFiles[0].text);
             
             try {
                 const configModule = await import(pathToFileURL(localTempFile).href);

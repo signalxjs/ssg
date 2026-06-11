@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - `data-no-spa` now opts out an anchor **or any ancestor container** from SPA navigation, and LivePreview islands carry it by default — links inside rendered example previews can no longer hijack navigation ([#95](https://github.com/signalxjs/ssg/issues/95)).
+- `ssg.config.ts` files importing relative `.ts` helpers (and non-erasable TS syntax like enums) now load on every supported Node version — the config loader bundles the config with esbuild (packages external) instead of only type-stripping it, which silently required Node ≥22.18 native type stripping ([#96](https://github.com/signalxjs/ssg/issues/96), root cause of signalxjs.github.io#37).
 
 ## [0.7.0] - 2026-06-11
 
