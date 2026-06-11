@@ -112,6 +112,14 @@ export interface SSGConfig {
      */
     prefetch?: boolean | { delay?: number };
 
+    /**
+     * Route internal anchor clicks through the router (SPA navigation)
+     * instead of full page reloads. Set to `false` for MPA behavior.
+     * Per-link opt-out: `data-no-spa`.
+     * @default true
+     */
+    spaNavigation?: boolean;
+
     // ========================================================================
     // Navigation Options
     // ========================================================================

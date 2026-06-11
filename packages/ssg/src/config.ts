@@ -36,6 +36,7 @@ export function defineSSGConfig(config: SSGConfig): SSGConfig {
         trailingSlash: 'always',
         // Zero-config defaults
         prefetch: true,
+        spaNavigation: true,
         // User overrides
         ...config,
         // Merge nested objects

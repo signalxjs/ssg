@@ -177,6 +177,7 @@ export function generateClientEntry(config: SSGConfig, detection: EntryDetection
         : 100;
 
     const prefetchEnabled = config.prefetch !== false;
+    const spaNavEnabled = config.spaNavigation !== false;
 
     return `/**
  * Auto-generated client entry point
@@ -186,7 +187,7 @@ export function generateClientEntry(config: SSGConfig, detection: EntryDetection
 ${cssImport}${additionalImportsBlock}
 import { defineApp, component } from 'sigx';
 import { createRouter, createWebHistory } from '@sigx/router';
-import { ssrClientPlugin, installPackageManagerSwitcher${prefetchEnabled ? ', setupPrefetch' : ''} } from '@sigx/ssg/client';
+import { ssrClientPlugin, installPackageManagerSwitcher${spaNavEnabled ? ', installSpaNavigation' : ''}${prefetchEnabled ? ', setupPrefetch' : ''} } from '@sigx/ssg/client';
 import routes from 'virtual:ssg-routes';
 import { setupLayouts, LayoutRouter, setPageProps } from 'virtual:generated-layouts';
 
@@ -222,6 +223,11 @@ defineApp(<App />)
     .use(ssrClientPlugin)
     .hydrate('#app');
 
+${spaNavEnabled ? `// Route internal anchor clicks (incl. MDX content links) through the
+// router instead of full page reloads (#35). Opt out per link with
+// \`data-no-spa\`, or globally with \`spaNavigation: false\`.
+installSpaNavigation(router, { base: '${config.base || '/'}' });
+` : ''}
 // Enable the npm/pnpm/yarn/bun switcher on install code blocks. Runs after
 // hydration so it never races the framework; on pages with no install fences it
 // just registers its (cheap) page-wide listeners and does no visible work.
