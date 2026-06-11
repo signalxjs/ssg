@@ -7,6 +7,7 @@
 
 import { component, watch, onUnmounted } from 'sigx';
 import { useRoute } from '@sigx/router';
+import type { PageMeta } from '@sigx/ssg';
 
 export interface TOCItem {
     id: string;
@@ -15,7 +16,15 @@ export interface TOCItem {
 }
 
 export interface TOCProps {
-    // Future: allow passing items directly
+    /**
+     * Current page meta — `meta.toc: false` hides the TOC, and
+     * `meta.toc.minLevel`/`maxLevel` override the heading range (#65).
+     */
+    meta?: PageMeta;
+    /** Lowest heading level collected. @default 2 */
+    minLevel?: number;
+    /** Highest heading level collected. @default 3 */
+    maxLevel?: number;
 }
 
 /**
@@ -28,7 +37,29 @@ export function extractHeadingText(heading: Element): string {
     return (clone.textContent ?? '').trim();
 }
 
-export default component(({ signal, onMounted }) => {
+/**
+ * Collect TOC items from rendered headings within `[minLevel, maxLevel]`,
+ * skipping `data-toc-ignore` ones (#65). Ensures every collected heading
+ * carries an id so the TOC links resolve.
+ */
+export function collectTocItems(root: Element, minLevel: number, maxLevel: number): TOCItem[] {
+    const levels: string[] = [];
+    for (let l = Math.max(1, minLevel); l <= Math.min(6, maxLevel); l++) levels.push(`h${l}`);
+    if (levels.length === 0) return [];
+
+    const items: TOCItem[] = [];
+    root.querySelectorAll(levels.join(', ')).forEach((heading) => {
+        if (heading.hasAttribute('data-toc-ignore')) return;
+        const text = extractHeadingText(heading);
+        const id = heading.id || text.toLowerCase().replace(/\s+/g, '-');
+        if (!heading.id && id) heading.id = id;
+        if (!text) return;
+        items.push({ id, text, level: parseInt(heading.tagName[1]) });
+    });
+    return items;
+}
+
+export default component<TOCProps>(({ props, signal, onMounted }) => {
     const route = useRoute();
     const state = signal<{ items: TOCItem[]; activeId: string | null }>({
         items: [],
@@ -56,24 +87,12 @@ export default component(({ signal, onMounted }) => {
             return;
         }
 
-        const headings = article.querySelectorAll('h2, h3');
-        const items: TOCItem[] = [];
-
-        headings.forEach((heading) => {
-            const text = extractHeadingText(heading);
-            const id = heading.id || text.toLowerCase().replace(/\s+/g, '-');
-
-            // Ensure heading has an ID
-            if (!heading.id && id) {
-                heading.id = id;
-            }
-
-            items.push({
-                id,
-                text,
-                level: parseInt(heading.tagName[1]),
-            });
-        });
+        // Per-page meta wins over props over defaults (#65).
+        const tocMeta = props.meta?.toc;
+        const metaLevels = typeof tocMeta === 'object' && tocMeta !== null ? tocMeta : undefined;
+        const minLevel = metaLevels?.minLevel ?? props.minLevel ?? 2;
+        const maxLevel = metaLevels?.maxLevel ?? props.maxLevel ?? 3;
+        const items = collectTocItems(article, minLevel, maxLevel);
 
         state.items = items;
 
@@ -94,7 +113,10 @@ export default component(({ signal, onMounted }) => {
             { rootMargin: '-100px 0px -80% 0px' }
         );
 
-        headings.forEach((heading) => currentObserver!.observe(heading));
+        items.forEach((item) => {
+            const el = document.getElementById(item.id);
+            if (el) currentObserver!.observe(el);
+        });
     }
 
     onMounted(() => {
@@ -120,7 +142,8 @@ export default component(({ signal, onMounted }) => {
     });
 
     return () => {
-        if (state.items.length === 0) {
+        // Per-page opt-out: `toc: false` in frontmatter (#65).
+        if (props.meta?.toc === false || state.items.length === 0) {
             return null;
         }
 

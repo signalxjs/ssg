@@ -187,7 +187,7 @@ export function generateClientEntry(config: SSGConfig, detection: EntryDetection
 ${cssImport}${additionalImportsBlock}
 import { defineApp, component } from 'sigx';
 import { createRouter, createWebHistory } from '@sigx/router';
-import { ssrClientPlugin, installPackageManagerSwitcher${spaNavEnabled ? ', installSpaNavigation' : ''}${prefetchEnabled ? ', setupPrefetch' : ''} } from '@sigx/ssg/client';
+import { ssrClientPlugin, installPackageManagerSwitcher, installCodeCopy${spaNavEnabled ? ', installSpaNavigation' : ''}${prefetchEnabled ? ', setupPrefetch' : ''} } from '@sigx/ssg/client';
 import routes from 'virtual:ssg-routes';
 import { setupLayouts, LayoutRouter, setPageProps } from 'virtual:generated-layouts';
 
@@ -232,6 +232,8 @@ installSpaNavigation(router, { base: '${config.base || '/'}' });
 // hydration so it never races the framework; on pages with no install fences it
 // just registers its (cheap) page-wide listeners and does no visible work.
 installPackageManagerSwitcher();
+// Copy buttons on code windows (#65) — same delegated, hydration-safe pattern.
+installCodeCopy();
 
 ${prefetchEnabled ? `// Enable link prefetching for faster navigation
 setupPrefetch({ delay: ${prefetchDelay} });` : ''}

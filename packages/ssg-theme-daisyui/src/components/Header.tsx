@@ -8,6 +8,7 @@ import { component } from 'sigx';
 import type { SiteConfig } from '@sigx/ssg';
 import { siteBrand, siteNavItems, siteRepoUrl } from '../lib/site.js';
 import CommandPalette from './CommandPalette.js';
+import { applyInitialTheme, persistTheme, type ThemeName } from '../lib/theme-init.js';
 
 export interface HeaderProps {
     onMenuClick?: () => void;
@@ -20,14 +21,22 @@ export interface HeaderProps {
     search?: boolean | { base?: string; url?: string };
 }
 
-export default component<HeaderProps>(({ props, signal }) => {
-    const state = signal({
+export default component<HeaderProps>(({ props, signal, onMounted }) => {
+    const state = signal<{ theme: ThemeName }>({
         theme: 'light',
+    });
+
+    // Adopt the persisted/OS theme on hydration — the no-FOUC head script
+    // (themeInitScript in the theme's head contribution) already applied it
+    // before paint; this syncs the toggle's state with it (#65).
+    onMounted(() => {
+        state.theme = applyInitialTheme();
     });
 
     const toggleTheme = () => {
         state.theme = state.theme === 'light' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', state.theme);
+        persistTheme(state.theme);
     };
 
     return () => (

@@ -149,16 +149,21 @@ export default component<SidebarProps>(({ props }) => {
         return (
             <nav class="sidebar">
                 <ul class="menu menu-sm bg-base-200 rounded-box w-full">
-                    {sections.map((section) => (
-                        <>
-                            {section.title && (
-                                <li class="menu-title">
-                                    <span>{section.title}</span>
-                                </li>
-                            )}
-                            {section.items.map((item) => renderItem(item))}
-                        </>
-                    ))}
+                    {sections.map((section) =>
+                        section.title ? (
+                            // Collapsible group (#65): native <details>, open by
+                            // default — works before hydration and stays valid
+                            // <ul><li> nesting.
+                            <li>
+                                <details open>
+                                    <summary class="menu-title">{section.title}</summary>
+                                    <ul>{section.items.map((item) => renderItem(item))}</ul>
+                                </details>
+                            </li>
+                        ) : (
+                            section.items.map((item) => renderItem(item))
+                        )
+                    )}
                 </ul>
             </nav>
         );

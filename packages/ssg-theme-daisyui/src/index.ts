@@ -17,6 +17,8 @@ import Footer from './components/Footer.js';
 import Sidebar from './components/Sidebar.js';
 import TOC from './components/TOC.js';
 import CommandPalette from './components/CommandPalette.js';
+import PrevNext from './components/PrevNext.js';
+import { themeInitScript } from './lib/theme-init.js';
 
 // Re-export component types
 export type { HeaderProps } from './components/Header.js';
@@ -32,6 +34,14 @@ export type { CommandPaletteProps } from './components/CommandPalette.js';
  */
 export const config: ThemeConfig = {
     defaultLayout: 'default',
+    // No-FOUC: apply the persisted/OS light-dark theme before first paint —
+    // the Header toggle reads and writes the same storage key (#65).
+    head: [
+        {
+            tag: 'script',
+            children: themeInitScript(),
+        },
+    ],
 };
 
 /**
@@ -52,6 +62,7 @@ export const components = {
     Sidebar,
     TOC,
     CommandPalette,
+    PrevNext,
 };
 
 /**

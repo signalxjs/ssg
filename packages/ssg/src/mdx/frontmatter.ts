@@ -101,6 +101,20 @@ export function extractTitleFromContent(content: string): string | null {
 }
 
 /**
+ * Backfill a missing `title` from the content's first H1 (#55), marking it
+ * `titleFromContent` so layouts that render their own `<h1>{title}</h1>`
+ * can skip it — the heading is already in the page body (#65).
+ */
+export function applyTitleFallback(frontmatter: Record<string, unknown>, content: string): void {
+    if (frontmatter.title) return;
+    const extracted = extractTitleFromContent(content);
+    if (extracted) {
+        frontmatter.title = extracted;
+        frontmatter.titleFromContent = true;
+    }
+}
+
+/**
  * Serialize frontmatter back to YAML string
  */
 export function serializeFrontmatter(data: PageMeta): string {
