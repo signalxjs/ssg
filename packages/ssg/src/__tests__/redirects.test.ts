@@ -35,6 +35,23 @@ describe('generateRedirectHtml (#61)', () => {
         const html = generateRedirectHtml('https://elsewhere.example/x', { base: '/sub/' });
         expect(html).toContain('url=https://elsewhere.example/x');
     });
+
+    it('treats non-//-scheme URLs (mailto:, tel:) as absolute', () => {
+        const html = generateRedirectHtml('mailto:hi@example.com', { base: '/sub/' });
+        expect(html).toContain('url=mailto:hi@example.com');
+        expect(html).not.toContain('/sub/mailto:');
+    });
+
+    it('does not double-prefix a target that already carries the base', () => {
+        const html = generateRedirectHtml('/sub/docs/intro/', { base: '/sub/' });
+        expect(html).toContain('url=/sub/docs/intro/');
+        expect(html).not.toContain('/sub/sub/');
+    });
+
+    it('still prefixes paths that merely start with the base string', () => {
+        const html = generateRedirectHtml('/subway/', { base: '/sub/' });
+        expect(html).toContain('url=/sub/subway/');
+    });
 });
 
 describe('generateRedirectsFile (#61)', () => {
@@ -64,6 +81,19 @@ describe('writeRedirects (#61)', () => {
             expect(fs.readFileSync(path.join(outDir, 'old', 'index.html'), 'utf-8')).toContain('url=/new/');
             expect(fs.readFileSync(path.join(outDir, 'legacy', 'deep', 'index.html'), 'utf-8')).toContain('url=/docs/intro/');
             expect(fs.readFileSync(path.join(outDir, '_redirects'), 'utf-8')).toContain('/old /new/ 301');
+        } finally {
+            fs.rmSync(outDir, { recursive: true, force: true });
+        }
+    });
+
+    it('appends to a user-managed _redirects instead of clobbering it', async () => {
+        const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ssg-redir3-'));
+        try {
+            fs.writeFileSync(path.join(outDir, '_redirects'), '/user-rule /kept/ 302\n');
+            await writeRedirects({ '/old': '/new/' }, { base: '/' }, outDir);
+            const text = fs.readFileSync(path.join(outDir, '_redirects'), 'utf-8');
+            // User rules stay first — Netlify is first-match-wins.
+            expect(text.trim().split('\n')).toEqual(['/user-rule /kept/ 302', '/old /new/ 301']);
         } finally {
             fs.rmSync(outDir, { recursive: true, force: true });
         }

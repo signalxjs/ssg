@@ -20,13 +20,18 @@ import { getOutputPath } from './collect-paths';
 import { escapeHtml } from './head';
 
 function isAbsoluteUrl(target: string): boolean {
-    return /^[a-z][a-z0-9+.-]*:\/\//i.test(target);
+    // Any scheme-prefixed URL (https://, mailto:, tel:, …) passes through.
+    return /^[a-z][a-z0-9+.-]*:/i.test(target);
 }
 
-/** Apply the configured base to a relative target path. */
+/** Apply the configured base to a relative target path (idempotent). */
 function withBase(target: string, config: SSGConfig): string {
     if (isAbsoluteUrl(target)) return target;
     const base = config.base && config.base !== '/' ? config.base.replace(/\/+$/, '') : '';
+    if (!base) return target;
+    // Already carries the base (slash-boundary check, so '/sub' never
+    // swallows '/subway') — don't double-prefix.
+    if (target === base || target.startsWith(base + '/')) return target;
     return base + target;
 }
 
@@ -63,8 +68,11 @@ export function generateRedirectsFile(redirects: Record<string, string>, config:
 
 /**
  * Write all redirect pages and the `_redirects` file into `outDir`.
- * Refuses to overwrite an existing file — a redirect shadowing a real
- * rendered page is a config error, not something to clobber silently.
+ * Refuses to overwrite an existing redirect *page* — a redirect shadowing a
+ * real rendered page is a config error, not something to clobber silently.
+ * A user-managed `_redirects` (shipped via `public/`) is appended to, with
+ * the user's rules kept first — Netlify/Cloudflare match top-down, so
+ * hand-written rules keep precedence over config-generated ones.
  */
 export async function writeRedirects(
     redirects: Record<string, string>,
@@ -83,5 +91,13 @@ export async function writeRedirects(
         await fs.writeFile(outputPath, generateRedirectHtml(to, config), 'utf-8');
     }
 
-    await fs.writeFile(path.join(outDir, '_redirects'), generateRedirectsFile(redirects, config), 'utf-8');
+    const redirectsPath = path.join(outDir, '_redirects');
+    const generated = generateRedirectsFile(redirects, config);
+    if (fsSync.existsSync(redirectsPath)) {
+        const existing = await fs.readFile(redirectsPath, 'utf-8');
+        const sep = existing.endsWith('\n') || existing === '' ? '' : '\n';
+        await fs.writeFile(redirectsPath, existing + sep + generated, 'utf-8');
+    } else {
+        await fs.writeFile(redirectsPath, generated, 'utf-8');
+    }
 }
