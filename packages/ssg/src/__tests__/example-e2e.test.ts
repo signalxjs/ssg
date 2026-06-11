@@ -1,0 +1,96 @@
+/**
+ * End-to-end build test (signalxjs/ssg#72): builds examples/basic through the
+ * real production pipeline (vite client + SSR bundles, render, sitemap) and
+ * asserts on the emitted files. This is the regression gate for the class of
+ * bugs unit tests can't see — dynamic routes silently skipped (#46), drafts
+ * published (#48), canonical/sitemap URL drift (#41).
+ *
+ * Requires packages/ssg/dist (the example resolves `@sigx/ssg` through the
+ * workspace link's exports map). CI's test job runs `pnpm build` first; the
+ * suite skips with a notice when dist is missing (e.g. the coverage job).
+ */
+
+import { describe, it, expect, beforeAll } from 'vitest';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const execFileAsync = promisify(execFile);
+
+const PKG_ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..');
+const REPO_ROOT = path.resolve(PKG_ROOT, '../..');
+const EXAMPLE_DIR = path.join(REPO_ROOT, 'examples', 'basic');
+const DIST = path.join(EXAMPLE_DIR, 'dist');
+
+const ssgDistBuilt = fs.existsSync(path.join(PKG_ROOT, 'dist', 'build.js'));
+if (!ssgDistBuilt) {
+    console.warn('[example-e2e] packages/ssg/dist not built — skipping e2e build test (run `pnpm build` first)');
+}
+
+function read(...segments: string[]): string {
+    return fs.readFileSync(path.join(DIST, ...segments), 'utf-8');
+}
+
+describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build', () => {
+    beforeAll(async () => {
+        fs.rmSync(DIST, { recursive: true, force: true });
+        await execFileAsync(process.execPath, ['build.mjs'], {
+            cwd: EXAMPLE_DIR,
+            timeout: 180_000,
+        });
+    }, 200_000);
+
+    it('renders static pages with content and head tags', () => {
+        const home = read('index.html');
+        expect(home).toContain('basic example');
+        expect(home).toContain('<title>Home</title>');
+        expect(home).not.toContain('<!--app-html-->');
+        expect(home).not.toContain('<!--head-tags-->');
+    });
+
+    it('builds dynamic routes from getStaticPaths (#46)', () => {
+        // The SSR renderer may emit text-marker comments between text parts.
+        const first = read('blog', 'first-post', 'index.html');
+        expect(first).toMatch(/Post: (<!--[^>]*-->)?first-post/);
+        expect(first).toContain('Rendered at build time from getStaticPaths.');
+
+        const second = read('blog', 'second-post', 'index.html');
+        expect(second).toMatch(/Post: (<!--[^>]*-->)?second-post/);
+    });
+
+    it('excludes draft pages from the output and the sitemap (#48)', () => {
+        expect(fs.existsSync(path.join(DIST, 'drafts-demo'))).toBe(false);
+        expect(read('sitemap.xml')).not.toContain('drafts-demo');
+    });
+
+    it('emits trailing-slash canonical and sitemap URLs that match (#41)', () => {
+        const guide = read('guide', 'index.html');
+        expect(guide).toContain('<link rel="canonical" href="https://basic.example/guide/">');
+        expect(guide).toContain('<meta property="og:url" content="https://basic.example/guide/">');
+
+        const sitemap = read('sitemap.xml');
+        expect(sitemap).toContain('<loc>https://basic.example/guide/</loc>');
+        expect(sitemap).toContain('<loc>https://basic.example/blog/first-post/</loc>');
+        expect(sitemap).toContain('<loc>https://basic.example/</loc>');
+    });
+
+    it('renders the package-manager switcher on install fences', () => {
+        // The command text is shiki-tokenized into spans, so assert on the
+        // structural markup: the tab strip and all four pre-rendered variants.
+        const guide = read('guide', 'index.html');
+        expect(guide).toContain('code-window-pm-tab');
+        for (const pm of ['npm', 'pnpm', 'yarn', 'bun']) {
+            expect(guide).toContain(`data-pm-variant="${pm}"`);
+        }
+    });
+
+    it('writes robots.txt pointing at the sitemap', () => {
+        expect(read('robots.txt')).toContain('Sitemap: https://basic.example/sitemap.xml');
+    });
+
+    it('applies the custom layout', () => {
+        expect(read('index.html')).toContain('Built with @sigx/ssg');
+    });
+});

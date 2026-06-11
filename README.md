@@ -67,6 +67,17 @@ src/pages/
 - **Streaming SSR** — render to a stream with async-component support.
 - **Built on Vite 8 + Rolldown** — fast dev, fast builds.
 
+## Examples
+
+[`examples/basic`](examples/basic) is a minimal runnable site (routing, MDX,
+a dynamic route, drafts, custom layout). From a clone:
+
+```bash
+pnpm install && pnpm build
+pnpm --filter @sigx-examples/basic dev         # dev server
+pnpm --filter @sigx-examples/basic build:site  # static build
+```
+
 ## Companion repos
 
 - [SignalX core](https://sigx.dev/core/) — `reactivity`, `runtime-core`, `runtime-dom`, `server-renderer`, `vite`, `sigx`

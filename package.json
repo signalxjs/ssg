@@ -5,7 +5,8 @@
   "description": "SignalX SSG — static site generator, SSR islands, router, and store",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/*"
   ],
   "scripts": {
     "wt": "node scripts/worktree.mjs",

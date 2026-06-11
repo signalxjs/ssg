@@ -106,6 +106,16 @@ To run a package script: `pnpm --filter <package-name> <script>`.
 - `packages/ssg` → `@sigx/ssg` — Static Site Generator for SignalX with file-based routing, MDX support, and pluggable themes.
 - `packages/ssg-theme-daisyui` → `@sigx/ssg-theme-daisyui` — DaisyUI theme for @sigx/ssg with pre-built layouts and components.
 
+### Examples
+
+- `examples/basic` — private workspace app exercising the core feature set
+  (routing, MDX, a dynamic route, drafts, custom layout/HTML). It doubles as
+  the fixture for the e2e build test
+  (`packages/ssg/src/__tests__/example-e2e.test.ts`), which requires
+  `pnpm build` first (it skips with a notice otherwise). Run it with
+  `pnpm --filter @sigx-examples/basic dev` / `build:site`. If you change its
+  pages, keep the e2e assertions in sync.
+
 ## Parallel work with git worktrees
 
 To work two things at once — each with its own checkout and its own agent
