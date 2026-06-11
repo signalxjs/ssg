@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - Pages titled only by a leading `# Heading` (no frontmatter `title`) now get that H1 as `<title>`/`og:title` — the fallback existed but never reached head generation. Fenced ```` ``` ```` blocks are ignored when looking for the H1.
   - Code fences in any bundled Shiki language now highlight — grammars outside the configured `langs` list (e.g. `python`, `rust`) are loaded on demand instead of collapsing to plain text.
   - The package-manager switcher no longer renders wrong commands: lines with manager-specific flags (`--legacy-peer-deps`, `--frozen-lockfile`, …) or compound commands (`&&`, `;`, `|`) are left untranslated, and `dlx`/`create`/`run` arguments (including their flags) are preserved verbatim instead of having `-D`/`-g` stripped.
+- Build robustness batch ([#52](https://github.com/signalxjs/ssg/issues/52)):
+  - Failed page renders now **fail the build** (structured `SSG300` error listing every failed page) instead of exiting 0 with pages missing — including pages whose component threw during SSR and was swallowed into an `<!--ssr-error-->` marker by the renderer.
+  - A syntax/runtime error in `ssg.config.ts` and a configured `theme` package that fails to load are now hard errors instead of silently falling back to defaults / building without the theme.
+  - Page HTML containing `String.replace` patterns (`` $` ``, `$'`, `$&`, `$1`) is no longer corrupted when spliced into the template.
+  - The user's `index.html` is restored and `.ssg-temp-*` entry files are removed on SIGINT/SIGTERM too, not just on normal completion.
+  - `ssg build` now works zero-config: without a `vite.config`, the build injects the same plugin set (`@sigx/vite`, optional Tailwind, the SSG plugins, oxc JSX) the zero-config dev server uses — previously the virtual entries could never resolve. `vite.config.mts` is now also detected (dev mode previously double-registered plugins for `.mts` users).
 
 ### Added
 
