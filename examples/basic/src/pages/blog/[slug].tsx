@@ -1,9 +1,13 @@
 import { component } from 'sigx';
-import { useRoute } from '@sigx/router';
+
+interface PostProps {
+    params: { slug: string };
+    featured?: boolean;
+}
 
 export async function getStaticPaths() {
     return [
-        { params: { slug: 'first-post' } },
+        { params: { slug: 'first-post' }, props: { featured: true } },
         { params: { slug: 'second-post' } },
     ];
 }
@@ -14,13 +18,12 @@ export const meta = {
     category: 'Blog',
 };
 
-// Pages read params from the router (signalxjs/ssg#73 tracks passing
-// getStaticPaths params/props directly as component props).
-export default component(() => {
-    const route = useRoute();
+// Route params and getStaticPaths props arrive as component props (#73).
+export default component<PostProps>(({ props }) => {
     return () => (
         <article>
-            <h1>Post: {route.params.slug}</h1>
+            <h1>Post: {props.params.slug}</h1>
+            {props.featured ? <p>This post is featured.</p> : null}
             <p>Rendered at build time from getStaticPaths.</p>
         </article>
     );

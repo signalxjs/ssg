@@ -55,4 +55,13 @@ declare module 'virtual:generated-layouts' {
 
     /** Layout-aware router component that preserves layouts across navigations. */
     export const LayoutRouter: unknown;
+
+    /**
+     * Register getStaticPaths props for a route path so the LayoutRouter
+     * passes them to the page component (#73). Called by the generated
+     * server entry (per render) and the client entry (from the embedded
+     * `window.__SSG_PROPS__` payload) — call it yourself only in custom
+     * entries.
+     */
+    export function setPageProps(path: string, props: Record<string, unknown> | undefined): void;
 }

@@ -160,7 +160,14 @@ import { defineApp, component } from 'sigx';
 import { createRouter, createWebHistory } from '@sigx/router';
 import { ssrClientPlugin, installPackageManagerSwitcher${prefetchEnabled ? ', setupPrefetch' : ''} } from '@sigx/ssg/client';
 import routes from 'virtual:ssg-routes';
-import { setupLayouts, LayoutRouter } from 'virtual:generated-layouts';
+import { setupLayouts, LayoutRouter, setPageProps } from 'virtual:generated-layouts';
+
+// Register the getStaticPaths props the build embedded for this page, so
+// hydration renders with the same props the server used (#73).
+const embeddedProps = window.__SSG_PROPS__;
+if (embeddedProps && embeddedProps.path) {
+    setPageProps(embeddedProps.path, embeddedProps.props);
+}
 
 // Apply layouts to routes (annotates routes with layout info)
 const layoutRoutes = setupLayouts(routes);
@@ -210,7 +217,7 @@ import { renderToString } from '@sigx/server-renderer/server';
 import { defineApp } from 'sigx';
 import { createRouter, createMemoryHistory } from '@sigx/router';
 import routes from 'virtual:ssg-routes';
-import { setupLayouts, LayoutRouter } from 'virtual:generated-layouts';
+import { setupLayouts, LayoutRouter, setPageProps } from 'virtual:generated-layouts';
 
 // Pre-process routes with layouts once at module load time (not per-render)
 const routesWithLayouts = setupLayouts(routes);
@@ -219,6 +226,11 @@ const routesWithLayouts = setupLayouts(routes);
  * Render the app to HTML string for a given URL
  */
 export async function render(url, context) {
+    // Register this path's getStaticPaths props so the LayoutRouter passes
+    // them to the page component (#73). Keyed by path — concurrent renders
+    // sharing this module don't interfere.
+    setPageProps(url || '/', context?.props);
+
     // Create router with memory history for SSR
     // Note: We must create a new router per render because history is URL-specific
     const router = createRouter({

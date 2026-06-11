@@ -25,7 +25,7 @@ import { registerProcessCleanup } from './cleanup';
 import { hasViteConfigFile, assembleZeroConfigPlugins, ZERO_CONFIG_OXC } from './vite/zero-config';
 import { discoverLayouts } from './layouts/index';
 import { writeSitemap } from './sitemap';
-import { generateHeadTags } from './head';
+import { generateHeadTags, pagePropsScript } from './head';
 import {
     detectCustomEntries,
     generateClientEntry,
@@ -225,8 +225,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                     throw new Error('component threw during SSR (the output contains an <!--ssr-error--> marker)');
                 }
 
-                // Inject into template (replacer-safe, see template.ts)
-                const headTags = generateHeadTags(pathInfo, resolvedConfig);
+                // Inject into template (replacer-safe, see template.ts).
+                // Pages with getStaticPaths props also embed them so the
+                // client hydrates with the same props the server used (#73).
+                const headTags =
+                    generateHeadTags(pathInfo, resolvedConfig) +
+                    pagePropsScript(pathInfo.path, pathInfo.props);
                 const html = injectIntoTemplate(template, appHtml, headTags);
 
                 const outputPath = getOutputPath(pathInfo.path, resolvedConfig.outDir!);

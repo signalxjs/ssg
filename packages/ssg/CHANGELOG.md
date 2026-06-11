@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - Page HTML containing `String.replace` patterns (`` $` ``, `$'`, `$&`, `$1`) is no longer corrupted when spliced into the template.
   - The user's `index.html` is restored and `.ssg-temp-*` entry files are removed on SIGINT/SIGTERM too, not just on normal completion.
   - `ssg build` now works zero-config: without a `vite.config`, the build injects the same plugin set (`@sigx/vite`, optional Tailwind, the SSG plugins, oxc JSX) the zero-config dev server uses — previously the virtual entries could never resolve. `vite.config.mts` is now also detected (dev mode previously double-registered plugins for `.mts` users).
+- Route params and `getStaticPaths` `props` now reach page components as documented (`props.params.slug`, plus per-path props spread at the top level) — previously the generated LayoutRouter rendered every page with empty props and the server entry dropped the render context, so the documented pattern SSR'd to an error ([#73](https://github.com/signalxjs/ssg/issues/73)). Props are registered per path in the generated layouts module (`setPageProps`), the build embeds a `window.__SSG_PROPS__` payload (XSS-hardened) so hydration uses the same props the server rendered with, and `params` always flows from the matched route — including after client-side navigation. The dead duplicate `generateThemeLayoutsModule` codegen was removed.
 
 ### Added
 

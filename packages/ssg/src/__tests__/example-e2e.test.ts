@@ -60,6 +60,17 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         expect(second).toMatch(/Post: (<!--[^>]*-->)?second-post/);
     });
 
+    it('passes getStaticPaths props to page components and embeds them for hydration (#73)', () => {
+        const first = read('blog', 'first-post', 'index.html');
+        expect(first).toContain('This post is featured.');
+        expect(first).toContain('window.__SSG_PROPS__');
+        expect(first).toContain('"featured":true');
+
+        const second = read('blog', 'second-post', 'index.html');
+        expect(second).not.toContain('This post is featured.');
+        expect(second).not.toContain('window.__SSG_PROPS__');
+    });
+
     it('excludes draft pages from the output and the sitemap (#48)', () => {
         expect(fs.existsSync(path.join(DIST, 'drafts-demo'))).toBe(false);
         expect(read('sitemap.xml')).not.toContain('drafts-demo');
