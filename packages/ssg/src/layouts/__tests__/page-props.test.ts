@@ -23,6 +23,14 @@ describe('generated LayoutRouter — page props (#73)', () => {
         // Lookup must be trailing-slash-insensitive (served URLs may differ
         // from build-time route paths by a trailing slash).
         expect(CODE).toMatch(/replace\(.*\/\+?\$.*\)|normalizePropsPath/);
+        // Robust to URLs carrying query/hash, and a null-prototype registry.
+        expect(CODE).toContain("split(/[?#]/)");
+        expect(CODE).toContain('Object.create(null)');
+    });
+
+    it('route params win over a static-props params key', () => {
+        // Spread order: static props first, params last.
+        expect(CODE).toContain('...getPageProps(routePath), params: route.params');
     });
 });
 

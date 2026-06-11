@@ -76,10 +76,13 @@ export const defaultLayout = '${config.defaultLayout || 'default'}';
  * embedded in the built HTML before hydrating. Keyed by path so concurrent
  * SSR renders sharing this module never cross-contaminate.
  */
-const __pagePropsByPath = {};
+const __pagePropsByPath = Object.create(null);
 
 function normalizePropsPath(path) {
-    return path && path !== '/' ? path.replace(/\\/+$/, '') : '/';
+    if (!path) return '/';
+    // Strip query/hash (render() may receive a full URL) and any trailing slash.
+    const bare = path.split(/[?#]/)[0];
+    return bare && bare !== '/' ? bare.replace(/\\/+$/, '') : '/';
 }
 
 export function setPageProps(path, props) {
@@ -191,9 +194,10 @@ export const LayoutRouter = component((ctx) => {
         const rawComponent = match.originalComponent || match.component;
         const routePath = route.path;
 
-        // Props every page receives: matched route params plus any
-        // getStaticPaths props registered for this path (#73).
-        const pageProps = { params: route.params || {}, ...getPageProps(routePath) };
+        // Props every page receives: getStaticPaths props registered for
+        // this path, with the matched route params last so a static-props
+        // object containing a 'params' key can never clobber them (#73).
+        const pageProps = { ...getPageProps(routePath), params: route.params || {} };
 
         // Handle lazy/dynamic import components
         if (isMarkedLazy(rawComponent) || (typeof rawComponent === 'function' && !rawComponent.__setup)) {
