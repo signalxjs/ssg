@@ -6,10 +6,38 @@
  * internals used by it (and its tests) live here instead.
  */
 
+import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { SSGRoute, PageModule, StaticPath } from './types';
 import { isDynamicRoute, extractParams, expandDynamicRoute } from './routing/index';
 import { SSGError, ErrorCodes } from './errors';
+
+/**
+ * Get output file path for a URL path.
+ *
+ * - `/`         → `<outDir>/index.html`
+ * - `/about`    → `<outDir>/about/index.html`
+ * - `/foo.html` → `<outDir>/foo.html`
+ * - `/404`      → `<outDir>/404.html` — the root-level not-found convention
+ *                 GitHub Pages / Netlify / Cloudflare serve (#57)
+ */
+export function getOutputPath(urlPath: string, outDir: string): string {
+    const normalized = urlPath.replace(/^\//, '').replace(/\/$/, '');
+
+    if (!normalized) {
+        return path.join(outDir, 'index.html');
+    }
+
+    if (normalized === '404') {
+        return path.join(outDir, '404.html');
+    }
+
+    if (normalized.endsWith('.html')) {
+        return path.join(outDir, normalized);
+    }
+
+    return path.join(outDir, normalized, 'index.html');
+}
 
 /**
  * Path information for rendering

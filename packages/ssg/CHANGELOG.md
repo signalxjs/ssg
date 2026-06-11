@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Windows: watcher and HMR handlers now match page/layout files (dir prefix checks compared backslash `path.resolve` results against Vite's posix-normalized paths and never matched), prefix matching is path-boundary-safe on every OS (`src/pages-archive` no longer matches `src/pages`), and the production HTML template's `<script src>` no longer contains backslashes ([#54](https://github.com/signalxjs/ssg/issues/54)).
 - Sitemap/robots plumbing ([#56](https://github.com/signalxjs/ssg/issues/56)): pages with `robots: noindex` and the `/404` page are no longer advertised in sitemap.xml; a user-supplied `public/robots.txt` is no longer overwritten; without `site.url` the sitemap is skipped with a warning instead of emitting spec-invalid relative `<loc>` URLs; and frontmatter `date` now becomes `<lastmod>` (a first freshness signal toward [#38](https://github.com/signalxjs/ssg/issues/38)).
+- 404 story ([#57](https://github.com/signalxjs/ssg/issues/57)): a `src/pages/404.*` page is now emitted as a ROOT `404.html` — the not-found convention GitHub Pages / Netlify / Cloudflare actually serve — instead of `404/index.html`; and the dev server returns an honest **404 status** for URLs that match no route (it previously served the SPA shell with 200 for any extension-less URL, so typos looked like blank successful pages).
 
 ### Added
 
