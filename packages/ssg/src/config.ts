@@ -35,7 +35,6 @@ export function defineSSGConfig(config: SSGConfig): SSGConfig {
         base: '/',
         trailingSlash: 'always',
         // Zero-config defaults
-        autoEntries: true,
         prefetch: true,
         // User overrides
         ...config,

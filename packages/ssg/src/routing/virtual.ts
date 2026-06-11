@@ -22,6 +22,27 @@ function normalizePath(filePath: string): string {
 }
 
 /**
+ * Fallback layout for a route: its collection's `layout` when the route
+ * lives under a collection path that sets one (#51), else the config
+ * default. Frontmatter/`export const layout` always wins at runtime.
+ */
+function fallbackLayout(routePath: string, config: SSGConfig): string {
+    let best: { layout: string; length: number } | undefined;
+    for (const collection of Object.values(config.collections ?? {})) {
+        if (!collection.layout) continue;
+        const prefix = collection.path.replace(/\/+$/, '');
+        if (routePath === prefix || routePath.startsWith(prefix + '/')) {
+            // Longest matching prefix wins — nested collections (/docs/api
+            // inside /docs) must pick the most specific layout.
+            if (!best || prefix.length > best.length) {
+                best = { layout: collection.layout, length: prefix.length };
+            }
+        }
+    }
+    return best?.layout ?? config.defaultLayout ?? 'default';
+}
+
+/**
  * Generate the virtual routes module code
  */
 export function generateRoutesModule(routes: SSGRoute[], config: SSGConfig): string {
@@ -55,7 +76,7 @@ export function generateRoutesModule(routes: SSGRoute[], config: SSGConfig): str
         file: '${normalizedFile}',
         component: ${componentName},
         meta: ${metaName},
-        layout: ${metaName}.layout || '${config.defaultLayout || 'default'}',
+        layout: ${metaName}.layout || '${fallbackLayout(route.path, config)}',
         getStaticPaths: import.meta.env.SSR && 'getStaticPaths' in ${componentName}Module ? ${componentName}Module.getStaticPaths : undefined,
     }`);
     }
@@ -97,7 +118,7 @@ export function generateLazyRoutesModule(routes: SSGRoute[], config: SSGConfig):
         file: '${normalizedFile}',
         component: () => import('${normalizedFile}'),
         meta: ${metaName},
-        layout: ${metaName}.layout || '${config.defaultLayout || 'default'}',
+        layout: ${metaName}.layout || '${fallbackLayout(route.path, config)}',
     }`);
     }
 

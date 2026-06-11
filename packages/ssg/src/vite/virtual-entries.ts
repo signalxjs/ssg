@@ -83,30 +83,58 @@ export function detectCustomEntries(root: string, config: SSGConfig): EntryDetec
     let customHtmlPath: string | undefined;
     let globalCssPath: string | undefined;
 
+    // Explicit config entries win over convention detection (#51). An
+    // explicitly configured path that doesn't exist is a hard error — falling
+    // back silently would build with the wrong entry.
+    const resolveExplicit = (option: 'clientEntry' | 'serverEntry' | 'htmlTemplate', value: string): string => {
+        const fullPath = path.resolve(root, value);
+        if (!fs.existsSync(fullPath)) {
+            throw new Error(`ssg config \`${option}\` points to a missing file: ${value} (resolved to ${fullPath})`);
+        }
+        return fullPath;
+    };
+
+    if (config.clientEntry) {
+        customClientPath = resolveExplicit('clientEntry', config.clientEntry);
+    }
+    if (config.serverEntry) {
+        customServerPath = resolveExplicit('serverEntry', config.serverEntry);
+    }
+    if (typeof config.htmlTemplate === 'string') {
+        customHtmlPath = resolveExplicit('htmlTemplate', config.htmlTemplate);
+    }
+
     // Check for custom client entry
-    for (const p of clientPaths) {
-        const fullPath = path.join(root, p);
-        if (fs.existsSync(fullPath)) {
-            customClientPath = fullPath;
-            break;
+    if (!customClientPath) {
+        for (const p of clientPaths) {
+            const fullPath = path.join(root, p);
+            if (fs.existsSync(fullPath)) {
+                customClientPath = fullPath;
+                break;
+            }
         }
     }
 
     // Check for custom server entry
-    for (const p of serverPaths) {
-        const fullPath = path.join(root, p);
-        if (fs.existsSync(fullPath)) {
-            customServerPath = fullPath;
-            break;
+    if (!customServerPath) {
+        for (const p of serverPaths) {
+            const fullPath = path.join(root, p);
+            if (fs.existsSync(fullPath)) {
+                customServerPath = fullPath;
+                break;
+            }
         }
     }
 
-    // Check for custom HTML template
-    for (const p of htmlPaths) {
-        const fullPath = path.join(root, p);
-        if (fs.existsSync(fullPath)) {
-            customHtmlPath = fullPath;
-            break;
+    // Check for custom HTML template (htmlTemplate: false forces the
+    // generated one even when an index.html exists)
+    if (!customHtmlPath && config.htmlTemplate !== false) {
+        for (const p of htmlPaths) {
+            const fullPath = path.join(root, p);
+            if (fs.existsSync(fullPath)) {
+                customHtmlPath = fullPath;
+                break;
+            }
         }
     }
 

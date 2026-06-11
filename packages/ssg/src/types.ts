@@ -76,20 +76,9 @@ export interface SSGConfig {
      */
     markdown?: MarkdownConfig;
 
-    /**
-     * Vite configuration overrides
-     */
-    vite?: Record<string, unknown>;
-
     // ========================================================================
     // Zero-Config Options
     // ========================================================================
-
-    /**
-     * Whether to auto-generate entry points when not found
-     * @default true
-     */
-    autoEntries?: boolean;
 
     /**
      * Custom client entry path (overrides virtual entry detection)
@@ -710,10 +699,9 @@ export interface ThemeConfig {
      */
     defaultLayout?: string;
 
-    /**
-     * CSS files to include
-     */
-    css?: string[];
+    // NOTE: theme-contributed CSS is part of the Theme API v2 design
+    // (signalxjs/ssg#60); the old `css?: string[]` field was never read and
+    // has been removed (#51).
 }
 
 // ============================================================================
@@ -736,7 +724,7 @@ export interface BuildOptions {
 
     /**
      * Number of pages to render in parallel
-     * @default 10
+     * @default 20
      */
     concurrency?: number;
 
