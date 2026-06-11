@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-11
+
 ### Fixed
 
 - The copy-code button now ships styled ([#113](https://github.com/signalxjs/ssg/issues/113)): a ghost icon button matching the code-window chrome, revealed on hover/focus, with a ✓ success state — it previously rendered as a raw browser button. A stylesheet-coverage test now asserts every emitted interactive class has rules.
