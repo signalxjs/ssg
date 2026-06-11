@@ -95,16 +95,28 @@ export async function loadConfig(configPath?: string): Promise<SSGConfig> {
             // BUNDLE (don't just type-strip): a config importing relative .ts
             // helpers must work on every supported Node, not only versions
             // with native type stripping — and non-erasable syntax (enums)
-            // must work everywhere (#96). Package imports stay external and
-            // resolve from the temp file's location next to the config.
+            // must work everywhere (#96). Bare package imports stay external
+            // and resolve at runtime from the temp file next to the config —
+            // enforced via a resolve plugin because esbuild's
+            // `packages: 'external'` still inlines pnpm-workspace-symlinked
+            // packages.
             const result = await esbuild.build({
                 entryPoints: [foundPath],
                 bundle: true,
                 format: 'esm',
                 platform: 'node',
-                packages: 'external',
                 write: false,
                 sourcemap: false,
+                plugins: [
+                    {
+                        name: 'ssg-external-bare-imports',
+                        setup(pluginBuild) {
+                            pluginBuild.onResolve({ filter: /^[^./]/ }, (args) =>
+                                args.kind === 'entry-point' ? undefined : { path: args.path, external: true }
+                            );
+                        },
+                    },
+                ],
             });
 
             const configDir = fsPath.dirname(foundPath);
