@@ -7,6 +7,9 @@ export default defineSSGConfig({
         url: 'https://basic.example',
     },
     collections: {
+        // Pages under /docs get the `docs` layout automatically and an
+        // auto-generated sidebar from their `category`/`order` frontmatter.
+        docs: { path: '/docs', layout: 'docs' },
         blog: { path: '/blog' },
     },
     // Base styles for ssg-emitted markup (code windows, pm switcher tabs,

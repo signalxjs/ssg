@@ -3,6 +3,9 @@
 The smallest realistic `@sigx/ssg` site, exercising the core feature set:
 
 - **File-based routing** — `src/pages/index.mdx`, `src/pages/guide.mdx`
+- **Header navigation** — `src/components/SiteHeader.tsx` with active-section highlighting
+- **Auto-generated docs sidebar** — `src/pages/docs/*` pages declare only `category`/`order` frontmatter; `src/layouts/docs.tsx` renders the tree from `virtual:ssg-navigation` (`detectCollection` + `getSidebar`)
+- **Per-collection layouts** — `/docs` pages get the `docs` layout from `collections.docs.layout`, no per-page frontmatter
 - **Dynamic route** — `src/pages/blog/[slug].tsx` with `getStaticPaths`; route params and per-path `props` arrive as component props (`props.params.slug`, `props.featured`)
 - **Drafts** — `src/pages/drafts-demo.mdx` has `draft: true` and is excluded from production builds and the sitemap (include it with `--drafts` / `build({ drafts: true })`)
 - **Custom layout** — `src/layouts/default.tsx` rendering `slots.default()`

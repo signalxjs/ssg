@@ -119,4 +119,26 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         const guide = read('guide', 'index.html');
         expect(guide).toMatch(/<link rel="stylesheet"[^>]*\.css/);
     });
+
+    it('renders site navigation and the auto-generated docs sidebar (#87)', () => {
+        // Header nav on every page
+        const home = read('index.html');
+        expect(home).toContain('class="site-header"');
+        expect(home).toContain('href="/guide"');
+
+        // Docs pages get the docs layout from collections.docs.layout (#85)
+        // and a sidebar generated from frontmatter category/order — the pages
+        // themselves declare no layout.
+        const docs = read('docs', 'getting-started', 'index.html');
+        expect(docs).toContain('docs-sidebar');
+        expect(docs).toContain('Going further');
+        expect(docs).toContain('href="/docs/configuration"');
+
+        // Active item is marked
+        const config = read('docs', 'configuration', 'index.html');
+        expect(config).toMatch(/aria-current="page"[^>]*>|href="\/docs\/configuration"[^>]*aria-current="page"/);
+
+        // Non-docs pages keep the default layout (no sidebar)
+        expect(read('guide', 'index.html')).not.toContain('docs-sidebar');
+    });
 });

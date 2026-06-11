@@ -1,0 +1,16 @@
+---
+title: Deployment
+description: Build and ship the static output
+category: Going further
+order: 1
+---
+
+# Deployment
+
+```bash
+npx sigx ssg build
+```
+
+The build renders every route to `dist/<path>/index.html`, writes
+`sitemap.xml` and `robots.txt`, and emits a root `404.html` from a
+`src/pages/404.*` page. Upload `dist/` to any static host.
