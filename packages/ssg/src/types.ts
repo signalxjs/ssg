@@ -154,10 +154,18 @@ export interface SSGConfig {
 
     /**
      * Build pipeline hooks — the extension points for search indexing,
-     * OG-image generation, link checking, redirects emission, HTML
-     * post-processing, … A hook that throws fails the build.
+     * OG-image generation, link checking, HTML post-processing, …
+     * A hook that throws fails the build.
      */
     hooks?: BuildHooks;
+
+    /**
+     * Static redirects, `{ '/old': '/new/' }`. Each entry emits a
+     * meta-refresh page at the old path (canonical → target, noindex)
+     * plus a line in a `_redirects` file for hosts that support real 301s.
+     * Relative targets are prefixed with `base`; absolute URLs pass through.
+     */
+    redirects?: Record<string, string>;
 }
 
 /**

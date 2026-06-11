@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `redirects` config (`{ '/old': '/new/' }`): each entry emits a static meta-refresh page at the old path (canonical → target, `noindex`, fallback link) plus a `_redirects` file (Netlify/Cloudflare format) for hosts that answer with real 301s. Relative targets are `base`-prefixed; absolute URLs pass through; a redirect that would overwrite a real rendered page fails the build ([#61](https://github.com/signalxjs/ssg/issues/61)).
+
 ## [0.7.1] - 2026-06-11
 
 ### Fixed
