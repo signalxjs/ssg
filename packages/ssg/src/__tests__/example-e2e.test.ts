@@ -141,4 +141,19 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         // Non-docs pages keep the default layout (no sidebar)
         expect(read('guide', 'index.html')).not.toContain('docs-sidebar');
     });
+
+    it('runs build pipeline hooks (#58)', () => {
+        // transformHtml ran on every page
+        expect(read('index.html')).toContain('<meta name="generator" content="@sigx/ssg">');
+        expect(read('blog', 'first-post', 'index.html')).toContain('<meta name="generator" content="@sigx/ssg">');
+
+        // postBuild ran once with the build result
+        const manifest = JSON.parse(read('build-manifest.json'));
+        expect(manifest.pages.length).toBeGreaterThanOrEqual(8);
+        expect(manifest.pages.map((p: { path: string }) => p.path)).toContain('/guide');
+
+        // onPageRendered ran for every page (collected into the manifest)
+        expect(manifest.rendered).toContain('/guide');
+        expect(manifest.rendered.length).toBe(manifest.pages.length);
+    });
 });

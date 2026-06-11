@@ -151,6 +151,61 @@ export interface SSGConfig {
      * @default {}
      */
     sitemap?: SitemapOptions | false;
+
+    /**
+     * Build pipeline hooks — the extension points for search indexing,
+     * OG-image generation, link checking, redirects emission, HTML
+     * post-processing, … A hook that throws fails the build.
+     */
+    hooks?: BuildHooks;
+}
+
+/**
+ * Page context passed to per-page build hooks.
+ */
+export interface BuildHookPage {
+    /** URL path being rendered (e.g. `/blog/my-post`). */
+    path: string;
+    /** Route params for dynamic routes. */
+    params: Record<string, string>;
+    /** getStaticPaths props, when present. */
+    props?: Record<string, unknown>;
+    /** The page's route metadata (frontmatter / `export const meta`). */
+    meta?: PageMeta;
+    /** The matched route definition. */
+    route: SSGRoute;
+}
+
+/**
+ * Build pipeline hooks (production builds only).
+ *
+ * The per-page hooks (`transformHtml`, `onPageRendered`) run inside the
+ * parallel render/write phases — they may be invoked CONCURRENTLY and in no
+ * guaranteed order. Avoid unsynchronized shared state beyond append-only
+ * collection. `postBuild` runs exactly once, after everything else.
+ */
+export interface BuildHooks {
+    /**
+     * Transform a page's final HTML before it is written. Runs per page,
+     * after head tags and app HTML are injected.
+     */
+    transformHtml?: (html: string, page: BuildHookPage) => string | Promise<string>;
+
+    /**
+     * Observe each page after it has been rendered and written — the build
+     * result entry plus the final HTML (e.g. feed entries, search indexing
+     * per page).
+     */
+    onPageRendered?: (page: PageBuildResult & { html: string }) => void | Promise<void>;
+
+    /**
+     * Run once after all pages are written and the sitemap is generated —
+     * the slot for search indexes, link checkers, redirects files, …
+     */
+    postBuild?: (
+        result: { pages: PageBuildResult[]; warnings: string[] },
+        ctx: { outDir: string; config: SSGConfig }
+    ) => void | Promise<void>;
 }
 
 /**
