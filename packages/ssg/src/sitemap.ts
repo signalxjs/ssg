@@ -85,10 +85,17 @@ export function pagesToSitemapEntries(
 
             // Filter out excluded paths
             for (const pattern of exclude) {
-                if (pattern.includes('*')) {
-                    // Simple glob matching
+                if (pattern.includes('*') || pattern.includes('?')) {
+                    // Glob matching: escape regex metacharacters first so e.g.
+                    // the `.` in `/docs/v1.0/*` stays literal, then expand the
+                    // glob tokens.
                     const regex = new RegExp(
-                        '^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$'
+                        '^' +
+                            pattern
+                                .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+                                .replace(/\*/g, '.*')
+                                .replace(/\?/g, '.') +
+                            '$'
                     );
                     if (regex.test(page.path)) return false;
                 } else if (page.path === pattern) {
@@ -132,8 +139,8 @@ export async function writeSitemap(
     outDir: string,
     options: SitemapOptions = {}
 ): Promise<{ sitemapPath: string; robotsPath: string }> {
-    // Generate entries from pages
-    const entries = pagesToSitemapEntries(pages, options);
+    // Generate entries from pages (includePages: false → additionalUrls only)
+    const entries = options.includePages === false ? [] : pagesToSitemapEntries(pages, options);
 
     // Add additional URLs if provided
     if (options.additionalUrls) {

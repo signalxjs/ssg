@@ -105,3 +105,37 @@ describe('sitemap plumbing (#56)', () => {
         }
     });
 });
+
+describe('sitemap options — review follow-ups (#56)', () => {
+    it('includePages: false emits only additionalUrls', async () => {
+        const fs = await import('node:fs');
+        const os = await import('node:os');
+        const path = await import('node:path');
+        const { writeSitemap } = await import('../sitemap');
+
+        const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ssg-incl-'));
+        try {
+            await writeSitemap(
+                [{ path: '/auto', file: '/x', time: 1, size: 1 }] as any,
+                { base: '/', site: { url: 'https://x.example' } },
+                outDir,
+                { includePages: false, additionalUrls: [{ path: '/manual' }] }
+            );
+            const xml = fs.readFileSync(path.join(outDir, 'sitemap.xml'), 'utf-8');
+            expect(xml).toContain('https://x.example/manual/');
+            expect(xml).not.toContain('/auto');
+        } finally {
+            fs.rmSync(outDir, { recursive: true, force: true });
+        }
+    });
+
+    it('exclude globs treat regex metacharacters literally', async () => {
+        const { pagesToSitemapEntries } = await import('../sitemap');
+        const pages = [
+            { path: '/docs/v1.0/intro', file: '/x', time: 1, size: 1 },
+            { path: '/docs/v1x0/intro', file: '/x', time: 1, size: 1 },
+        ] as any;
+        const entries = pagesToSitemapEntries(pages, { exclude: ['/docs/v1.0/*'] });
+        expect(entries.map((e) => e.path)).toEqual(['/docs/v1x0/intro']);
+    });
+});
