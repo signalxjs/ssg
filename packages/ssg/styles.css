@@ -27,6 +27,7 @@
     --ssg-tab-active-bg: #ffffff;
     --ssg-tab-active-border: #d8dde3;
     --ssg-anchor-fg: #8c959f;
+    --ssg-copy-done-fg: #1a7f37;
 }
 
 .dark,
@@ -40,6 +41,7 @@
     --ssg-tab-active-bg: #0d1117;
     --ssg-tab-active-border: #30363d;
     --ssg-anchor-fg: #6e7681;
+    --ssg-copy-done-fg: #3fb950;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -53,6 +55,7 @@
         --ssg-tab-active-bg: #0d1117;
         --ssg-tab-active-border: #30363d;
         --ssg-anchor-fg: #6e7681;
+        --ssg-copy-done-fg: #3fb950;
     }
 }
 
@@ -172,6 +175,55 @@
     font-size: 0.75rem;
     padding: 0.2rem 0.6rem;
     cursor: pointer;
+}
+
+.code-window-copy {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.625rem;
+    height: 1.625rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ssg-tab-fg);
+    cursor: pointer;
+    /* Revealed on window hover / keyboard focus — chrome, not content. */
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.code-window:hover .code-window-copy,
+.code-window-copy:focus-visible,
+.code-window-copy-done {
+    opacity: 1;
+}
+
+.code-window-copy:hover {
+    color: var(--ssg-tab-active-fg);
+    background: var(--ssg-tab-active-bg);
+    border-color: var(--ssg-tab-active-border);
+}
+
+.code-window-copy svg {
+    display: block;
+}
+
+/* Click feedback: swap the icon for a ✓ until the runtime reverts it. */
+.code-window-copy-done {
+    color: var(--ssg-copy-done-fg);
+}
+
+.code-window-copy-done svg {
+    display: none;
+}
+
+.code-window-copy-done::after {
+    content: '✓';
+    font-size: 0.8125rem;
+    line-height: 1;
 }
 
 /* ---------------------------------------------------------------- *
