@@ -18,6 +18,16 @@ export interface TOCProps {
     // Future: allow passing items directly
 }
 
+/**
+ * Text of a heading element, excluding the appended autolink anchor —
+ * plain `textContent` would render every TOC item as "My Heading#" (#55).
+ */
+export function extractHeadingText(heading: Element): string {
+    const clone = heading.cloneNode(true) as Element;
+    clone.querySelectorAll('.heading-anchor, .heading-anchor-icon').forEach((el) => el.remove());
+    return (clone.textContent ?? '').trim();
+}
+
 export default component(({ signal, onMounted }) => {
     const route = useRoute();
     const state = signal<{ items: TOCItem[]; activeId: string | null }>({
@@ -50,7 +60,8 @@ export default component(({ signal, onMounted }) => {
         const items: TOCItem[] = [];
 
         headings.forEach((heading) => {
-            const id = heading.id || heading.textContent?.toLowerCase().replace(/\s+/g, '-') || '';
+            const text = extractHeadingText(heading);
+            const id = heading.id || text.toLowerCase().replace(/\s+/g, '-');
 
             // Ensure heading has an ID
             if (!heading.id && id) {
@@ -59,7 +70,7 @@ export default component(({ signal, onMounted }) => {
 
             items.push({
                 id,
-                text: heading.textContent || '',
+                text,
                 level: parseInt(heading.tagName[1]),
             });
         });

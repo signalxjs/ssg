@@ -9,7 +9,7 @@ import fg from 'fast-glob';
 import path from 'node:path';
 import fs from 'node:fs';
 import type { SSGRoute, SSGConfig, PageMeta } from '../types';
-import { parseFrontmatter } from '../mdx/frontmatter';
+import { parseFrontmatter, extractTitleFromContent } from '../mdx/frontmatter';
 
 /**
  * File extensions to treat as pages
@@ -75,6 +75,13 @@ async function fileToRouteWithMeta(filePath: string, pagesDir: string): Promise<
             const content = fs.readFileSync(route.file, 'utf-8');
             const { data } = parseFrontmatter(content);
             route.meta = data;
+
+            // Fall back to the first H1 so pages titled only by content get
+            // a real <title>/og:title instead of the site default (#55).
+            if (!route.meta.title) {
+                const title = extractTitleFromContent(content);
+                if (title) route.meta.title = title;
+            }
         } catch (err) {
             // Ignore read errors - frontmatter just won't be available
         }

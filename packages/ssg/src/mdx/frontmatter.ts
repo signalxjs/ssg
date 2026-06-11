@@ -88,10 +88,15 @@ function normalizeFrontmatter(data: Record<string, unknown>): PageMeta {
 /**
  * Extract title from markdown content if not in frontmatter
  *
- * Looks for the first H1 heading
+ * Looks for the first H1 heading. Fenced code blocks are stripped first —
+ * a `# comment` line inside a fence is never a title (#55).
  */
 export function extractTitleFromContent(content: string): string | null {
-    const h1Match = content.match(/^#\s+(.+)$/m);
+    const withoutFences = content
+        .replace(/^(```|~~~)[\s\S]*?^\1.*$/gm, '')
+        // An unclosed fence swallows the rest of the document.
+        .replace(/^(```|~~~)[\s\S]*$/m, '');
+    const h1Match = withoutFences.match(/^#\s+(.+)$/m);
     return h1Match ? h1Match[1].trim() : null;
 }
 

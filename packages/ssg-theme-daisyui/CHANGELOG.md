@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Sidebar active-item matching is now trailing-slash-insensitive, so highlighting works when a built site is served at `/about/` while nav hrefs are generated without the slash ([#41](https://github.com/signalxjs/ssg/issues/41)).
+- TOC items no longer show a trailing `#` — heading text is extracted excluding the appended autolink anchor (new exported helper `extractHeadingText`) ([#55](https://github.com/signalxjs/ssg/issues/55)).
 
 ## [0.6.0] - 2026-06-09
 

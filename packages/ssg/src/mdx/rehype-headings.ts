@@ -24,6 +24,13 @@ export interface RehypeHeadingsOptions {
      * @default 3
      */
     maxLevel?: number;
+
+    /**
+     * Called with the extracted headings and the vfile's path. Lets the MDX
+     * plugin export the headings computed by the SAME pipeline that renders
+     * the document, instead of a divergent re-parse (#55).
+     */
+    collect?: (filePath: string | undefined, headings: TocHeading[]) => void;
 }
 
 /**
@@ -42,7 +49,7 @@ export interface RehypeHeadingsOptions {
  * ```
  */
 export function rehypeExtractHeadings(options: RehypeHeadingsOptions = {}) {
-    const { minLevel = 2, maxLevel = 3 } = options;
+    const { minLevel = 2, maxLevel = 3, collect } = options;
 
     return (tree: any, file: any) => {
         const headings: TocHeading[] = [];
@@ -61,8 +68,9 @@ export function rehypeExtractHeadings(options: RehypeHeadingsOptions = {}) {
             const id = node.properties?.id;
             if (!id) return;
 
-            // Extract text content from the heading
-            const text = toString(node).trim();
+            // Extract text content, skipping autolink anchors so the TOC
+            // never shows a trailing "#" (#55).
+            const text = headingText(node);
             if (!text) return;
 
             headings.push({ id, text, level });
@@ -71,7 +79,22 @@ export function rehypeExtractHeadings(options: RehypeHeadingsOptions = {}) {
         // Store headings in file data for later access
         file.data = file.data || {};
         file.data.headings = headings;
+
+        collect?.(file.path ?? file.history?.[0], headings);
     };
+}
+
+/**
+ * Text content of a heading node, excluding `rehype-autolink-headings`
+ * anchors (class `heading-anchor` / `heading-anchor-icon`).
+ */
+function headingText(node: any): string {
+    const children = (node.children ?? []).filter((child: any) => {
+        const cls = child?.properties?.class ?? child?.properties?.className;
+        const classes = Array.isArray(cls) ? cls.join(' ') : String(cls ?? '');
+        return !classes.includes('heading-anchor');
+    });
+    return toString({ ...node, children }).trim();
 }
 
 export default rehypeExtractHeadings;

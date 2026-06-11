@@ -102,3 +102,33 @@ describe('fileToRoute', () => {
         expect(fileToRoute('docs/index.tsx', '/pages')?.path).toBe('/docs');
     });
 });
+
+describe('scanPages — H1 title fallback (#55)', () => {
+    it('falls back to the first H1 when frontmatter has no title', async () => {
+        const fs = await import('node:fs');
+        const os = await import('node:os');
+        const path = await import('node:path');
+        const { scanPages } = await import('../scanner');
+
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ssg-scan-'));
+        fs.mkdirSync(path.join(root, 'src', 'pages'), { recursive: true });
+        fs.writeFileSync(
+            path.join(root, 'src', 'pages', 'doc.mdx'),
+            '---\ndescription: No title here\n---\n\n# Heading Title\n\nbody\n'
+        );
+        fs.writeFileSync(
+            path.join(root, 'src', 'pages', 'titled.mdx'),
+            '---\ntitle: Frontmatter Wins\n---\n\n# Ignored\n'
+        );
+
+        try {
+            const routes = await scanPages({}, root);
+            const doc = routes.find((r) => r.name === 'doc');
+            const titled = routes.find((r) => r.name === 'titled');
+            expect(doc?.meta?.title).toBe('Heading Title');
+            expect(titled?.meta?.title).toBe('Frontmatter Wins');
+        } finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+});

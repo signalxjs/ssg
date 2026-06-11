@@ -37,7 +37,7 @@ export interface MDXPluginOptions {
  * `options` at construction time.
  */
 export function mdxPlugin(options: MDXPluginOptions = {}): Plugin {
-    let mdxRollupPromise: Promise<any> | null = null;
+    let mdxRollupPromise: Promise<MdxPipeline> | null = null;
     let viteConfig: ResolvedConfig;
 
     return {
@@ -69,7 +69,7 @@ export function mdxPlugin(options: MDXPluginOptions = {}): Plugin {
             if (!mdxRollupPromise) {
                 mdxRollupPromise = createMdxRollup(options);
             }
-            const mdxRollup = await mdxRollupPromise;
+            const { mdxRollup, headingsByFile } = await mdxRollupPromise;
 
             const result = await mdxRollup.transform(code, id);
 
@@ -77,9 +77,14 @@ export function mdxPlugin(options: MDXPluginOptions = {}): Plugin {
                 return null;
             }
 
-            // Extract headings from the file data (set by rehype-extract-headings)
-            // Note: We need to process the content to get headings
-            const headings = await extractHeadingsFromContent(content, options);
+            // Headings come from the rehype pass of the compile above — the
+            // same pipeline that renders the document — so the exported ids
+            // always match the rendered anchors (#55). The standalone
+            // re-parse remains only as a fallback for unexpected vfile paths.
+            const headings =
+                headingsByFile.get(id) ??
+                (await extractHeadingsFromContent(content, options));
+            headingsByFile.delete(id);
 
             // Create module ID for HMR tracking (normalize path separators)
             const moduleId = id.replace(/\\/g, '/');
@@ -101,12 +106,19 @@ export function mdxPlugin(options: MDXPluginOptions = {}): Plugin {
     };
 }
 
+interface MdxPipeline {
+    mdxRollup: any;
+    /** Headings collected per vfile path during the rehype pass (#55). */
+    headingsByFile: Map<string, TocHeading[]>;
+}
+
 /**
  * Build the @mdx-js/rollup instance with the remark/rehype chain derived from
  * the (by now fully resolved) plugin options.
  */
-async function createMdxRollup(options: MDXPluginOptions): Promise<any> {
+async function createMdxRollup(options: MDXPluginOptions): Promise<MdxPipeline> {
     const markdown = options.markdown ?? {};
+    const headingsByFile = new Map<string, TocHeading[]>();
 
     // Dynamically import @mdx-js/rollup
     const mdxModule = await import('@mdx-js/rollup');
@@ -125,6 +137,16 @@ async function createMdxRollup(options: MDXPluginOptions): Promise<any> {
     // Add rehype-slug first to generate heading IDs
     rehypePlugins.push(rehypeSlug);
 
+    // Heading extraction for the TOC — after slug (needs ids) but BEFORE
+    // autolink, so the extracted text never includes the anchor "#" (#55).
+    // The collector hands the result back to transform() keyed by vfile path.
+    rehypePlugins.push([rehypeExtractHeadings, {
+        ...tocConfig,
+        collect: (filePath: string | undefined, headings: TocHeading[]) => {
+            if (filePath) headingsByFile.set(filePath, headings);
+        },
+    }]);
+
     // Add autolink headings (clickable anchor links)
     rehypePlugins.push([rehypeAutolinkHeadings, {
         behavior: 'append',
@@ -140,9 +162,6 @@ async function createMdxRollup(options: MDXPluginOptions): Promise<any> {
             children: [{ type: 'text', value: '#' }],
         },
     }]);
-
-    // Add heading extraction for TOC
-    rehypePlugins.push([rehypeExtractHeadings, tocConfig]);
 
     // Add Shiki if enabled
     if (markdown.shiki !== false) {
@@ -170,13 +189,15 @@ async function createMdxRollup(options: MDXPluginOptions): Promise<any> {
     // Create MDX plugin
     // Use jsx: false to output function calls instead of JSX syntax
     // This avoids needing esbuild to process .mdx files as JSX
-    return mdxModule.default({
+    const mdxRollup = mdxModule.default({
         jsx: false,
         jsxImportSource: 'sigx',
         remarkPlugins,
         rehypePlugins,
         providerImportSource: undefined,
     });
+
+    return { mdxRollup, headingsByFile };
 }
 
 /**

@@ -4,7 +4,7 @@
  * Provides code block highlighting for Markdown/MDX content.
  */
 
-import { createHighlighter, type Highlighter, type BundledLanguage, type BundledTheme } from 'shiki';
+import { createHighlighter, bundledLanguages, type Highlighter, type BundledLanguage, type BundledTheme } from 'shiki';
 import type { ShikiConfig } from '../types';
 import { type Pm, PMS, DEFAULT_PM, parse, render } from './package-manager';
 
@@ -68,9 +68,22 @@ export async function highlightCode(
     const highlighter = await getHighlighter(config);
     const mergedConfig = { ...DEFAULT_CONFIG, ...config };
 
-    // Check if language is loaded
+    // Resolve the fence language: already loaded (canonical names and their
+    // aliases both appear in getLoadedLanguages), else load any other bundled
+    // grammar on demand (`python`, `rust`, … — #55), else fall back to text.
     const loadedLangs = highlighter.getLoadedLanguages();
-    const effectiveLang = loadedLangs.includes(lang as BundledLanguage) ? lang : 'text';
+    let effectiveLang = lang;
+    if (!loadedLangs.includes(lang as BundledLanguage)) {
+        if (lang in bundledLanguages) {
+            try {
+                await highlighter.loadLanguage(lang as BundledLanguage);
+            } catch {
+                effectiveLang = 'text';
+            }
+        } else {
+            effectiveLang = 'text';
+        }
+    }
 
     // Highlight `src` with both themes (CSS picks light/dark). A helper rather
     // than an eager `codeHtml`, so the package-manager path — which re-highlights
