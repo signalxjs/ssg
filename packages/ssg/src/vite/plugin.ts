@@ -21,6 +21,7 @@ import { discoverLayouts } from '../layouts/resolver';
 import { generateLayoutsModule, VIRTUAL_LAYOUTS_ID, RESOLVED_VIRTUAL_LAYOUTS_ID } from '../layouts/virtual';
 import { mdxPlugin, type MDXPluginOptions } from '../mdx/plugin';
 import { parseFrontmatter } from '../mdx/frontmatter';
+import { isInsideDir } from './paths';
 import {
     detectCustomEntries,
     generateClientEntry,
@@ -144,26 +145,26 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
 
             // Clear caches and trigger HMR on file changes
             devServer.watcher.on('add', (file) => {
-                if (file.startsWith(pagesDir)) {
+                if (isInsideDir(file, pagesDir)) {
                     routesCache = null;
                     navigationCache = null;
                     invalidateModule(RESOLVED_VIRTUAL_ROUTES_ID);
                     invalidateModule(RESOLVED_VIRTUAL_NAVIGATION_ID);
-                } else if (file.startsWith(layoutsDir)) {
+                } else if (isInsideDir(file, layoutsDir)) {
                     layoutsCache = null;
                     invalidateModule(RESOLVED_VIRTUAL_LAYOUTS_ID);
                 }
             });
 
             devServer.watcher.on('unlink', (file) => {
-                if (file.startsWith(pagesDir)) {
+                if (isInsideDir(file, pagesDir)) {
                     routesCache = null;
                     navigationCache = null;
                     // Clean up frontmatter hash cache
                     frontmatterHashCache.delete(file);
                     invalidateModule(RESOLVED_VIRTUAL_ROUTES_ID);
                     invalidateModule(RESOLVED_VIRTUAL_NAVIGATION_ID);
-                } else if (file.startsWith(layoutsDir)) {
+                } else if (isInsideDir(file, layoutsDir)) {
                     layoutsCache = null;
                     invalidateModule(RESOLVED_VIRTUAL_LAYOUTS_ID);
                 }
@@ -171,7 +172,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
 
             // Handle MDX/MD file content changes for frontmatter updates
             devServer.watcher.on('change', async (file) => {
-                if (!file.startsWith(pagesDir)) return;
+                if (!isInsideDir(file, pagesDir)) return;
                 if (!/\.mdx?$/.test(file)) return;
                 
                 try {
@@ -350,7 +351,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
             const layoutsDir = path.resolve(root, ssgConfig.layouts || 'src/layouts');
             const pagesDir = path.resolve(root, ssgConfig.pages || 'src/pages');
 
-            if (file.startsWith(layoutsDir)) {
+            if (isInsideDir(file, layoutsDir)) {
                 // Clear layout cache
                 layoutsCache = null;
 
@@ -368,7 +369,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
             }
 
             // Handle MDX/MD file changes in pages directory
-            if (file.startsWith(pagesDir) && /\.mdx?$/.test(file)) {
+            if (isInsideDir(file, pagesDir) && /\.mdx?$/.test(file)) {
                 // The MDX plugin handles the transform and HMR code injection.
                 // We just need to ensure the module is properly invalidated.
                 // Vite will handle the rest via the injected import.meta.hot.accept()
