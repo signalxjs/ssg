@@ -15,7 +15,7 @@
         "sigx": "^0.4.3"
     },
     "devDependencies": {
-        "@sigx/vite": "^0.4.3",
-        "vite": "^8.0.3"
+        "@sigx/vite": "^0.6.0",
+        "vite": "^8.0.16"
     }
 }
