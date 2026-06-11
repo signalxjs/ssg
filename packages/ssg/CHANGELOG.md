@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-11
+
 ### Fixed
 
 - Optional route segments `[[id]]` now parse to `:id?` instead of the garbage pattern `:[id]` (the plain `[id]` branch matched first), and expanding a dynamic route no longer leaks the `?` optional marker into output paths (`/users/x?`) or corrupts paths when one param name is a prefix of another (`:id` vs `:id2`) ([#50](https://github.com/signalxjs/ssg/issues/50)).

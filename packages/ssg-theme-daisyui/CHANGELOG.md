@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-11
+
 ### Changed
 
 - Header and Footer no longer hardcode SignalX branding ([#60](https://github.com/signalxjs/ssg/issues/60)): the brand is `site.title` (+ optional `site.logo`), the nav renders `site.nav`, and the repository link appears only when `site.repo` is set — all flowing in via the new `LayoutProps.site`. Sites other than sigx.dev can finally use the theme as-is.
