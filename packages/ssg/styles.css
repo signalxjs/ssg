@@ -189,9 +189,12 @@
     border-radius: 6px;
     background: transparent;
     color: var(--ssg-tab-fg);
+    font: inherit;
     cursor: pointer;
-    /* Revealed on window hover / keyboard focus — chrome, not content. */
+    /* Revealed on window hover / keyboard focus — chrome, not content.
+       pointer-events off while hidden so it can't be tapped invisibly. */
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
@@ -199,6 +202,15 @@
 .code-window-copy:focus-visible,
 .code-window-copy-done {
     opacity: 1;
+    pointer-events: auto;
+}
+
+/* No hover available (touch) — keep the button discoverable. */
+@media (hover: none) {
+    .code-window-copy {
+        opacity: 1;
+        pointer-events: auto;
+    }
 }
 
 .code-window-copy:hover {

@@ -17,7 +17,10 @@ const css = fs.readFileSync(path.join(here, '..', '..', 'styles.css'), 'utf-8');
 const EMITTED_CLASSES = [
     'code-window',
     'code-window-header',
+    'code-window-header-left',
+    'code-window-tabs',
     'code-window-dots',
+    'code-window-dot',
     'code-window-filename',
     'code-window-lang',
     'code-window-content',
