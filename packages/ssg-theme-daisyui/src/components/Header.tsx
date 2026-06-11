@@ -5,9 +5,13 @@
  */
 
 import { component } from 'sigx';
+import type { SiteConfig } from '@sigx/ssg';
+import { siteBrand, siteNavItems, siteRepoUrl } from '../lib/site.js';
 
 export interface HeaderProps {
     onMenuClick?: () => void;
+    /** Site config for branding (title/logo/nav/repo) — see #60. */
+    site?: SiteConfig;
 }
 
 export default component<HeaderProps>(({ props, signal }) => {
@@ -46,19 +50,20 @@ export default component<HeaderProps>(({ props, signal }) => {
                     </button>
                 </div>
 
-                {/* Logo */}
+                {/* Brand */}
                 <div class="flex-1">
                     <a href="/" class="btn btn-ghost text-xl">
-                        SignalX
+                        {props.site?.logo ? <img src={props.site.logo} alt="" class="w-6 h-6" /> : null}
+                        {siteBrand(props.site)}
                     </a>
                 </div>
 
-                {/* Desktop navigation */}
+                {/* Desktop navigation (from site.nav) */}
                 <div class="flex-none hidden lg:block">
                     <ul class="menu menu-horizontal px-1">
-                        <li><a href="/docs">Docs</a></li>
-                        <li><a href="/blog">Blog</a></li>
-                        <li><a href="/examples">Examples</a></li>
+                        {siteNavItems(props.site).map((item) => (
+                            <li><a href={item.href ?? '#'}>{item.title}</a></li>
+                        ))}
                     </ul>
                 </div>
 
@@ -101,14 +106,15 @@ export default component<HeaderProps>(({ props, signal }) => {
                     </button>
                 </div>
 
-                {/* GitHub link */}
+                {/* Repository link (only when configured) */}
+                {siteRepoUrl(props.site) && (
                 <div class="flex-none">
                     <a
-                        href="https://github.com/signalxjs/core"
+                        href={siteRepoUrl(props.site)!}
                         class="btn btn-square btn-ghost"
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="GitHub"
+                        aria-label="Repository"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -119,6 +125,7 @@ export default component<HeaderProps>(({ props, signal }) => {
                         </svg>
                     </a>
                 </div>
+                )}
             </div>
         </header>
     );

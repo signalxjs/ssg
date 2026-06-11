@@ -22,7 +22,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props, sig
 
     return () => (
         <div class="min-h-screen flex flex-col">
-            <Header onMenuClick={toggleSidebar} />
+            <Header onMenuClick={toggleSidebar} site={props.site} />
 
             <div class="flex-1 flex">
                 {/* Sidebar */}
@@ -70,7 +70,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props, sig
                 </main>
             </div>
 
-            <Footer />
+            <Footer site={props.site} />
         </div>
     );
 });

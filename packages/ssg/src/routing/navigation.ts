@@ -47,6 +47,21 @@ export function generateNavigation(
     routes: SSGRoute[],
     collectionPath: string,
     showDrafts: 'dev' | 'never',
+    isDev: boolean,
+    sectionOrder?: Record<string, number>
+): CollectionNavigation {
+    customSectionOrder = sectionOrder;
+    try {
+        return generateNavigationImpl(routes, collectionPath, showDrafts, isDev);
+    } finally {
+        customSectionOrder = undefined;
+    }
+}
+
+function generateNavigationImpl(
+    routes: SSGRoute[],
+    collectionPath: string,
+    showDrafts: 'dev' | 'never',
     isDev: boolean
 ): CollectionNavigation {
     // Filter routes for navigation
@@ -174,13 +189,20 @@ const SECTION_ORDER: Record<string, number> = {
 };
 
 /**
+ * Custom per-title order for the current generateNavigation call, merged
+ * over the built-in defaults (#60). Module-scoped because the sort
+ * comparators run synchronously inside that call.
+ */
+let customSectionOrder: Record<string, number> | undefined;
+
+/**
  * Get sort order for a section/category title
  */
 function getSectionOrder(title: string, explicitOrder?: number): number {
     if (explicitOrder !== undefined) {
         return explicitOrder;
     }
-    return SECTION_ORDER[title] ?? 50;
+    return customSectionOrder?.[title] ?? SECTION_ORDER[title] ?? 50;
 }
 
 /**
@@ -346,7 +368,7 @@ export function generateAllCollections(
 
     for (const [name, collectionConfig] of Object.entries(collections)) {
         const showDrafts = collectionConfig.showDrafts ?? config.navigation?.showDrafts ?? 'dev';
-        result[name] = generateNavigation(routes, collectionConfig.path, showDrafts, isDev);
+        result[name] = generateNavigation(routes, collectionConfig.path, showDrafts, isDev, config.navigation?.sectionOrder);
     }
 
     return result;
