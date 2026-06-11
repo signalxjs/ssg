@@ -232,3 +232,75 @@ describe('LivePreview island — SPA opt-out (#95)', () => {
         expect(html).toMatch(/class="live-preview-island"[^>]*data-no-spa/s);
     });
 });
+
+describe('shiki.transformers pass-through (#64)', () => {
+    it('runs configured transformers on every highlighted block', async () => {
+        const html = await highlightCode('const x = 1;', 'ts', {
+            transformers: [
+                {
+                    pre(node: any) {
+                        node.properties['data-transformed'] = 'yes';
+                    },
+                },
+            ],
+        });
+        expect(html).toContain('data-transformed="yes"');
+    });
+
+    it('exposes the raw fence meta to transformers (meta.__raw)', async () => {
+        // @shikijs/transformers' meta-highlight ({1,3-5}) reads options.meta.__raw —
+        // assert the plumbing with a minimal transformer doing the same.
+        const seen: string[] = [];
+        const tree = codeTree('{1,3-5} filename="x.tsx"');
+        await rehypeShiki({
+            transformers: [
+                {
+                    pre(node: any) {
+                        seen.push((this as any).options?.meta?.__raw ?? '');
+                        return node;
+                    },
+                },
+            ],
+        })(tree);
+        expect(seen.some((raw) => raw.includes('{1,3-5}'))).toBe(true);
+    });
+
+    it('applies transformers to all package-manager variants', async () => {
+        const html = await highlightCode('pnpm add foo', 'bash', {
+            transformers: [
+                {
+                    pre(node: any) {
+                        node.properties['data-transformed'] = 'yes';
+                    },
+                },
+            ],
+        });
+        expect((html.match(/data-transformed="yes"/g) ?? []).length).toBe(4);
+    });
+});
+
+describe('shiki.skipLanguages escape hatch (#64)', () => {
+    it('leaves fences in skipLanguages untouched for downstream plugins', async () => {
+        const codeNode = {
+            type: 'element',
+            tagName: 'code',
+            properties: { className: ['language-mermaid'] },
+            children: [{ type: 'text', value: 'graph TD; A-->B;' }],
+        };
+        const pre = { type: 'element', tagName: 'pre', properties: {}, children: [codeNode] };
+        const tree: any = { type: 'root', children: [pre] };
+
+        await rehypeShiki({ skipLanguages: ['mermaid'] })(tree);
+
+        // The raw pre>code survives — a mermaid rehype plugin/island can claim it.
+        expect(tree.children[0]).toBe(pre);
+        expect(tree.children[0].children[0].children[0].value).toBe('graph TD; A-->B;');
+    });
+
+    it('still highlights languages not in skipLanguages', async () => {
+        const tree: any = codeTree('');
+        await rehypeShiki({ skipLanguages: ['mermaid'] })(tree);
+        expect(tree.children[0].tagName).not.toBe('pre');
+        expect(findByClass(tree, 'code-window')).toBeTruthy();
+    });
+});
