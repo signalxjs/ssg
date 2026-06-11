@@ -40,13 +40,17 @@ export type {
 export { defineSSGConfig, defineSSGConfig as defineConfig } from './config';
 
 // Sitemap utilities
-export { 
-    generateSitemap, 
-    generateRobotsTxt, 
+export {
+    generateSitemap,
+    generateRobotsTxt,
     writeSitemap,
     pagesToSitemapEntries,
 } from './sitemap';
 export type { SitemapEntry, SitemapOptions } from './sitemap';
+
+// Public-URL path normalization (shared by canonical/og:url/sitemap)
+export { normalizePagePath } from './url';
+export type { TrailingSlash } from './url';
 
 // Re-export build for programmatic use
 export { build } from './build';

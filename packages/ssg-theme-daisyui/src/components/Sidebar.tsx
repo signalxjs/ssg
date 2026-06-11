@@ -55,14 +55,22 @@ export interface SidebarProps {
     collection?: string;
 }
 
+/**
+ * Trailing-slash-insensitive path equality: built sites serve folder routes
+ * at `/about/` while nav hrefs are generated without the slash (#41).
+ */
+function isSamePath(a: string, b: string): boolean {
+    return a.replace(/\/+$/, '') === b.replace(/\/+$/, '');
+}
+
 export default component<SidebarProps>(({ props }) => {
     const route = useRoute();
-    
+
     /**
      * Check if a nav item or any of its children is active
      */
     const isItemActive = (item: SidebarItem): boolean => {
-        if (item.href && route.path === item.href) {
+        if (item.href && isSamePath(route.path, item.href)) {
             return true;
         }
         if (item.items) {
@@ -107,7 +115,7 @@ export default component<SidebarProps>(({ props }) => {
     };
 
     const renderItem = (item: SidebarItem, depth = 0) => {
-        const isActive = item.href ? route.path === item.href : false;
+        const isActive = item.href ? isSamePath(route.path, item.href) : false;
         const hasActiveChild = item.items ? item.items.some(isItemActive) : false;
 
         if (item.items && item.items.length > 0) {

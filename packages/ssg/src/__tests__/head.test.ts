@@ -21,7 +21,7 @@ describe('generateHeadTags — baseline (no SEO fields)', () => {
         const html = gen({ title: 'Guide', description: 'A guide' });
         expect(html).toContain('<title>Guide</title>');
         expect(html).toContain('<meta name="description" content="A guide">');
-        expect(html).toContain('<link rel="canonical" href="https://example.com/guide">');
+        expect(html).toContain('<link rel="canonical" href="https://example.com/guide/">');
         expect(html).toContain('<meta property="og:title" content="Guide">');
         expect(html).toContain('<meta name="twitter:title" content="Guide">');
     });
@@ -37,6 +37,39 @@ describe('generateHeadTags — baseline (no SEO fields)', () => {
         const html = gen({});
         expect(html).toContain('<title>My Site</title>');
         expect(html).toContain('<meta name="description" content="Site description">');
+    });
+});
+
+describe('generateHeadTags — canonical URL normalization (#41)', () => {
+    it('derived canonical and og:url carry a trailing slash for folder routes', () => {
+        const html = gen({ title: 'Guide' });
+        expect(html).toContain('<link rel="canonical" href="https://example.com/guide/">');
+        expect(html).toContain('<meta property="og:url" content="https://example.com/guide/">');
+    });
+
+    it('root path canonical is the bare origin with a single slash', () => {
+        const html = gen({ title: 'Home' }, SITE, '/');
+        expect(html).toContain('<link rel="canonical" href="https://example.com/">');
+    });
+
+    it('.html routes keep their path verbatim', () => {
+        const html = gen({ title: 'Page' }, SITE, '/foo.html');
+        expect(html).toContain('<link rel="canonical" href="https://example.com/foo.html">');
+    });
+
+    it('base path is prefixed before the normalized path', () => {
+        const html = gen({ title: 'Guide' }, { ...SITE, base: '/docs/' });
+        expect(html).toContain('<link rel="canonical" href="https://example.com/docs/guide/">');
+    });
+
+    it("trailingSlash: 'never' preserves the old slash-less URLs", () => {
+        const html = gen({ title: 'Guide' }, { ...SITE, trailingSlash: 'never' });
+        expect(html).toContain('<link rel="canonical" href="https://example.com/guide">');
+    });
+
+    it('a per-page meta.canonical is never rewritten', () => {
+        const html = gen({ canonical: 'https://example.com/exact' });
+        expect(html).toContain('<link rel="canonical" href="https://example.com/exact">');
     });
 });
 

@@ -5,6 +5,7 @@
  */
 
 import type { ComponentFactory } from 'sigx';
+import type { TrailingSlash } from './url';
 
 // ============================================================================
 // Configuration Types
@@ -55,6 +56,15 @@ export interface SSGConfig {
      * @default '/'
      */
     base?: string;
+
+    /**
+     * Trailing-slash policy for derived public URLs (canonical, og:url,
+     * sitemap `<loc>`). `'always'` matches the `<path>/index.html` output
+     * layout, where static hosts serve `/about/` with 200 and 301 `/about`.
+     * Use `'never'` only when the host serves the slash-less URL directly.
+     * @default 'always'
+     */
+    trailingSlash?: TrailingSlash;
 
     /**
      * Site-wide metadata

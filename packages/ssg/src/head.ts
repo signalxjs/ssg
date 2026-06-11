@@ -11,6 +11,7 @@
  */
 
 import type { SSGConfig, PageMeta, HeadTag } from './types';
+import { normalizePagePath } from './url';
 
 /**
  * Minimal shape needed to render a page's head. Structurally compatible with
@@ -47,14 +48,15 @@ export function generateHeadTags(pathInfo: HeadPathInfo, config: SSGConfig): str
 
     // Build canonical first so OG/Twitter can reuse it. Mirror sitemap.ts so
     // canonical and sitemap URLs are byte-identical (Google flags soft-conflicts
-    // when they differ). A per-page `meta.canonical` overrides the derived value.
+    // when they differ) — both normalize the path via normalizePagePath. A
+    // per-page `meta.canonical` overrides the derived value verbatim.
     let canonical: string | null = null;
     if (typeof meta.canonical === 'string' && meta.canonical) {
         canonical = meta.canonical;
     } else if (site.url) {
         const siteUrl = site.url.replace(/\/$/, '');
         const base = config.base?.replace(/\/$/, '') || '';
-        canonical = `${siteUrl}${base}${pathInfo.path}`;
+        canonical = `${siteUrl}${base}${normalizePagePath(pathInfo.path, config.trailingSlash)}`;
     }
 
     if (title) {
