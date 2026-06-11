@@ -6,39 +6,14 @@
  */
 
 import fs from 'node:fs/promises';
+import fsSync from 'node:fs';
 import path from 'node:path';
-import type { SSGConfig, PageBuildResult } from './types';
+import type { SSGConfig, PageBuildResult, SitemapEntry, SitemapOptions } from './types';
 import { normalizePagePath } from './url';
 
-/**
- * Sitemap entry with optional metadata
- */
-export interface SitemapEntry {
-    /** URL path (relative to site base) */
-    path: string;
-    /** Last modification date */
-    lastmod?: Date | string;
-    /** Change frequency hint */
-    changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
-    /** Priority relative to other pages (0.0 to 1.0) */
-    priority?: number;
-}
-
-/**
- * Sitemap generation options
- */
-export interface SitemapOptions {
-    /** Include all built pages automatically */
-    includePages?: boolean;
-    /** Additional URLs to include */
-    additionalUrls?: SitemapEntry[];
-    /** URLs to exclude (glob patterns or exact matches) */
-    exclude?: string[];
-    /** Default change frequency */
-    defaultChangefreq?: SitemapEntry['changefreq'];
-    /** Default priority */
-    defaultPriority?: number;
-}
+// Definitions live in types.ts (referenced by SSGConfig.sitemap); re-exported
+// here for backwards compatibility with existing imports.
+export type { SitemapEntry, SitemapOptions } from './types';
 
 /**
  * Generate sitemap XML content
@@ -102,6 +77,12 @@ export function pagesToSitemapEntries(
 
     return pages
         .filter((page) => {
+            // Pages opting out of indexing must not be advertised (#56),
+            // and a 404 page is never a crawlable URL.
+            const robots = page.meta?.robots;
+            if (typeof robots === 'string' && robots.includes('noindex')) return false;
+            if (page.path === '/404' || page.path === '/404.html') return false;
+
             // Filter out excluded paths
             for (const pattern of exclude) {
                 if (pattern.includes('*')) {
@@ -120,7 +101,7 @@ export function pagesToSitemapEntries(
             // Determine priority based on path depth
             const depth = page.path.split('/').filter(Boolean).length;
             let priority = defaultPriority;
-            
+
             if (page.path === '/') {
                 priority = 1.0; // Homepage highest priority
             } else if (depth === 1) {
@@ -129,10 +110,15 @@ export function pagesToSitemapEntries(
                 priority = 0.6; // Second-level pages
             }
 
+            // meta.date is a freshness signal crawlers can use (#56)
+            const date = page.meta?.date;
+            const lastmod = date instanceof Date && !Number.isNaN(date.getTime()) ? date : undefined;
+
             return {
                 path: page.path,
                 changefreq: defaultChangefreq,
                 priority,
+                ...(lastmod ? { lastmod } : {}),
             };
         });
 }
@@ -159,10 +145,12 @@ export async function writeSitemap(
     const sitemapPath = path.join(outDir, 'sitemap.xml');
     await fs.writeFile(sitemapPath, sitemapContent, 'utf-8');
 
-    // Generate robots.txt
-    const robotsContent = generateRobotsTxt(config);
+    // Generate robots.txt — but never clobber one the user shipped via
+    // public/ (Vite copies it into outDir before we run) (#56).
     const robotsPath = path.join(outDir, 'robots.txt');
-    await fs.writeFile(robotsPath, robotsContent, 'utf-8');
+    if (!fsSync.existsSync(robotsPath)) {
+        await fs.writeFile(robotsPath, generateRobotsTxt(config), 'utf-8');
+    }
 
     return { sitemapPath, robotsPath };
 }

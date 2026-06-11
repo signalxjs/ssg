@@ -297,6 +297,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                     file: result.outputPath,
                     time: result.renderTime,
                     size,
+                    meta: result.pathInfo.route.meta,
                 });
                 
                 if (verbose) {
@@ -312,12 +313,21 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             console.log(`   ✓ Rendered ${renderResults.length} pages`);
         }
 
-        // Step 8: Generate sitemap and robots.txt
-        if (pages.length > 0) {
-            console.log('🗺️  Generating sitemap...');
-            await writeSitemap(pages, resolvedConfig, resolvedConfig.outDir!);
-            console.log('   ✓ sitemap.xml');
-            console.log('   ✓ robots.txt');
+        // Step 8: Generate sitemap and robots.txt (config.sitemap carries
+        // the SitemapOptions; `false` disables generation entirely) (#56)
+        if (pages.length > 0 && resolvedConfig.sitemap !== false) {
+            if (!resolvedConfig.site?.url) {
+                console.warn(
+                    '⚠️  Skipping sitemap.xml/robots.txt: set `site.url` in your ssg.config — ' +
+                    'sitemap <loc> entries must be absolute URLs (or set `sitemap: false` to silence this).'
+                );
+                warnings.push('Sitemap skipped: site.url is not configured.');
+            } else {
+                console.log('🗺️  Generating sitemap...');
+                await writeSitemap(pages, resolvedConfig, resolvedConfig.outDir!, resolvedConfig.sitemap ?? {});
+                console.log('   ✓ sitemap.xml');
+                console.log('   ✓ robots.txt');
+            }
         }
 
     } finally {

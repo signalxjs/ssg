@@ -54,3 +54,54 @@ describe('generateSitemap — URL normalization (#41)', () => {
         expect(head).toContain(`<meta property="og:url" content="${loc}">`);
     });
 });
+
+describe('sitemap plumbing (#56)', () => {
+    const page = (path: string, meta?: Record<string, unknown>) => ({
+        path,
+        file: `/dist${path}/index.html`,
+        time: 1,
+        size: 100,
+        meta,
+    });
+
+    it('excludes pages with robots noindex', async () => {
+        const { pagesToSitemapEntries } = await import('../sitemap');
+        const entries = pagesToSitemapEntries([
+            page('/visible'),
+            page('/hidden', { robots: 'noindex, nofollow' }),
+        ] as any);
+        expect(entries.map((e) => e.path)).toEqual(['/visible']);
+    });
+
+    it('excludes the 404 page', async () => {
+        const { pagesToSitemapEntries } = await import('../sitemap');
+        const entries = pagesToSitemapEntries([page('/'), page('/404')] as any);
+        expect(entries.map((e) => e.path)).toEqual(['/']);
+    });
+
+    it('maps meta.date to lastmod', async () => {
+        const { pagesToSitemapEntries, generateSitemap } = await import('../sitemap');
+        const entries = pagesToSitemapEntries([
+            page('/post', { date: new Date('2026-05-01T12:00:00Z') }),
+        ] as any);
+        const xml = generateSitemap(entries, { base: '/', site: { url: 'https://x.example' } });
+        expect(xml).toContain('<lastmod>2026-05-01</lastmod>');
+    });
+
+    it('writeSitemap does not clobber an existing robots.txt', async () => {
+        const fs = await import('node:fs');
+        const os = await import('node:os');
+        const path = await import('node:path');
+        const { writeSitemap } = await import('../sitemap');
+
+        const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ssg-robots-'));
+        fs.writeFileSync(path.join(outDir, 'robots.txt'), 'User-agent: *\nDisallow: /secret\n');
+        try {
+            await writeSitemap([page('/')] as any, { base: '/', site: { url: 'https://x.example' } }, outDir);
+            const robots = fs.readFileSync(path.join(outDir, 'robots.txt'), 'utf-8');
+            expect(robots).toContain('Disallow: /secret');
+        } finally {
+            fs.rmSync(outDir, { recursive: true, force: true });
+        }
+    });
+});
