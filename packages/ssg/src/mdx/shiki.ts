@@ -22,6 +22,8 @@ const DEFAULT_CONFIG: Required<ShikiConfig> = {
     langs: ['javascript', 'typescript', 'jsx', 'tsx', 'json', 'css', 'html', 'markdown', 'bash', 'shell'],
     triggerLabel: '⚡ Try Live',
     defaultPackageManager: DEFAULT_PM,
+    transformers: [],
+    skipLanguages: [],
 };
 
 /** Shell-ish languages whose fences may carry package-manager install commands. */
@@ -63,7 +65,7 @@ export async function highlightCode(
     code: string,
     lang: string,
     config?: ShikiConfig,
-    meta?: { filename?: string; live?: boolean; tabs?: TabType[]; triggerLabel?: string }
+    meta?: { filename?: string; live?: boolean; tabs?: TabType[]; triggerLabel?: string; metaRaw?: string }
 ): Promise<string> {
     const highlighter = await getHighlighter(config);
     const mergedConfig = { ...DEFAULT_CONFIG, ...config };
@@ -95,6 +97,9 @@ export async function highlightCode(
                 light: mergedConfig.light as BundledTheme,
                 dark: mergedConfig.dark as BundledTheme,
             },
+            transformers: mergedConfig.transformers,
+            // Raw fence meta for meta-driven transformers ({1,3-5}, diff, …).
+            meta: meta?.metaRaw ? { __raw: meta.metaRaw } : undefined,
         });
 
     // Wrap in code-window structure
@@ -346,6 +351,8 @@ export function rehypeShiki(config?: ShikiConfig) {
         const { visit } = await import('unist-util-visit');
         const { fromHtml } = await import('hast-util-from-html');
 
+        const skipLanguages = new Set((config?.skipLanguages ?? []).map((l) => l.toLowerCase()));
+
         const nodesToProcess: Array<{ node: any; parent: any; index: number }> = [];
 
         visit(tree, 'element', (node: any, index: number | undefined, parent: any) => {
@@ -366,6 +373,10 @@ export function rehypeShiki(config?: ShikiConfig) {
                 // Extract language from class (e.g., "language-typescript")
                 const className = codeNode.properties?.className?.[0] || '';
                 const lang = className.replace(/^language-/, '') || 'text';
+
+                // Escape hatch (#64): leave skipped languages as raw pre>code
+                // for a downstream plugin/island (mermaid, math, …).
+                if (skipLanguages.has(lang.toLowerCase())) return;
 
                 // Extract filename from meta string if present
                 // Supports: ```tsx filename="Counter.tsx" or ```tsx title="Counter.tsx"
@@ -412,6 +423,7 @@ export function rehypeShiki(config?: ShikiConfig) {
                     live: isLive,
                     tabs: tabs.length > 0 ? tabs : undefined,
                     triggerLabel,
+                    metaRaw: metaString || undefined,
                 });
 
                 // Parse the HTML string into HAST nodes

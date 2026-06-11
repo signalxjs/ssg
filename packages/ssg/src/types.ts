@@ -5,6 +5,7 @@
  */
 
 import type { ComponentFactory } from 'sigx';
+import type { ShikiTransformer } from 'shiki';
 import type { TrailingSlash } from './url';
 
 // ============================================================================
@@ -515,6 +516,22 @@ export interface ShikiConfig {
      * @default 'pnpm'
      */
     defaultPackageManager?: 'pnpm' | 'npm' | 'yarn' | 'bun';
+
+    /**
+     * Shiki transformers applied to every highlighted block (including each
+     * package-manager variant). The raw fence meta is exposed as
+     * `options.meta.__raw`, so `@shikijs/transformers` meta-driven features
+     * (line highlighting `{1,3-5}`, diff, focus, word highlight) work without
+     * core changes.
+     */
+    transformers?: ShikiTransformer[];
+
+    /**
+     * Fence languages the highlighter leaves untouched (raw `<pre><code
+     * class="language-…">` survives in the output), so a later rehype plugin
+     * or island can claim them — e.g. `['mermaid', 'math']`.
+     */
+    skipLanguages?: string[];
 }
 
 // ============================================================================
