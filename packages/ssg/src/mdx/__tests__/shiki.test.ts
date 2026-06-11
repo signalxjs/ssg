@@ -225,3 +225,10 @@ describe('highlightCode — language aliases (#55)', () => {
         expect(html).toContain('code-window');
     });
 });
+
+describe('LivePreview island — SPA opt-out (#95)', () => {
+    it('the island wrapper carries data-no-spa so preview links never hijack navigation', async () => {
+        const html = await highlightCode(LIVE_CODE, 'tsx', undefined, { tabs: ['preview', 'code'] });
+        expect(html).toMatch(/class="live-preview-island"[^>]*data-no-spa/s);
+    });
+});

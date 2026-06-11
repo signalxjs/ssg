@@ -101,6 +101,7 @@ export interface SpaNavigationOptions {
  * - clicks something else already handled (`defaultPrevented` — RouterLink)
  * - external origins, `mailto:`/`tel:` etc.
  * - `target` (other than `_self`), `download`, and `data-no-spa` anchors
+ *   (the attribute opts out the anchor or any ancestor container)
  * - pure-hash and same-page `#hash` links (native scroll)
  *
  * Returns an uninstall function. Wired automatically into the generated
@@ -123,7 +124,9 @@ export function installSpaNavigation(
 
         const href = anchor.getAttribute('href');
         if (!href || href.startsWith('#')) return;
-        if (anchor.hasAttribute('download') || anchor.dataset.noSpa !== undefined) return;
+        // data-no-spa opts out the anchor itself OR any ancestor container
+        // (e.g. live-code preview islands rendering arbitrary example markup).
+        if (anchor.hasAttribute('download') || anchor.closest('[data-no-spa]')) return;
         const target = anchor.getAttribute('target');
         if (target && target !== '_self') return;
 
