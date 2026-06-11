@@ -133,16 +133,17 @@ export function filePathToRoutePath(filePath: string): string {
                 return `*${param}`;
             }
 
+            // Optional segment: [[id]] -> :id?
+            // Must be checked before [id] — both prefixes match '['.
+            if (segment.startsWith('[[') && segment.endsWith(']]')) {
+                const param = segment.slice(2, -2);
+                return `:${param}?`;
+            }
+
             // Dynamic segment: [id] -> :id
             if (segment.startsWith('[') && segment.endsWith(']')) {
                 const param = segment.slice(1, -1);
                 return `:${param}`;
-            }
-
-            // Optional segment: [[id]] -> :id?
-            if (segment.startsWith('[[') && segment.endsWith(']]')) {
-                const param = segment.slice(2, -2);
-                return `:${param}?`;
             }
 
             return segment;
@@ -257,16 +258,33 @@ export function expandDynamicRoute(
     const paths: string[] = [];
 
     for (const { params } of staticPaths) {
-        let expandedPath = route.path;
+        // Substitute segment-wise: string replace on the whole path corrupts
+        // routes when one param name is a prefix of another (:id vs :id2) and
+        // leaves the optional marker behind (:id? -> "x?").
+        const segments: string[] = [];
 
-        for (const [key, value] of Object.entries(params)) {
-            // Replace :param with value
-            expandedPath = expandedPath.replace(`:${key}`, value);
-            // Replace *param with value
-            expandedPath = expandedPath.replace(`*${key}`, value);
+        for (const segment of route.path.split('/')) {
+            if (segment.startsWith(':')) {
+                const optional = segment.endsWith('?');
+                const name = optional ? segment.slice(1, -1) : segment.slice(1);
+                const value = params[name];
+
+                if (value !== undefined && value !== '') {
+                    segments.push(value);
+                } else if (optional) {
+                    continue; // Absent optional param: drop the segment
+                } else {
+                    segments.push(segment); // No value provided: leave pattern as-is
+                }
+            } else if (segment.startsWith('*')) {
+                const value = params[segment.slice(1)];
+                segments.push(value !== undefined ? value : segment);
+            } else {
+                segments.push(segment);
+            }
         }
 
-        paths.push(expandedPath);
+        paths.push(segments.join('/') || '/');
     }
 
     return paths;
