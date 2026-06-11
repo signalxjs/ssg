@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `redirects` config (`{ '/old': '/new/' }`): each entry emits a static meta-refresh page at the old path (canonical → target, `noindex`, fallback link) plus a `_redirects` file (Netlify/Cloudflare format) for hosts that answer with real 301s. Relative targets are `base`-prefixed; absolute URLs pass through; a redirect that would overwrite a real rendered page fails the build ([#61](https://github.com/signalxjs/ssg/issues/61)).
+- Public package-manager client API ([#63](https://github.com/signalxjs/ssg/issues/63)): `getPackageManager()` / `setPackageManager(pm)` / `onPackageManagerChange(listener)` in `@sigx/ssg/client` expose the install-fence switcher's selection programmatically (tab clicks, programmatic sets, and cross-tab sync all notify subscribers), and the command parser ships as public API — `parsePackageManagerCommand`, `renderPackageManagerCommand`, `translatePackageManagerCommand`, `PACKAGE_MANAGERS`, `DEFAULT_PACKAGE_MANAGER`, and the `Pm` / `ParsedPackageManagerCommand` types.
 
 ## [0.7.1] - 2026-06-11
 

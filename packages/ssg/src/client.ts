@@ -9,6 +9,18 @@
 
 export { ssrClientPlugin } from '@sigx/server-renderer/client';
 
+// Package-manager command parsing/translation — public API (#63). Pure and
+// dependency-free; the same functions the build-time switcher uses.
+import { DEFAULT_PM, PMS, type Pm } from './mdx/package-manager';
+export {
+    parse as parsePackageManagerCommand,
+    render as renderPackageManagerCommand,
+    translate as translatePackageManagerCommand,
+    PMS as PACKAGE_MANAGERS,
+    DEFAULT_PM as DEFAULT_PACKAGE_MANAGER,
+} from './mdx/package-manager';
+export type { Pm, Parsed as ParsedPackageManagerCommand } from './mdx/package-manager';
+
 /**
  * Prefetch a route's assets
  */
@@ -171,15 +183,17 @@ export function installSpaNavigation(
 // bug that broke the old docs-side DOM enhancer; see issue #40).
 
 const PM_STORAGE_KEY = 'sigx-pm';
-const VALID_PMS = ['pnpm', 'npm', 'yarn', 'bun'];
+// Single source of truth with the parser exports (PACKAGE_MANAGERS) — typed
+// as plain strings so unvalidated input can be `.includes()`-checked.
+const VALID_PMS: readonly string[] = PMS;
 
 let pmSwitcherInstalled = false;
 
 /** Read the persisted manager, or null when unset/invalid/unavailable. */
-function readStoredPm(): string | null {
+function readStoredPm(): Pm | null {
     try {
         const v = localStorage.getItem(PM_STORAGE_KEY);
-        return v && VALID_PMS.includes(v) ? v : null;
+        return v && VALID_PMS.includes(v) ? (v as Pm) : null;
     } catch {
         return null;
     }
@@ -187,6 +201,10 @@ function readStoredPm(): string | null {
 
 /** Show the chosen variant + mark its tab active in every PM window. */
 function applyPm(pm: string): void {
+    // setPackageManager is public API — callable where no DOM exists (SSR,
+    // tests); the in-memory selection still updates, and persistence happens
+    // when localStorage is available.
+    if (typeof document === 'undefined' || !document) return;
     for (const win of document.querySelectorAll<HTMLElement>('.code-window-pm')) {
         if (win.dataset.pm === pm) continue; // already applied — skip redundant DOM writes
         win.dataset.pm = pm;
@@ -199,6 +217,83 @@ function applyPm(pm: string): void {
             tab.setAttribute('aria-selected', String(active));
         }
     }
+}
+
+/**
+ * The active selection, shared between the switcher UI and the public API
+ * (#63). Lazily seeded from localStorage; null until anything reads/sets it.
+ */
+let activePm: Pm | null = null;
+
+const pmListeners = new Set<(pm: Pm) => void>();
+
+function notifyPmChange(pm: Pm): void {
+    for (const listener of pmListeners) {
+        try {
+            listener(pm);
+        } catch (err) {
+            // One bad subscriber must not block the rest (or the click/storage
+            // handlers driving the notification).
+            console.error('[ssg] onPackageManagerChange listener failed:', err);
+        }
+    }
+}
+
+/** Internal: adopt a (validated) selection — DOM, persistence, listeners. */
+function adoptPm(pm: Pm, persist: boolean): void {
+    activePm = pm;
+    applyPm(pm);
+    if (persist) {
+        try {
+            localStorage.setItem(PM_STORAGE_KEY, pm);
+        } catch {
+            /* storage unavailable — selection still applies for this session */
+        }
+    }
+    notifyPmChange(pm);
+}
+
+/**
+ * The currently selected package manager: the in-page selection, else the
+ * persisted one, else the first PM window's server-rendered default, else
+ * `'pnpm'` (#63).
+ */
+export function getPackageManager(): Pm {
+    if (activePm) return activePm;
+    const stored = readStoredPm();
+    if (stored) {
+        // Seed: the persisted choice is authoritative, so later reads stay
+        // consistent without re-touching storage. The DOM/default fallbacks
+        // below are NOT seeded — they're page-state snapshots, and pinning
+        // them would mask a switcher window that hydrates later.
+        activePm = stored;
+        return stored;
+    }
+    const win = typeof document !== 'undefined' && document
+        ? document.querySelector<HTMLElement>('.code-window-pm[data-pm]')
+        : null;
+    const fromDom = win?.dataset.pm;
+    return fromDom && VALID_PMS.includes(fromDom) ? (fromDom as Pm) : DEFAULT_PM;
+}
+
+/**
+ * Programmatically select a package manager — updates every switcher window,
+ * persists the choice, and notifies subscribers (#63).
+ */
+export function setPackageManager(pm: Pm): void {
+    if (!VALID_PMS.includes(pm)) {
+        throw new TypeError(`setPackageManager: unknown package manager "${pm}" (expected ${VALID_PMS.join(' | ')})`);
+    }
+    adoptPm(pm, true);
+}
+
+/**
+ * Subscribe to package-manager changes (tab clicks, programmatic sets,
+ * cross-tab sync). Returns an unsubscribe function (#63).
+ */
+export function onPackageManagerChange(listener: (pm: Pm) => void): () => void {
+    pmListeners.add(listener);
+    return () => pmListeners.delete(listener);
 }
 
 /** Inject the minimal functional layout for the tab strip once (themeable). */
@@ -233,13 +328,13 @@ export function installPackageManagerSwitcher(): () => void {
 
     injectPmStyles();
 
-    // The active selection, cached so the MutationObserver never has to touch
-    // localStorage on the hydration / navigation hot path. Updated on clicks
-    // and cross-tab storage events.
-    let currentPm = readStoredPm();
+    // Seed the shared selection so the MutationObserver never has to touch
+    // localStorage on the hydration / navigation hot path. Updated on clicks,
+    // programmatic sets, and cross-tab storage events.
+    if (!activePm) activePm = readStoredPm();
 
     const sync = () => {
-        if (currentPm) applyPm(currentPm);
+        if (activePm) applyPm(activePm);
     };
 
     if (document.readyState === 'loading') {
@@ -268,7 +363,7 @@ export function installPackageManagerSwitcher(): () => void {
         return false;
     };
     const observer = new MutationObserver((records) => {
-        if (scheduled || !currentPm || !addsPmWindow(records)) return;
+        if (scheduled || !activePm || !addsPmWindow(records)) return;
         scheduled = true;
         queueMicrotask(() => {
             scheduled = false;
@@ -285,21 +380,14 @@ export function installPackageManagerSwitcher(): () => void {
         const tab = e.target.closest<HTMLElement>('.code-window-pm-tab');
         const pm = tab?.dataset.pm;
         if (!pm || !VALID_PMS.includes(pm)) return;
-        currentPm = pm;
-        applyPm(pm);
-        try {
-            localStorage.setItem(PM_STORAGE_KEY, pm);
-        } catch {
-            /* storage unavailable — selection still applies for this session */
-        }
+        adoptPm(pm as Pm, true);
     };
     document.addEventListener('click', onClick);
 
     // Cross-tab / cross-page sync.
     const onStorage = (e: StorageEvent) => {
         if (e.key === PM_STORAGE_KEY && e.newValue && VALID_PMS.includes(e.newValue)) {
-            currentPm = e.newValue;
-            applyPm(e.newValue);
+            adoptPm(e.newValue as Pm, false); // already persisted by the other tab
         }
     };
     window.addEventListener('storage', onStorage);
