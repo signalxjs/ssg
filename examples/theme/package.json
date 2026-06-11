@@ -13,7 +13,7 @@
         "@sigx/router": "^0.4.5",
         "@sigx/ssg": "workspace:^",
         "@sigx/ssg-theme-daisyui": "workspace:^",
-        "sigx": "^0.4.3"
+        "sigx": "^0.6.0"
     },
     "devDependencies": {
         "@sigx/vite": "^0.4.3",
