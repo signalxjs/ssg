@@ -188,10 +188,10 @@ const VALID_PMS = ['pnpm', 'npm', 'yarn', 'bun'];
 let pmSwitcherInstalled = false;
 
 /** Read the persisted manager, or null when unset/invalid/unavailable. */
-function readStoredPm(): string | null {
+function readStoredPm(): Pm | null {
     try {
         const v = localStorage.getItem(PM_STORAGE_KEY);
-        return v && VALID_PMS.includes(v) ? v : null;
+        return v && VALID_PMS.includes(v) ? (v as Pm) : null;
     } catch {
         return null;
     }
@@ -199,6 +199,9 @@ function readStoredPm(): string | null {
 
 /** Show the chosen variant + mark its tab active in every PM window. */
 function applyPm(pm: string): void {
+    // setPackageManager is public API — callable where no DOM exists (SSR,
+    // tests); the selection still updates and persists.
+    if (typeof document === 'undefined' || !document) return;
     for (const win of document.querySelectorAll<HTMLElement>('.code-window-pm')) {
         if (win.dataset.pm === pm) continue; // already applied — skip redundant DOM writes
         win.dataset.pm = pm;
@@ -217,12 +220,20 @@ function applyPm(pm: string): void {
  * The active selection, shared between the switcher UI and the public API
  * (#63). Lazily seeded from localStorage; null until anything reads/sets it.
  */
-let activePm: string | null = null;
+let activePm: Pm | null = null;
 
 const pmListeners = new Set<(pm: Pm) => void>();
 
 function notifyPmChange(pm: Pm): void {
-    for (const listener of pmListeners) listener(pm);
+    for (const listener of pmListeners) {
+        try {
+            listener(pm);
+        } catch (err) {
+            // One bad subscriber must not block the rest (or the click/storage
+            // handlers driving the notification).
+            console.error('[ssg] onPackageManagerChange listener failed:', err);
+        }
+    }
 }
 
 /** Internal: adopt a (validated) selection — DOM, persistence, listeners. */
@@ -245,14 +256,21 @@ function adoptPm(pm: Pm, persist: boolean): void {
  * `'pnpm'` (#63).
  */
 export function getPackageManager(): Pm {
-    if (activePm) return activePm as Pm;
+    if (activePm) return activePm;
     const stored = readStoredPm();
-    if (stored) return stored as Pm;
-    const win = typeof document !== 'undefined'
+    if (stored) {
+        // Seed: the persisted choice is authoritative, so later reads stay
+        // consistent without re-touching storage. The DOM/default fallbacks
+        // below are NOT seeded — they're page-state snapshots, and pinning
+        // them would mask a switcher window that hydrates later.
+        activePm = stored;
+        return stored;
+    }
+    const win = typeof document !== 'undefined' && document
         ? document.querySelector<HTMLElement>('.code-window-pm[data-pm]')
         : null;
     const fromDom = win?.dataset.pm;
-    return (fromDom && VALID_PMS.includes(fromDom) ? fromDom : DEFAULT_PM) as Pm;
+    return fromDom && VALID_PMS.includes(fromDom) ? (fromDom as Pm) : DEFAULT_PM;
 }
 
 /**

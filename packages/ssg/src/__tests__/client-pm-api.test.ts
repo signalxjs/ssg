@@ -97,6 +97,44 @@ describe('onPackageManagerChange (#63)', () => {
     });
 });
 
+describe('review hardening (#63)', () => {
+    it('a throwing subscriber does not block later subscribers', () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const bad = vi.fn(() => {
+            throw new Error('boom');
+        });
+        const good = vi.fn();
+        const offBad = onPackageManagerChange(bad);
+        const offGood = onPackageManagerChange(good);
+
+        expect(() => setPackageManager('npm')).not.toThrow();
+        expect(good).toHaveBeenCalledWith('npm');
+
+        offBad();
+        offGood();
+        errSpy.mockRestore();
+    });
+
+    it('setPackageManager is safe without a DOM', () => {
+        vi.stubGlobal('document', undefined);
+        try {
+            expect(() => setPackageManager('bun')).not.toThrow();
+            expect(getPackageManager()).toBe('bun');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it('getPackageManager seeds from the persisted value, so a later storage wipe cannot flip it', async () => {
+        vi.resetModules();
+        localStorage.setItem('sigx-pm', 'yarn');
+        const fresh = await import('../client');
+        expect(fresh.getPackageManager()).toBe('yarn');
+        localStorage.clear();
+        expect(fresh.getPackageManager()).toBe('yarn');
+    });
+});
+
 describe('parser re-exports (#63)', () => {
     it('parse and translate are public client API', () => {
         expect(parsePackageManagerCommand('pnpm add foo')).toMatchObject({ action: 'add', args: 'foo' });
