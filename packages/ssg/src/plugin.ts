@@ -41,12 +41,14 @@ export default definePlugin({
             args: {
                 config: { type: 'string', description: 'Path to ssg.config.ts' },
                 verbose: { type: 'boolean', description: 'Verbose logging' },
+                drafts: { type: 'boolean', description: 'Include draft: true pages in the build' },
             },
             async run(ctx) {
                 const { build } = await import('./build.js');
                 await build({
                     configPath: ctx.args.config as string | undefined,
                     verbose: ctx.args.verbose as boolean | undefined,
+                    drafts: ctx.args.drafts as boolean | undefined,
                 });
             },
         },

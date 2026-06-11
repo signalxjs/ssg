@@ -139,8 +139,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
         // Step 6: Collect all paths to render
         console.log('📝 Collecting paths to render...');
-        const pathsToRender = await collectPaths(routes, root, warnings);
+        const pathsToRender = await collectPaths(routes, root, warnings, { drafts: options.drafts });
         console.log(`   ${pathsToRender.length} path(s) to render`);
+        const draftCount = routes.filter((route) => route.meta?.draft).length;
+        if (draftCount > 0 && !options.drafts) {
+            console.log(`   Skipped ${draftCount} draft page(s) (build with --drafts to include)`);
+        }
 
         // Pre-create all output directories to avoid mkdir contention during parallel rendering
         const outputDirs = new Set<string>();
@@ -320,16 +324,25 @@ interface PathToRender {
 }
 
 /**
- * Collect all paths to render, expanding dynamic routes
+ * Collect all paths to render, expanding dynamic routes.
+ *
+ * Pages with `draft: true` frontmatter are excluded (they are thereby also
+ * absent from the sitemap, which is generated from rendered pages) unless
+ * `options.drafts` is set. Exported for tests.
  */
-async function collectPaths(
+export async function collectPaths(
     routes: SSGRoute[],
     root: string,
-    warnings: string[]
+    warnings: string[],
+    options: { drafts?: boolean } = {}
 ): Promise<PathToRender[]> {
     const paths: PathToRender[] = [];
 
     for (const route of routes) {
+        if (route.meta?.draft && !options.drafts) {
+            continue;
+        }
+
         if (isDynamicRoute(route)) {
             // Load module and call getStaticPaths
             try {
