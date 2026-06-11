@@ -8,6 +8,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { SSGConfig, PageBuildResult } from './types';
+import { normalizePagePath } from './url';
 
 /**
  * Sitemap entry with optional metadata
@@ -50,7 +51,8 @@ export function generateSitemap(
     const base = config.base?.replace(/\/$/, '') || '';
 
     const urlEntries = entries.map((entry) => {
-        const loc = `${siteUrl}${base}${entry.path}`;
+        // Mirrors head.ts canonical derivation — keep byte-identical (#41).
+        const loc = `${siteUrl}${base}${normalizePagePath(entry.path, config.trailingSlash)}`;
         const lastmod = entry.lastmod
             ? typeof entry.lastmod === 'string'
                 ? entry.lastmod

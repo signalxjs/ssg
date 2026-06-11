@@ -57,6 +57,15 @@ export interface SSGConfig {
     base?: string;
 
     /**
+     * Trailing-slash policy for derived public URLs (canonical, og:url,
+     * sitemap `<loc>`). `'always'` matches the `<path>/index.html` output
+     * layout, where static hosts serve `/about/` with 200 and 301 `/about`.
+     * Use `'never'` only when the host serves the slash-less URL directly.
+     * @default 'always'
+     */
+    trailingSlash?: 'always' | 'never';
+
+    /**
      * Site-wide metadata
      */
     site?: SiteConfig;

@@ -33,6 +33,7 @@ export function defineSSGConfig(config: SSGConfig): SSGConfig {
         defaultLayout: 'default',
         outDir: 'dist',
         base: '/',
+        trailingSlash: 'always',
         // Zero-config defaults
         autoEntries: true,
         prefetch: true,
