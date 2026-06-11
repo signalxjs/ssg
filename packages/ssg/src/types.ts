@@ -147,6 +147,43 @@ export interface SSGConfig {
      * Table of Contents (TOC) configuration
      */
     toc?: TOCConfig;
+
+    /**
+     * Sitemap generation options, or `false` to disable sitemap.xml and
+     * robots.txt generation entirely.
+     * @default {}
+     */
+    sitemap?: SitemapOptions | false;
+}
+
+/**
+ * Sitemap entry with optional metadata
+ */
+export interface SitemapEntry {
+    /** URL path (relative to site base) */
+    path: string;
+    /** Last modification date */
+    lastmod?: Date | string;
+    /** Change frequency hint */
+    changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+    /** Priority relative to other pages (0.0 to 1.0) */
+    priority?: number;
+}
+
+/**
+ * Sitemap generation options
+ */
+export interface SitemapOptions {
+    /** Include all built pages automatically */
+    includePages?: boolean;
+    /** Additional URLs to include */
+    additionalUrls?: SitemapEntry[];
+    /** URLs to exclude (glob patterns or exact matches) */
+    exclude?: string[];
+    /** Default change frequency */
+    defaultChangefreq?: SitemapEntry['changefreq'];
+    /** Default priority */
+    defaultPriority?: number;
 }
 
 // ============================================================================
@@ -734,6 +771,13 @@ export interface PageBuildResult {
      * HTML size in bytes
      */
     size: number;
+
+    /**
+     * The page's route metadata (frontmatter / `export const meta`).
+     * Carried through the build so consumers (sitemap noindex/lastmod,
+     * feeds, …) can act on it.
+     */
+    meta?: PageMeta;
 }
 
 /**

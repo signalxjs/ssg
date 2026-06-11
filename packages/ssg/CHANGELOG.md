@@ -31,8 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Route params and `getStaticPaths` `props` now reach page components as documented (`props.params.slug`, plus per-path props spread at the top level) — previously the generated LayoutRouter rendered every page with empty props and the server entry dropped the render context, so the documented pattern SSR'd to an error ([#73](https://github.com/signalxjs/ssg/issues/73)). Props are registered per path in the generated layouts module (`setPageProps`), the build embeds a `window.__SSG_PROPS__` payload (XSS-hardened) so hydration uses the same props the server rendered with, and `params` always flows from the matched route — including after client-side navigation. The dead duplicate `generateThemeLayoutsModule` codegen was removed.
 
 - Windows: watcher and HMR handlers now match page/layout files (dir prefix checks compared backslash `path.resolve` results against Vite's posix-normalized paths and never matched), prefix matching is path-boundary-safe on every OS (`src/pages-archive` no longer matches `src/pages`), and the production HTML template's `<script src>` no longer contains backslashes ([#54](https://github.com/signalxjs/ssg/issues/54)).
+- Sitemap/robots plumbing ([#56](https://github.com/signalxjs/ssg/issues/56)): pages with `robots: noindex` and the `/404` page are no longer advertised in sitemap.xml; a user-supplied `public/robots.txt` is no longer overwritten; without `site.url` the sitemap is skipped with a warning instead of emitting spec-invalid relative `<loc>` URLs; and frontmatter `date` now becomes `<lastmod>` (a first freshness signal toward [#38](https://github.com/signalxjs/ssg/issues/38)).
 
 ### Added
+
+- `sitemap` config option carrying `SitemapOptions` (`exclude`, `additionalUrls`, `defaultChangefreq`, `defaultPriority` — previously dead API with no way to reach `writeSitemap`), or `sitemap: false` to disable generation. `PageBuildResult` now carries the page's `meta`, so build consumers (feeds, audits) can act on frontmatter ([#56](https://github.com/signalxjs/ssg/issues/56)).
 
 - `trailingSlash: 'always' | 'never'` config option (default `'always'`) controlling the policy above, and a `normalizePagePath` export implementing it ([#41](https://github.com/signalxjs/ssg/issues/41)).
 
