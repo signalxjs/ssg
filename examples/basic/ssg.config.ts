@@ -20,6 +20,9 @@ export default defineSSGConfig({
     // which zero-config mode auto-imports.
     clientImports: ['@sigx/ssg/styles.css'],
     // Static redirects (#61): old URLs keep working after content moves.
+    // Built-in search (#62): emits search-index.json over the rendered pages.
+    search: true,
+
     redirects: {
         '/old-guide': '/guide/',
     },

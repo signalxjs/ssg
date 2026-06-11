@@ -7,11 +7,17 @@
 import { component } from 'sigx';
 import type { SiteConfig } from '@sigx/ssg';
 import { siteBrand, siteNavItems, siteRepoUrl } from '../lib/site.js';
+import CommandPalette from './CommandPalette.js';
 
 export interface HeaderProps {
     onMenuClick?: () => void;
     /** Site config for branding (title/logo/nav/repo) — see #60. */
     site?: SiteConfig;
+    /**
+     * Show the ⌘K search palette (#62). Requires the site to build with
+     * `search: true`. Pass the deploy base for subpath deploys.
+     */
+    search?: boolean | { base?: string; url?: string };
 }
 
 export default component<HeaderProps>(({ props, signal }) => {
@@ -68,6 +74,16 @@ export default component<HeaderProps>(({ props, signal }) => {
                             ))}
                     </ul>
                 </div>
+
+                {/* Search palette (#62, opt-in) */}
+                {props.search && (
+                    <div class="flex-none">
+                        <CommandPalette
+                            base={typeof props.search === 'object' ? props.search.base : undefined}
+                            url={typeof props.search === 'object' ? props.search.url : undefined}
+                        />
+                    </div>
+                )}
 
                 {/* Theme toggle */}
                 <div class="flex-none">

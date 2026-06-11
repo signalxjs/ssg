@@ -13,6 +13,9 @@
       "@sigx/ssg": [
         "./packages/ssg/src/index.ts"
       ],
+      "@sigx/ssg/client": [
+        "./packages/ssg/src/client.ts"
+      ],
       "@sigx/ssg-theme-daisyui": [
         "./packages/ssg-theme-daisyui/src/index.ts"
       ]

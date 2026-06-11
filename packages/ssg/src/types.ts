@@ -167,6 +167,17 @@ export interface SSGConfig {
      * Relative targets are prefixed with `base`; absolute URLs pass through.
      */
     redirects?: Record<string, string>;
+
+    /**
+     * Built-in search (#62). `true` emits a `search-index.json` over the
+     * rendered pages at build time — one entry per page with title,
+     * description, headings, and visible text (`noindex` pages and the 404
+     * page are excluded, like the sitemap). Consume it with
+     * `loadSearchIndex()`/`searchPages()` from `@sigx/ssg/client`, or the
+     * theme command palette.
+     * @default false
+     */
+    search?: boolean | SearchOptions;
 }
 
 /**
@@ -470,6 +481,7 @@ export interface MarkdownConfig {
      */
     remarkPlugins?: unknown[];
 
+
     /**
      * Custom rehype plugins
      */
@@ -532,6 +544,41 @@ export interface ShikiConfig {
      * or island can claim them — e.g. `['mermaid', 'math']`.
      */
     skipLanguages?: string[];
+}
+
+/**
+ * Built-in search configuration (#62).
+ */
+export interface SearchOptions {
+    /**
+     * Index filename inside `outDir`.
+     * @default 'search-index.json'
+     */
+    output?: string;
+
+    /**
+     * Cap on indexed visible text per page, in characters.
+     * @default 8000
+     */
+    maxTextLength?: number;
+}
+
+/**
+ * One page in the emitted search index (#62).
+ */
+export interface SearchIndexEntry {
+    /** URL path of the page (no `base` prefix). */
+    path: string;
+    /** Page title (frontmatter title, else first heading, else the path). */
+    title: string;
+    /** Frontmatter description, when set. */
+    description?: string;
+    /** The page's headings — matches deep-link via `#id`. */
+    headings: TocHeading[];
+    /** The page's visible text (capped, see `SearchOptions.maxTextLength`). */
+    text: string;
+    /** Frontmatter tags, when set. */
+    tags?: string[];
 }
 
 // ============================================================================
