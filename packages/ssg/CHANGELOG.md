@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `SiteConfig.search` ([#116](https://github.com/signalxjs/ssg/issues/116)): ask the theme to show its search UI (the daisyui ⌘K palette) — a pure pass-through to layouts via `LayoutProps.site`; pair with the top-level `search: true`.
+
+### Fixed
+
+- `LayoutProps.site` now reaches layouts on **every** render path ([#116](https://github.com/signalxjs/ssg/issues/116)): four of the generated layout-router branches (cached components, loaded lazy components, the hydration placeholder) dropped it, so theme headers lost their branding/nav/repo in production SSR output — invisible until a theme-using site existed.
+
 ## [0.8.0] - 2026-06-11
 
 ### Fixed

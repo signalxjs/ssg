@@ -1,0 +1,27 @@
+---
+title: Configuration
+description: Site branding and theme options
+category: Guide
+order: 2
+---
+
+# Configuration
+
+Branding comes from `site` — title, nav, logo, repo, and `search` to show
+the palette.
+
+## Site config
+
+```ts
+site: {
+    title: 'Theme Example',
+    nav: [{ title: 'Docs', href: '/docs/getting-started' }],
+    repo: 'https://github.com/signalxjs/ssg',
+    search: true,
+}
+```
+
+## Table of contents
+
+Per-page `toc: false` hides this TOC; `data-toc-ignore` skips a single
+heading.

@@ -23,7 +23,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props, sig
 
     return () => (
         <div class="min-h-screen flex flex-col">
-            <Header onMenuClick={toggleSidebar} site={props.site} />
+            <Header onMenuClick={toggleSidebar} site={props.site} search={props.site?.search} />
 
             <div class="flex-1 flex">
                 {/* Sidebar */}

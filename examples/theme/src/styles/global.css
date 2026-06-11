@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@plugin "daisyui";
+
+/* The theme's components are outside this app's source tree, so pull their
+   classes into the scan explicitly. The explicit file glob matters --
+   Tailwind's directory form skips dist directories by default. In a normal
+   app, point the same glob at the package inside your node_modules,
+   relative to this CSS file. */
+@source "../../../../packages/ssg-theme-daisyui/dist/**/*.js";

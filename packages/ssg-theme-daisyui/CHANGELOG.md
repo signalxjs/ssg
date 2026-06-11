@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The built-in layouts forward `site.search` to the Header, so the ⌘K command palette can be enabled from config alone (`site: { search: true }`) without composing a custom layout ([#116](https://github.com/signalxjs/ssg/issues/116)).
+
 ## [0.8.0] - 2026-06-11
 
 ### Added

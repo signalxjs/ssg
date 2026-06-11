@@ -15,7 +15,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) =
 
     return () => (
         <div class="min-h-screen flex flex-col">
-            <Header site={props.site} />
+            <Header site={props.site} search={props.site?.search} />
 
             <main class="flex-1">
                 {/* Hero section */}

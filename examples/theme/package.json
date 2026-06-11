@@ -1,0 +1,25 @@
+{
+    "name": "@sigx-examples/theme",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "description": "@sigx/ssg-theme-daisyui example site — theme layouts, ⌘K palette, sidebar/TOC/prev-next, light-dark toggle. Also built by the theme e2e test in packages/ssg.",
+    "scripts": {
+        "dev": "vite",
+        "build:site": "node build.mjs",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@sigx/router": "^0.4.5",
+        "@sigx/ssg": "workspace:^",
+        "@sigx/ssg-theme-daisyui": "workspace:^",
+        "sigx": "^0.4.3"
+    },
+    "devDependencies": {
+        "@sigx/vite": "^0.4.3",
+        "@tailwindcss/vite": "^4.1.0",
+        "daisyui": "^5.0.0",
+        "tailwindcss": "^4.1.0",
+        "vite": "^8.0.3"
+    }
+}
