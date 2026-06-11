@@ -441,18 +441,23 @@ export function searchPages(
         const text = entry.text.toLowerCase();
 
         let score = 0;
-        let anchor: string | undefined;
         let firstBodyMatch = -1;
         let everyTermMatched = true;
+        // Term hits per heading — the anchor goes to the heading matching
+        // the most query terms, not the first heading any term hit.
+        const headingHits: number[] = entry.headings.map(() => 0);
 
         for (const term of terms) {
             let termScore = 0;
             if (title.includes(term)) termScore += 10;
-            const heading = entry.headings.find((h) => h.text.toLowerCase().includes(term));
-            if (heading) {
-                termScore += 5;
-                if (!anchor) anchor = `#${heading.id}`;
-            }
+            let termHitHeading = false;
+            entry.headings.forEach((h, hi) => {
+                if (h.text.toLowerCase().includes(term)) {
+                    headingHits[hi]++;
+                    termHitHeading = true;
+                }
+            });
+            if (termHitHeading) termScore += 5;
             if (description.includes(term)) termScore += 3;
             const bodyIndex = text.indexOf(term);
             if (bodyIndex !== -1) {
@@ -466,6 +471,15 @@ export function searchPages(
             score += termScore;
         }
         if (!everyTermMatched) continue;
+
+        let anchor: string | undefined;
+        let bestHits = 0;
+        headingHits.forEach((hits, hi) => {
+            if (hits > bestHits) {
+                bestHits = hits;
+                anchor = `#${entry.headings[hi].id}`;
+            }
+        });
 
         const result: SearchResult = { path: entry.path, title: entry.title, score };
         if (anchor) result.anchor = anchor;

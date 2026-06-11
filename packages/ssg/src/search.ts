@@ -30,7 +30,13 @@ const ENTITIES: Record<string, string> = {
 function decodeEntities(text: string): string {
     return text
         .replace(/&(?:amp|lt|gt|quot|#39|apos|nbsp);/g, (m) => ENTITIES[m] ?? m)
-        .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)));
+        .replace(/&#(\d+);/g, (match, code) => {
+            const point = Number(code);
+            // Invalid/out-of-range code points must not throw mid-build.
+            return point <= 0x10ffff && !(point >= 0xd800 && point <= 0xdfff)
+                ? String.fromCodePoint(point)
+                : match;
+        });
 }
 
 /**

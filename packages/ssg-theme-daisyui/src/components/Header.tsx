@@ -17,7 +17,7 @@ export interface HeaderProps {
      * Show the ⌘K search palette (#62). Requires the site to build with
      * `search: true`. Pass the deploy base for subpath deploys.
      */
-    search?: boolean | { base?: string };
+    search?: boolean | { base?: string; url?: string };
 }
 
 export default component<HeaderProps>(({ props, signal }) => {
@@ -80,6 +80,7 @@ export default component<HeaderProps>(({ props, signal }) => {
                     <div class="flex-none">
                         <CommandPalette
                             base={typeof props.search === 'object' ? props.search.base : undefined}
+                            url={typeof props.search === 'object' ? props.search.url : undefined}
                         />
                     </div>
                 )}

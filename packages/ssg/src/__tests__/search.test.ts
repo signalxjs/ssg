@@ -38,6 +38,12 @@ describe('extractSearchText (#62)', () => {
         expect(text).not.toContain('.h{}');
     });
 
+    it('survives invalid numeric entities instead of throwing', () => {
+        const text = extractSearchText(HTML('<main><p>ok &#99999999; still &#65;</p></main>'));
+        expect(text).toContain('ok');
+        expect(text).toContain('A'); // valid one decoded
+    });
+
     it('collapses whitespace and decodes common entities', () => {
         const text = extractSearchText(HTML('<main><p>a&amp;b   &lt;c&gt;\n\n  d&#39;e</p></main>'));
         expect(text).toBe("a&b <c> d'e");

@@ -15,6 +15,8 @@ import { movePaletteSelection, paletteHref, isPaletteHotkey } from '../lib/palet
 export interface CommandPaletteProps {
     /** Deploy base when the site lives under a subpath (default `/`). */
     base?: string;
+    /** Explicit index URL — for a custom `SearchOptions.output` filename. */
+    url?: string;
     /** Max results shown (default 10). */
     limit?: number;
 }
@@ -34,7 +36,7 @@ export default component<CommandPaletteProps>(({ props, signal, onMounted }) => 
     const ensureIndex = (): Promise<void> => {
         if (entries) return Promise.resolve();
         if (loading) return loading;
-        const pending = loadSearchIndex({ base: props.base ?? '/' })
+        const pending = loadSearchIndex({ base: props.base ?? '/', url: props.url })
             .then((loaded) => {
                 entries = loaded;
                 state.error = null;

@@ -50,6 +50,22 @@ describe('searchPages (#62)', () => {
         expect(top.anchor).toBe('#install');
     });
 
+    it('anchors to the heading matching the most query terms', () => {
+        const entries = [
+            {
+                path: '/p',
+                title: 'Page',
+                headings: [
+                    { id: 'install-only', text: 'Install', level: 2 },
+                    { id: 'install-server', text: 'Install the dev server', level: 2 },
+                ],
+                text: 'install dev server words',
+            },
+        ];
+        const [top] = searchPages(entries, 'install server');
+        expect(top.anchor).toBe('#install-server');
+    });
+
     it('returns an excerpt around the first body match', () => {
         const [top] = searchPages(ENTRIES, 'dev server');
         expect(top.path).toBe('/guide');
