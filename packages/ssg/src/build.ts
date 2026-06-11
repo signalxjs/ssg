@@ -15,6 +15,7 @@ import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
+import type { InlineConfig } from 'vite';
 import type { SSGConfig, BuildOptions, BuildResult, PageBuildResult } from './types';
 import { loadConfig, resolveConfigPaths } from './config';
 import { scanPages } from './routing/index';
@@ -108,35 +109,20 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         // Note: We don't empty the outDir since vite build may have already run
         // Always use HTML as input so Vite outputs index.html properly
         const clientInput = htmlTemplatePath;
-        
-        await vite.build({
+
+        const buildConfigs = createViteBuildConfigs(
+            resolvedConfig,
             root,
-            mode: 'production',
-            build: {
-                outDir: resolvedConfig.outDir,
-                emptyOutDir: false,
-                ssrManifest: true,
-                rollupOptions: {
-                    input: clientInput,
-                },
-            },
-            logLevel: options.verbose ? 'info' : 'warn',
-        });
+            clientInput,
+            ssrEntry,
+            options.verbose
+        );
+
+        await vite.build(buildConfigs.client);
 
         // Build SSR bundle
-        const ssrOutDir = path.join(resolvedConfig.outDir!, '.ssg');
-        await vite.build({
-            root,
-            mode: 'production',
-            build: {
-                outDir: ssrOutDir,
-                ssr: true,
-                rollupOptions: {
-                    input: ssrEntry,
-                },
-            },
-            logLevel: options.verbose ? 'info' : 'warn',
-        });
+        const ssrOutDir = buildConfigs.ssr.build!.outDir!;
+        await vite.build(buildConfigs.ssr);
 
         // Step 6: Collect all paths to render
         console.log('📝 Collecting paths to render...');
@@ -315,6 +301,129 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 }
 
 /**
+<<<<<<< HEAD
+=======
+ * Vite configs for the client and SSR production builds.
+ *
+ * `base` must be passed explicitly: the SSG config's base (set in
+ * ssg.config.ts or inherited from vite.config) has to reach the asset URLs
+ * Vite emits, or subpath deploys break (#49). Exported for tests.
+ */
+export function createViteBuildConfigs(
+    config: SSGConfig,
+    root: string,
+    clientInput: string,
+    ssrEntry: string,
+    verbose?: boolean
+): { client: InlineConfig; ssr: InlineConfig } {
+    const base = config.base || '/';
+    const logLevel = verbose ? 'info' : 'warn';
+
+    return {
+        client: {
+            root,
+            base,
+            mode: 'production',
+            build: {
+                outDir: config.outDir,
+                emptyOutDir: false,
+                ssrManifest: true,
+                rollupOptions: {
+                    input: clientInput,
+                },
+            },
+            logLevel,
+        },
+        ssr: {
+            root,
+            base,
+            mode: 'production',
+            build: {
+                outDir: path.join(config.outDir!, '.ssg'),
+                ssr: true,
+                rollupOptions: {
+                    input: ssrEntry,
+                },
+            },
+            logLevel,
+        },
+    };
+}
+
+/**
+ * Path information for rendering
+ */
+interface PathToRender {
+    path: string;
+    route: SSGRoute;
+    params: Record<string, string>;
+    props?: Record<string, unknown>;
+}
+
+/**
+ * Collect all paths to render, expanding dynamic routes
+ */
+async function collectPaths(
+    routes: SSGRoute[],
+    root: string,
+    warnings: string[]
+): Promise<PathToRender[]> {
+    const paths: PathToRender[] = [];
+
+    for (const route of routes) {
+        if (isDynamicRoute(route)) {
+            // Load module and call getStaticPaths
+            try {
+                const moduleUrl = pathToFileURL(route.file).href;
+                const pageModule = (await import(moduleUrl)) as PageModule;
+
+                if (!pageModule.getStaticPaths) {
+                    const params = extractParams(route.path).join(', ');
+                    console.warn(
+                        `\n⚠️  SSG102: Dynamic route missing getStaticPaths()\n` +
+                        `   📁 ${route.file}\n` +
+                        `   Route: ${route.path} (params: ${params})\n` +
+                        `   💡 Export getStaticPaths() to generate static pages:\n\n` +
+                        `      export async function getStaticPaths() {\n` +
+                        `          return [{ params: { ${params.split(', ')[0]}: 'value' } }];\n` +
+                        `      }\n`
+                    );
+                    warnings.push(
+                        `Route ${route.path} has dynamic segments [${params}] but no getStaticPaths() export. Skipping.`
+                    );
+                    continue;
+                }
+
+                const staticPaths = await pageModule.getStaticPaths();
+
+                for (const staticPath of staticPaths) {
+                    const expandedPaths = expandDynamicRoute(route, [staticPath]);
+                    for (const expandedPath of expandedPaths) {
+                        paths.push({
+                            path: expandedPath,
+                            route,
+                            params: staticPath.params,
+                            props: staticPath.props,
+                        });
+                    }
+                }
+            } catch (err) {
+                warnings.push(`Failed to load ${route.file}: ${err}`);
+            }
+        } else {
+            paths.push({
+                path: route.path,
+                route,
+                params: {},
+            });
+        }
+    }
+
+    return paths;
+}
+
+/**
+>>>>>>> fix(ssg): propagate base from ssg.config.ts to the production Vite builds
  * Render a page to HTML
  */
 async function renderPage(
