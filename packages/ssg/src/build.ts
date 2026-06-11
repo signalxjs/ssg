@@ -316,7 +316,8 @@ export function createViteBuildConfigs(
     ssrEntry: string,
     verbose?: boolean
 ): { client: InlineConfig; ssr: InlineConfig } {
-    const base = config.base || '/';
+    const base = config.base ?? '/';
+    const outDir = config.outDir ?? 'dist';
     const logLevel = verbose ? 'info' : 'warn';
 
     return {
@@ -325,7 +326,7 @@ export function createViteBuildConfigs(
             base,
             mode: 'production',
             build: {
-                outDir: config.outDir,
+                outDir,
                 emptyOutDir: false,
                 ssrManifest: true,
                 rollupOptions: {
@@ -339,7 +340,7 @@ export function createViteBuildConfigs(
             base,
             mode: 'production',
             build: {
-                outDir: path.join(config.outDir!, '.ssg'),
+                outDir: path.join(outDir, '.ssg'),
                 ssr: true,
                 rollupOptions: {
                     input: ssrEntry,
