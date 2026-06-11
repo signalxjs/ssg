@@ -8,7 +8,7 @@
 import fg from 'fast-glob';
 import path from 'node:path';
 import fs from 'node:fs';
-import type { SSGRoute, SSGConfig, PageMeta } from '../types';
+import type { SSGRoute, SSGConfig, PageMeta, ProgrammaticRoute } from '../types';
 import { parseFrontmatter, extractTitleFromContent } from '../mdx/frontmatter';
 
 /**
@@ -57,8 +57,57 @@ export async function scanPages(config: SSGConfig, root: string): Promise<SSGRou
         }
     }
 
+    // Programmatic routes from config.routes (#59) — merged before the
+    // specificity sort so dev, build, and navigation all see them.
+    if (config.routes) {
+        const programmatic = await config.routes({ config, root });
+        for (const route of programmatic) {
+            routes.push(normalizeProgrammaticRoute(route, routes, root));
+        }
+    }
+
     // Sort routes by specificity (static > dynamic > catch-all)
     return sortRoutes(routes);
+}
+
+/**
+ * Validate a `config.routes` entry and shape it like a scanned route (#59):
+ * absolute existing component file, leading-slash path, no collision with an
+ * already-known route, and a derived name.
+ */
+function normalizeProgrammaticRoute(
+    route: ProgrammaticRoute,
+    existing: SSGRoute[],
+    root: string
+): SSGRoute {
+    if (!route.path.startsWith('/')) {
+        throw new Error(`routes: path "${route.path}" must start with "/".`);
+    }
+    // `/about` and `/about/` render to the same about/index.html — normalize
+    // before the collision check so they can't silently overwrite each other.
+    const routePath = route.path !== '/' ? route.path.replace(/\/+$/, '') : route.path;
+
+    const file = path.isAbsolute(route.file) ? route.file : path.resolve(root, route.file);
+    if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
+        throw new Error(`routes: component for "${routePath}" is not a file: ${route.file}`);
+    }
+    const collision = existing.find((r) => r.path === routePath);
+    if (collision) {
+        throw new Error(
+            `routes: "${routePath}" collides with an existing page (${collision.file}). ` +
+                `Remove the page or the programmatic route.`
+        );
+    }
+
+    const normalized: SSGRoute = { path: routePath, file, name: pathToRouteName(routePath) };
+    if (route.meta) normalized.meta = { ...route.meta };
+    if (route.layout) {
+        normalized.layout = route.layout;
+        // The generated routes module resolves layouts from meta.layout —
+        // mirror it there so `layout` actually takes effect.
+        normalized.meta = { ...normalized.meta, layout: route.layout };
+    }
+    return normalized;
 }
 
 /**

@@ -49,6 +49,17 @@ declare module 'virtual:ssg-navigation' {
     export default _default;
 }
 
+declare module 'virtual:ssg-data' {
+    /**
+     * Results of the config's build-time data loaders (#59). The module
+     * also emits one named export per key, but only the default export is
+     * typed here — augment `virtual:ssg-data` in your site for typed named
+     * imports.
+     */
+    const data: Record<string, unknown>;
+    export default data;
+}
+
 declare module 'virtual:generated-layouts' {
     /** Annotates routes with their resolved layout component. */
     export function setupLayouts<T>(routes: T): T;

@@ -59,6 +59,12 @@ const VIRTUAL_CONFIG_ID = 'virtual:ssg-config';
 const RESOLVED_VIRTUAL_CONFIG_ID = '\0' + VIRTUAL_CONFIG_ID;
 
 /**
+ * Virtual module for build-time data loaders (#59)
+ */
+const VIRTUAL_DATA_ID = 'virtual:ssg-data';
+const RESOLVED_VIRTUAL_DATA_ID = '\0' + VIRTUAL_DATA_ID;
+
+/**
  * Create the SSG Vite plugin
  */
 export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
@@ -72,6 +78,10 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
     let routesCache: { routes: any[]; code: string } | null = null;
     let layoutsCache: { layouts: any[]; code: string } | null = null;
     let navigationCache: { code: string } | null = null;
+    // Loader results are memoized for the build / dev-server lifetime (#59)
+    // — content edits never re-run loaders (they can hit the network); a
+    // config change needs a dev-server restart, like other config edits.
+    let dataCache: Promise<string> | null = null;
     
     // Cache for frontmatter hashes to detect changes
     const frontmatterHashCache = new Map<string, string>();
@@ -299,6 +309,9 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
             if (id === VIRTUAL_NAVIGATION_ID) {
                 return RESOLVED_VIRTUAL_NAVIGATION_ID;
             }
+            if (id === VIRTUAL_DATA_ID) {
+                return RESOLVED_VIRTUAL_DATA_ID;
+            }
             // Handle virtual entry points (both formats)
             if (id === VIRTUAL_CLIENT_ID || id === SSG_CLIENT_ENTRY_PATH) {
                 return RESOLVED_VIRTUAL_CLIENT_ID;
@@ -353,6 +366,16 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                 return navigationCache.code;
             }
 
+            // Build-time data loaders module (#59)
+            if (id === RESOLVED_VIRTUAL_DATA_ID) {
+                if (!dataCache) {
+                    const { loadDataOnce, generateDataModule } = await import('../data');
+                    // Process-wide per-root cache: the client and SSR builds
+                    // bake identical values, loaders run once per build.
+                    dataCache = loadDataOnce(root, ssgConfig.data ?? {}).then(generateDataModule);
+                }
+                return dataCache;
+            }
             // Generate virtual config module
             if (id === RESOLVED_VIRTUAL_CONFIG_ID) {
                 return `export default ${JSON.stringify(ssgConfig)};`;

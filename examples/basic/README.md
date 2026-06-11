@@ -13,6 +13,8 @@ The smallest realistic `@sigx/ssg` site, exercising the core feature set:
 - **MDX** — frontmatter, GFM, Shiki highlighting, and an npm-install fence that renders the npm/pnpm/yarn/bun switcher
 - **Redirects** — `redirects: { '/old-guide': '/guide/' }` emits a meta-refresh page + `_redirects` entry
 - **Search** — `search: true` emits `search-index.json` over the rendered pages
+- **Programmatic routes** — `/generated` is added via `config.routes` from `src/templates/`
+- **Data loaders** — `config.data.buildInfo` baked into the page via `virtual:ssg-data`
 - **Build hooks** — `ssg.config.ts` uses `transformHtml` (injects a generator meta tag into every page) and `postBuild` (writes `dist/build-manifest.json`)
 - **Styling** — `@sigx/ssg/styles.css` (base styles for ssg-emitted markup, via `clientImports`) plus `src/styles/global.css` (site typography, auto-imported by zero-config mode)
 
