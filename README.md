@@ -39,14 +39,14 @@ npm install @sigx/ssg-theme-daisyui
 import { defineConfig } from '@sigx/ssg';
 
 export default defineConfig({
-  pagesDir: 'src/pages',
+  pages: 'src/pages',
   outDir: 'dist',
 });
 ```
 
 ```bash
-npx sigx-ssg dev    # dev server with HMR
-npx sigx-ssg build  # static build
+npx sigx ssg dev    # dev server with HMR (requires @sigx/cli)
+npx sigx ssg build  # static build
 ```
 
 Drop `.tsx` or `.mdx` files in `src/pages/` and they become routes:
