@@ -192,6 +192,18 @@ function renderJsonLd(data: object): string {
 }
 
 /**
+ * Script tag embedding a page's getStaticPaths props so the client entry can
+ * register them before hydration (#73). Empty when the page has no props.
+ * `<` is JSON-unicode-escaped so the payload cannot break out via a literal
+ * `</script>` (same hardening as renderJsonLd above).
+ */
+export function pagePropsScript(path: string, props: Record<string, unknown> | undefined): string {
+    if (!props || Object.keys(props).length === 0) return '';
+    const json = JSON.stringify({ path, props }).replace(/</g, '\\u003c');
+    return `<script>window.__SSG_PROPS__=${json}</script>`;
+}
+
+/**
  * Escape HTML special characters in attribute values / text.
  */
 export function escapeHtml(str: string): string {

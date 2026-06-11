@@ -71,6 +71,26 @@ ${layoutEntries.join(',\n')}
 export const defaultLayout = '${config.defaultLayout || 'default'}';
 
 /**
+ * getStaticPaths props, registered per route path (#73). The server entry
+ * registers them before rendering; the client entry registers the payload
+ * embedded in the built HTML before hydrating. Keyed by path so concurrent
+ * SSR renders sharing this module never cross-contaminate.
+ */
+const __pagePropsByPath = {};
+
+function normalizePropsPath(path) {
+    return path && path !== '/' ? path.replace(/\\/+$/, '') : '/';
+}
+
+export function setPageProps(path, props) {
+    __pagePropsByPath[normalizePropsPath(path)] = props || {};
+}
+
+function getPageProps(path) {
+    return __pagePropsByPath[normalizePropsPath(path)] ?? {};
+}
+
+/**
  * Check if a component is marked as lazy (created by lazy())
  */
 function isMarkedLazy(component) {
@@ -170,7 +190,11 @@ export const LayoutRouter = component((ctx) => {
         // Get the original (unwrapped) component
         const rawComponent = match.originalComponent || match.component;
         const routePath = route.path;
-        
+
+        // Props every page receives: matched route params plus any
+        // getStaticPaths props registered for this path (#73).
+        const pageProps = { params: route.params || {}, ...getPageProps(routePath) };
+
         // Handle lazy/dynamic import components
         if (isMarkedLazy(rawComponent) || (typeof rawComponent === 'function' && !rawComponent.__setup)) {
             // Check if already loaded
@@ -181,7 +205,7 @@ export const LayoutRouter = component((ctx) => {
                     meta: match.meta, 
                     path: routePath, 
                     key: layoutName,  // Key by layout to preserve layout across pages
-                    children: PageComponent({}) 
+                    children: PageComponent(pageProps) 
                 });
             }
             
@@ -245,7 +269,7 @@ export const LayoutRouter = component((ctx) => {
                 meta: match.meta, 
                 path: routePath, 
                 key: layoutName,
-                children: PageComponent({}) 
+                children: PageComponent(pageProps) 
             });
         }
         
@@ -258,7 +282,7 @@ export const LayoutRouter = component((ctx) => {
                 meta: match.meta, 
                 path: routePath, 
                 key: layoutName,
-                children: PageComponent({}) 
+                children: PageComponent(pageProps) 
             });
         }
         
@@ -267,7 +291,7 @@ export const LayoutRouter = component((ctx) => {
             meta: match.meta, 
             path: routePath, 
             key: layoutName,
-            children: rawComponent({}) 
+            children: rawComponent(pageProps) 
         });
     };
 }, { name: 'LayoutRouter' });
@@ -298,171 +322,6 @@ export function setupLayouts(routes) {
 
         // Store layout info on the route, but don't wrap the component
         // LayoutRouter will handle layout rendering
-        return {
-            ...route,
-            layout: layoutName,
-            originalComponent: route.component,
-            meta: {
-                ...route.meta,
-                layout: layoutName,
-            },
-        };
-    });
-}
-
-export default layouts;
-`;
-}
-
-/**
- * Generate a simpler layouts module for theme-only setups
- */
-export function generateThemeLayoutsModule(themeName: string, config: SSGConfig): string {
-    return `
-import { component, signal, jsx } from 'sigx';
-import { useRoute } from '@sigx/router';
-import { layouts as themeLayouts, config as themeConfig } from '${themeName}';
-
-export const layouts = themeLayouts || {};
-export const defaultLayout = '${config.defaultLayout}' || themeConfig?.defaultLayout || 'default';
-
-/**
- * Check if a component is marked as lazy (created by lazy())
- */
-function isMarkedLazy(component) {
-    return component && component.__lazy === true;
-}
-
-/**
- * Check if a value is a Promise/thenable
- */
-function isPromise(value) {
-    return value && typeof value.then === 'function';
-}
-
-/**
- * Layout router component that preserves layouts across navigation.
- */
-export const LayoutRouter = component((ctx) => {
-    const route = useRoute();
-    const loadedComponents = {};
-    
-    // HMR support: Listen for MDX updates and clear the component cache
-    if (typeof window !== 'undefined' && import.meta.hot) {
-        const handleMdxHmr = (event) => {
-            for (const key in loadedComponents) {
-                delete loadedComponents[key];
-            }
-            ctx.update();
-        };
-        
-        window.addEventListener('sigx:mdx-hmr', handleMdxHmr);
-        
-        import.meta.hot.on('vite:beforeUpdate', (payload) => {
-            const hasMdxUpdate = payload.updates?.some(update => 
-                update.path?.endsWith('.mdx') || update.path?.endsWith('.md')
-            );
-            if (hasMdxUpdate) {
-                for (const key in loadedComponents) {
-                    delete loadedComponents[key];
-                }
-            }
-        });
-        
-        ctx.onUnmounted(() => {
-            window.removeEventListener('sigx:mdx-hmr', handleMdxHmr);
-        });
-    }
-    
-    return () => {
-        const matched = route.matched;
-        if (!matched || matched.length === 0) return null;
-        
-        const match = matched[0];
-        if (!match) return null;
-        
-        const layoutName = match.layout || match.meta?.layout || defaultLayout;
-        const Layout = layouts[layoutName];
-        
-        if (!Layout) {
-            console.warn(\`Layout "\${layoutName}" not found for route \${route.path}\`);
-            return null;
-        }
-        
-        const rawComponent = match.originalComponent || match.component;
-        const routePath = route.path;
-        
-        // Handle lazy/dynamic import components
-        if (isMarkedLazy(rawComponent) || (typeof rawComponent === 'function' && !rawComponent.__setup)) {
-            if (loadedComponents[routePath]) {
-                const PageComponent = loadedComponents[routePath];
-                return jsx(Layout, { 
-                    meta: match.meta, 
-                    path: routePath, 
-                    key: layoutName,
-                    children: PageComponent({}) 
-                });
-            }
-            
-            const loadState = signal({ value: null, loading: true, error: null });
-            
-            try {
-                const result = rawComponent();
-                if (isPromise(result)) {
-                    result.then(module => {
-                        const Component = module.default || module;
-                        loadedComponents[routePath] = Component;
-                        loadState.value = Component;
-                        loadState.loading = false;
-                    }).catch(err => {
-                        console.error('Failed to load component:', routePath, err);
-                        loadState.error = err;
-                        loadState.loading = false;
-                    });
-                } else {
-                    loadedComponents[routePath] = rawComponent;
-                    loadState.value = rawComponent;
-                    loadState.loading = false;
-                }
-            } catch (err) {
-                loadState.error = err;
-                loadState.loading = false;
-            }
-            
-            if (loadState.loading) {
-                return jsx(Layout, { meta: match.meta, path: routePath, key: layoutName, children: null });
-            }
-            if (loadState.error || !loadState.value) {
-                return jsx(Layout, { meta: match.meta, path: routePath, key: layoutName, children: null });
-            }
-            
-            return jsx(Layout, { 
-                meta: match.meta, 
-                path: routePath, 
-                key: layoutName,
-                children: loadState.value({}) 
-            });
-        }
-        
-        return jsx(Layout, { 
-            meta: match.meta, 
-            path: routePath, 
-            key: layoutName,
-            children: rawComponent({}) 
-        });
-    };
-}, { name: 'LayoutRouter' });
-
-export function setupLayouts(routes) {
-    return routes.map(route => {
-        const layoutName = route.layout || route.meta?.layout || defaultLayout;
-        const Layout = layouts[layoutName];
-
-        if (!Layout) {
-            console.warn(\`Layout "\${layoutName}" not found for route \${route.path}\`);
-            return route;
-        }
-
         return {
             ...route,
             layout: layoutName,
