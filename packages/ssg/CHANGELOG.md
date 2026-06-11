@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-06-11
+
 ### Fixed
 
 - `data-no-spa` now opts out an anchor **or any ancestor container** from SPA navigation, and LivePreview islands carry it by default — links inside rendered example previews can no longer hijack navigation ([#95](https://github.com/signalxjs/ssg/issues/95)).
