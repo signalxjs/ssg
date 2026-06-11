@@ -74,6 +74,17 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
     // Cache for frontmatter hashes to detect changes
     const frontmatterHashCache = new Map<string, string>();
 
+    // Seed the hash cache from a scan so the FIRST edit of a file compares
+    // against its on-disk frontmatter instead of being silently dropped (#53).
+    // Must serialize exactly like the change handler (JSON of the parsed data).
+    function seedFrontmatterCache(routes: Array<{ file: string; meta?: unknown }>) {
+        for (const route of routes) {
+            if (/\.mdx?$/.test(route.file) && !frontmatterHashCache.has(route.file)) {
+                frontmatterHashCache.set(route.file, JSON.stringify(route.meta ?? {}));
+            }
+        }
+    }
+
     // Shared with the MDX plugin, which reads it lazily on first transform —
     // configResolved below fills in the config loaded from ssg.config.ts, so
     // markdown/toc options from the config file actually take effect (#47).
@@ -171,9 +182,12 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                     
                     // Update the cache
                     frontmatterHashCache.set(file, newHash);
-                    
-                    // If frontmatter changed, invalidate navigation (titles, categories may have changed)
-                    if (oldHash !== undefined && oldHash !== newHash) {
+
+                    // If frontmatter changed, invalidate navigation (titles,
+                    // categories may have changed). The cache is seeded when
+                    // routes are scanned; an unseeded file (change before the
+                    // first scan) is treated as changed rather than dropped (#53).
+                    if (oldHash !== newHash) {
                         navigationCache = null;
                         routesCache = null;
                         
@@ -260,6 +274,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
             if (id === RESOLVED_VIRTUAL_ROUTES_ID) {
                 if (!routesCache) {
                     const routes = await scanPages(ssgConfig, root);
+                    seedFrontmatterCache(routes);
                     // Use lazy loading in dev mode for proper HMR and MDX processing
                     const code = config.command === 'serve'
                         ? generateLazyRoutesModule(routes, ssgConfig)
@@ -285,6 +300,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                     // Ensure routes are loaded (reuse cache if available)
                     if (!routesCache) {
                         const routes = await scanPages(ssgConfig, root);
+                        seedFrontmatterCache(routes);
                         const routesCode = config.command === 'serve'
                             ? generateLazyRoutesModule(routes, ssgConfig)
                             : generateRoutesModule(routes, ssgConfig);
@@ -344,7 +360,10 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                     server.moduleGraph.invalidateModule(mod);
                 }
 
-                // Also reload pages that use this layout
+                // The layouts module is regenerated code, not a normal HMR
+                // boundary — without an explicit reload the browser keeps the
+                // stale layout until a manual refresh (#53).
+                server.ws.send({ type: 'full-reload' });
                 return [];
             }
 
