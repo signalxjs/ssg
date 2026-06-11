@@ -123,3 +123,28 @@ describe('zero-config vite helpers (#52)', () => {
         expect(plugins.some((p: any) => p?.name === 'sigx-ssg')).toBe(true);
     });
 });
+
+describe('loadConfig — relative .ts imports are bundled (#96)', () => {
+    it('loads a config importing a relative .ts helper regardless of Node type-stripping', async () => {
+        const { loadConfig } = await import('../config');
+        // Inside the workspace: vitest's Vite server can't import temp .mjs
+        // files from outside its root (/tmp), unlike real Node usage.
+        const base = path.join(process.cwd(), 'node_modules', '.cache');
+        fs.mkdirSync(base, { recursive: true });
+        const dir = fs.mkdtempSync(path.join(base, 'ssg-cfg-rel-'));
+        fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+        // An enum is NOT erasable syntax — Node's native type-stripping
+        // rejects it, so this only works when the loader actually compiles.
+        fs.writeFileSync(path.join(dir, 'lib', 'registry.ts'),
+            "export enum Kind { Docs = 'docs' }\nexport const TITLE: string = 'From Helper';\n");
+        fs.writeFileSync(path.join(dir, 'ssg.config.ts'),
+            "import { TITLE, Kind } from './lib/registry.ts';\nexport default { site: { title: TITLE + ':' + Kind.Docs } };\n");
+
+        try {
+            const config = await loadConfig(path.join(dir, 'ssg.config.ts'));
+            expect(config.site?.title).toBe('From Helper:docs');
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+});
