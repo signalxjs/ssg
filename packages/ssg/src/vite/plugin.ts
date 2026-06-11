@@ -167,6 +167,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                     routesCache = null;
                     navigationCache = null;
                     dataCache = null;
+                    void import('../data').then(({ clearDataCache }) => clearDataCache(root));
                     invalidateModule(RESOLVED_VIRTUAL_ROUTES_ID);
                     invalidateModule(RESOLVED_VIRTUAL_NAVIGATION_ID);
                 } else if (isInsideDir(file, layoutsDir)) {
@@ -180,6 +181,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                     routesCache = null;
                     navigationCache = null;
                     dataCache = null;
+                    void import('../data').then(({ clearDataCache }) => clearDataCache(root));
                     // Clean up frontmatter hash cache
                     frontmatterHashCache.delete(toPosix(file));
                     invalidateModule(RESOLVED_VIRTUAL_ROUTES_ID);
@@ -371,8 +373,10 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
             // Generate virtual config module
             if (id === RESOLVED_VIRTUAL_DATA_ID) {
                 if (!dataCache) {
-                    const { runDataLoaders, generateDataModule } = await import('../data');
-                    dataCache = runDataLoaders(ssgConfig.data ?? {}).then(generateDataModule);
+                    const { loadDataOnce, generateDataModule } = await import('../data');
+                    // Process-wide per-root cache: the client and SSR builds
+                    // bake identical values, loaders run once per build.
+                    dataCache = loadDataOnce(root, ssgConfig.data ?? {}).then(generateDataModule);
                 }
                 return dataCache;
             }

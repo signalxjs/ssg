@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { runDataLoaders, generateDataModule } from '../data';
+import { runDataLoaders, generateDataModule, loadDataOnce, clearDataCache } from '../data';
 
 describe('runDataLoaders (#59)', () => {
     it('runs every loader (sync or async) and returns the values', async () => {
@@ -42,6 +42,32 @@ describe('runDataLoaders (#59)', () => {
         const loader = vi.fn(() => 1);
         await runDataLoaders({ n: loader });
         expect(loader).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('runDataLoaders — undefined values (#59)', () => {
+    it('rejects loaders returning undefined (not valid JSON)', async () => {
+        await expect(runDataLoaders({ nothing: () => undefined })).rejects.toThrow(/nothing/);
+    });
+});
+
+describe('loadDataOnce (#59)', () => {
+    it('runs loaders once per root across plugin instances (client + SSR builds)', async () => {
+        clearDataCache('/proj');
+        const loader = vi.fn(() => 1);
+        const a = await loadDataOnce('/proj', { n: loader });
+        const b = await loadDataOnce('/proj', { n: loader });
+        expect(loader).toHaveBeenCalledTimes(1);
+        expect(b).toBe(a);
+    });
+
+    it('clearDataCache forces a re-run (config change in dev)', async () => {
+        clearDataCache('/proj2');
+        const loader = vi.fn(() => 1);
+        await loadDataOnce('/proj2', { n: loader });
+        clearDataCache('/proj2');
+        await loadDataOnce('/proj2', { n: loader });
+        expect(loader).toHaveBeenCalledTimes(2);
     });
 });
 

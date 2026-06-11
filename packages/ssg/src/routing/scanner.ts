@@ -83,29 +83,30 @@ function normalizeProgrammaticRoute(
     if (!route.path.startsWith('/')) {
         throw new Error(`routes: path "${route.path}" must start with "/".`);
     }
+    // `/about` and `/about/` render to the same about/index.html — normalize
+    // before the collision check so they can't silently overwrite each other.
+    const routePath = route.path !== '/' ? route.path.replace(/\/+$/, '') : route.path;
+
     const file = path.isAbsolute(route.file) ? route.file : path.resolve(root, route.file);
-    if (!fs.existsSync(file)) {
-        throw new Error(`routes: component file for "${route.path}" does not exist: ${route.file}`);
+    if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
+        throw new Error(`routes: component for "${routePath}" is not a file: ${route.file}`);
     }
-    const collision = existing.find((r) => r.path === route.path);
+    const collision = existing.find((r) => r.path === routePath);
     if (collision) {
         throw new Error(
-            `routes: "${route.path}" collides with an existing page (${collision.file}). ` +
+            `routes: "${routePath}" collides with an existing page (${collision.file}). ` +
                 `Remove the page or the programmatic route.`
         );
     }
 
-    const name =
-        route.path === '/'
-            ? 'index'
-            : route.path
-                  .replace(/^\/+|\/+$/g, '')
-                  .replace(/:/g, '')
-                  .replace(/\//g, '-');
-
-    const normalized: SSGRoute = { path: route.path, file, name };
-    if (route.layout) normalized.layout = route.layout;
-    if (route.meta) normalized.meta = route.meta;
+    const normalized: SSGRoute = { path: routePath, file, name: pathToRouteName(routePath) };
+    if (route.meta) normalized.meta = { ...route.meta };
+    if (route.layout) {
+        normalized.layout = route.layout;
+        // The generated routes module resolves layouts from meta.layout —
+        // mirror it there so `layout` actually takes effect.
+        normalized.meta = { ...normalized.meta, layout: route.layout };
+    }
     return normalized;
 }
 

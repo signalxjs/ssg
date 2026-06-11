@@ -186,9 +186,11 @@ export interface SSGConfig {
     routes?: (ctx: RoutesContext) => ProgrammaticRoute[] | Promise<ProgrammaticRoute[]>;
 
     /**
-     * Build-time data loaders (#59): each runs once per build (and per dev
-     * server start); results are exposed via `virtual:ssg-data` as named
-     * exports. Values must be JSON-serializable — they are baked into the
+     * Build-time data loaders (#59): each runs once per build (shared
+     * across the client and SSR builds) and once per dev-server start;
+     * results are exposed via `virtual:ssg-data` (typed default export;
+     * per-key named exports exist — augment the module for typed named
+     * imports). Values must be JSON-serializable — they are baked into the
      * bundle. Replaces fetch-data-before-build scripts.
      */
     data?: DataLoaders;

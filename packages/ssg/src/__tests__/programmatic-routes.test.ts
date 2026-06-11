@@ -73,6 +73,42 @@ describe('config.routes (#59)', () => {
         ).rejects.toThrow(/collide|already/i);
     });
 
+    it('normalizes trailing slashes and catches collisions through them', async () => {
+        const routes = await scanPages(
+            { routes: () => [{ path: '/trail/', file: 'src/templates/tag.tsx' }] },
+            root
+        );
+        expect(routes.find((r) => r.path === '/trail')).toBeDefined();
+
+        await expect(
+            scanPages(
+                {
+                    routes: () => [
+                        { path: '/dup', file: 'src/templates/tag.tsx' },
+                        { path: '/dup/', file: 'src/templates/tag.tsx' },
+                    ],
+                },
+                root
+            )
+        ).rejects.toThrow(/collide|already/i);
+    });
+
+    it('rejects a directory passed as the component file', async () => {
+        await expect(
+            scanPages({ routes: () => [{ path: '/dir', file: 'src/templates' }] }, root)
+        ).rejects.toThrow(/not a file|does not exist/i);
+    });
+
+    it('exposes layout via meta.layout so the routes module honors it', async () => {
+        const routes = await scanPages(
+            { routes: () => [{ path: '/laid', file: 'src/templates/tag.tsx', layout: 'docs' }] },
+            root
+        );
+        const laid = routes.find((r) => r.path === '/laid')!;
+        // The generated routes module reads meta.layout, not route.layout.
+        expect(laid.meta?.layout).toBe('docs');
+    });
+
     it('rejects paths not starting with /', async () => {
         await expect(
             scanPages({ routes: () => [{ path: 'tags/x', file: 'src/templates/tag.tsx' }] }, root)

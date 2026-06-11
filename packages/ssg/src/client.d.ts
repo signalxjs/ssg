@@ -51,8 +51,10 @@ declare module 'virtual:ssg-navigation' {
 
 declare module 'virtual:ssg-data' {
     /**
-     * Results of the config's build-time data loaders (#59), one named
-     * export per key. Augment this module in your site for stricter types.
+     * Results of the config's build-time data loaders (#59). The module
+     * also emits one named export per key, but only the default export is
+     * typed here — augment `virtual:ssg-data` in your site for typed named
+     * imports.
      */
     const data: Record<string, unknown>;
     export default data;
