@@ -19,7 +19,7 @@ import type { InlineConfig } from 'vite';
 import type { SSGConfig, BuildOptions, BuildResult, PageBuildResult } from './types';
 import { loadConfig, resolveConfigPaths } from './config';
 import { scanPages } from './routing/index';
-import { collectPaths, type PathToRender } from './collect-paths';
+import { collectPaths, getOutputPath, type PathToRender } from './collect-paths';
 import { injectIntoTemplate } from './template';
 import { registerProcessCleanup } from './cleanup';
 import { hasViteConfigFile, assembleZeroConfigPlugins, ZERO_CONFIG_OXC } from './vite/zero-config';
@@ -411,27 +411,6 @@ export function createViteBuildConfigs(
             logLevel,
         },
     };
-}
-
-/**
- * Get output file path for a URL path.
- *
- * - `/`         → `<outDir>/index.html`
- * - `/about`    → `<outDir>/about/index.html`
- * - `/foo.html` → `<outDir>/foo.html`
- */
-function getOutputPath(urlPath: string, outDir: string): string {
-    const normalized = urlPath.replace(/^\//, '').replace(/\/$/, '');
-
-    if (!normalized) {
-        return path.join(outDir, 'index.html');
-    }
-
-    if (normalized.endsWith('.html')) {
-        return path.join(outDir, normalized);
-    }
-
-    return path.join(outDir, normalized, 'index.html');
 }
 
 /**

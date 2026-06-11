@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import type { SSGConfig } from '../types';
 import { defineSSGConfig, loadConfig } from '../config';
 import { scanPages } from '../routing/scanner';
+import { matchRoute } from '../routing/resolver';
 import { generateRoutesModule, generateLazyRoutesModule, VIRTUAL_ROUTES_ID, RESOLVED_VIRTUAL_ROUTES_ID } from '../routing/virtual';
 import { generateNavigationModule, VIRTUAL_NAVIGATION_ID, RESOLVED_VIRTUAL_NAVIGATION_ID } from '../routing/virtual-navigation';
 import { discoverLayouts } from '../layouts/resolver';
@@ -221,24 +222,47 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                 }
             }
 
+            // Whether a request path matches any scanned route (incl. dynamic
+            // patterns), so unknown URLs get an honest 404 status (#57).
+            async function urlMatchesRoute(url: string): Promise<boolean> {
+                const pathname = url.split(/[?#]/)[0];
+                const base = ssgConfig.base && ssgConfig.base !== '/' ? ssgConfig.base.replace(/\/+$/, '') : '';
+                let urlPath = base && pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
+                urlPath = urlPath !== '/' ? urlPath.replace(/\/+$/, '') : urlPath;
+
+                const routes = routesCache?.routes ?? (await scanPages(ssgConfig, root));
+                return routes.some(
+                    (route: { path: string }) => route.path === urlPath || matchRoute(route.path, urlPath).match
+                );
+            }
+
             // Serve virtual HTML template if no index.html exists
             if (entryDetection.useVirtualHtml) {
                 devServer.middlewares.use((req, res, next) => {
                     // Skip virtual modules and special Vite paths
-                    if (req.url?.startsWith('/@') || 
-                        req.url?.startsWith('/__') || 
+                    if (req.url?.startsWith('/@') ||
+                        req.url?.startsWith('/__') ||
                         req.url?.includes('virtual:') ||
                         req.url?.includes('node_modules') ||
                         req.url?.startsWith('/@vite') ||
                         req.url?.startsWith('/@fs')) {
                         return next();
                     }
-                    
+
                     // Only handle requests for HTML pages (not assets with extensions)
                     if (req.url && (req.url === '/' || !req.url.includes('.'))) {
+                        const url = req.url;
                         const html = generateHtmlTemplate(ssgConfig);
-                        // Transform HTML through Vite for HMR injection
-                        devServer.transformIndexHtml(req.url, html).then((transformedHtml) => {
+                        // Transform HTML through Vite for HMR injection; an
+                        // unmatched route still gets the shell (so the client
+                        // router can render) but with a 404 status (#57).
+                        Promise.all([
+                            devServer.transformIndexHtml(url, html),
+                            urlMatchesRoute(url),
+                        ]).then(([transformedHtml, matched]) => {
+                            if (!matched) {
+                                res.statusCode = 404;
+                            }
                             res.setHeader('Content-Type', 'text/html');
                             res.end(transformedHtml);
                         }).catch(next);
