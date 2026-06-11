@@ -73,6 +73,88 @@ export function getInitialState<T = Record<string, unknown>>(): T | null {
 }
 
 // ============================================================================
+// SPA navigation for internal anchors (#35)
+// ============================================================================
+
+/** The slice of the router installSpaNavigation needs. */
+export interface SpaNavigationRouter {
+    push(path: string): unknown;
+}
+
+export interface SpaNavigationOptions {
+    /**
+     * The site's base path (same value as the router's history base). Anchor
+     * hrefs carry the base on subpath deploys; it is stripped before push.
+     * @default '/'
+     */
+    base?: string;
+}
+
+/**
+ * Route same-origin internal anchor clicks through the router instead of
+ * full page reloads (#35). MDX content links compile to bare `<a>` elements
+ * and `@sigx/router` only wires its own RouterLink component — without this,
+ * every content/layout link is an MPA navigation.
+ *
+ * One delegated listener on `document`; the browser keeps handling:
+ * - modified clicks (ctrl/meta/shift/alt, non-primary buttons)
+ * - clicks something else already handled (`defaultPrevented` — RouterLink)
+ * - external origins, `mailto:`/`tel:` etc.
+ * - `target` (other than `_self`), `download`, and `data-no-spa` anchors
+ * - pure-hash and same-page `#hash` links (native scroll)
+ *
+ * Returns an uninstall function. Wired automatically into the generated
+ * client entry; call it yourself in custom entries.
+ */
+export function installSpaNavigation(
+    router: SpaNavigationRouter,
+    options: SpaNavigationOptions = {}
+): () => void {
+    if (typeof document === 'undefined') return () => {};
+
+    const base = options.base && options.base !== '/' ? options.base.replace(/\/+$/, '') : '';
+
+    const onClick = (event: MouseEvent) => {
+        if (event.defaultPrevented || event.button !== 0) return;
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+        const anchor = (event.target as Element | null)?.closest?.('a');
+        if (!anchor) return;
+
+        const href = anchor.getAttribute('href');
+        if (!href || href.startsWith('#')) return;
+        if (anchor.hasAttribute('download') || anchor.dataset.noSpa !== undefined) return;
+        const target = anchor.getAttribute('target');
+        if (target && target !== '_self') return;
+
+        let url: URL;
+        try {
+            url = new URL(anchor.href, location.href);
+        } catch {
+            return;
+        }
+        if (url.origin !== location.origin) return; // external, mailto:, tel:, …
+
+        // Same-page hash → let the browser scroll natively.
+        if (url.pathname === location.pathname && url.hash) return;
+
+        // Strip the base at a path boundary; links outside it are not ours.
+        let path = url.pathname;
+        if (base) {
+            if (path === base) path = '/';
+            else if (path.startsWith(base + '/')) path = path.slice(base.length);
+            else return;
+        }
+
+        event.preventDefault();
+        void router.push(path + url.search + url.hash);
+    };
+
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+}
+
+// ============================================================================
 // Package-manager switcher
 // ============================================================================
 //
