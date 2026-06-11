@@ -327,6 +327,12 @@ export interface NavigationConfig {
      * @default 'dev'
      */
     showDrafts?: 'dev' | 'never';
+
+    /**
+     * Sort order per section/category title, merged over the built-in
+     * defaults. Lower numbers come first; unlisted titles default to 50 (#60).
+     */
+    sectionOrder?: Record<string, number>;
 }
 
 /**
@@ -420,6 +426,22 @@ export interface SiteConfig {
      * Each object is emitted as a separate `<script type="application/ld+json">`.
      */
     jsonLd?: object | object[];
+
+    /**
+     * Main navigation items, for layouts/themes to render (header nav etc.).
+     * Reaches layouts via `LayoutProps.site` (#60).
+     */
+    nav?: NavItem[];
+
+    /** Logo URL/path, for layouts/themes to render (#60). */
+    logo?: string;
+
+    /**
+     * Repository URL (e.g. for a header GitHub link or edit-this-page
+     * links), for layouts/themes to render (#60).
+     */
+    repo?: string;
+
     /** Extra `<head>` tags appended to every page */
     head?: HeadTag[];
 }
@@ -717,6 +739,12 @@ export interface LayoutProps {
      * Current route path
      */
     path?: string;
+
+    /**
+     * Site-wide config (title, nav, logo, repo, …) so layouts/themes can
+     * render branding without hardcoding it (#60).
+     */
+    site?: SiteConfig;
 }
 
 /**
@@ -758,13 +786,27 @@ export interface ThemeModule {
  */
 export interface ThemeConfig {
     /**
-     * Default layout from this theme
+     * Default layout from this theme. Used when the site doesn't set its
+     * own `defaultLayout` (#60).
      */
     defaultLayout?: string;
 
-    // NOTE: theme-contributed CSS is part of the Theme API v2 design
-    // (signalxjs/ssg#60); the old `css?: string[]` field was never read and
-    // has been removed (#51).
+    /**
+     * Markdown plugins this theme contributes. They run before the site's
+     * own `markdown.remarkPlugins` / `rehypePlugins` (#60).
+     */
+    markdown?: Pick<MarkdownConfig, 'remarkPlugins' | 'rehypePlugins'>;
+
+    /**
+     * Head tags this theme contributes (prepended to `site.head`) (#60).
+     */
+    head?: HeadTag[];
+
+    /**
+     * CSS imports this theme contributes — import specifiers (e.g.
+     * '@my/theme/styles.css'), prepended to `clientImports` (#60).
+     */
+    css?: string[];
 }
 
 // ============================================================================

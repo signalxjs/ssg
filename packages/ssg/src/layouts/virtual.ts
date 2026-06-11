@@ -71,6 +71,12 @@ ${layoutEntries.join(',\n')}
 export const defaultLayout = '${config.defaultLayout || 'default'}';
 
 /**
+ * Site-wide config, embedded at generation time so layouts/themes can render
+ * branding (title, nav, logo, repo, …) without hardcoding it (#60).
+ */
+const __site = ${JSON.stringify(config.site ?? {})};
+
+/**
  * getStaticPaths props, registered per route path (#73). The server entry
  * registers them before rendering; the client entry registers the payload
  * embedded in the built HTML before hydrating. Keyed by path so concurrent
@@ -208,6 +214,7 @@ export const LayoutRouter = component((ctx) => {
                 return jsx(Layout, { 
                     meta: match.meta, 
                     path: routePath, 
+                    site: __site,
                     key: layoutName,  // Key by layout to preserve layout across pages
                     children: PageComponent(pageProps) 
                 });
@@ -253,6 +260,7 @@ export const LayoutRouter = component((ctx) => {
                 return jsx(Layout, { 
                     meta: match.meta, 
                     path: routePath, 
+                    site: __site,
                     key: layoutName,
                     children: null 
                 });
@@ -262,6 +270,7 @@ export const LayoutRouter = component((ctx) => {
                 return jsx(Layout, { 
                     meta: match.meta, 
                     path: routePath, 
+                    site: __site,
                     key: layoutName,
                     children: null 
                 });
@@ -294,6 +303,7 @@ export const LayoutRouter = component((ctx) => {
         return jsx(Layout, { 
             meta: match.meta, 
             path: routePath, 
+            site: __site,
             key: layoutName,
             children: rawComponent(pageProps) 
         });

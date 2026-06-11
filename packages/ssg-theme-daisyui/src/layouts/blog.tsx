@@ -15,7 +15,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) =
 
     return () => (
         <div class="min-h-screen flex flex-col">
-            <Header />
+            <Header site={props.site} />
 
             <main class="flex-1">
                 {/* Hero section */}
@@ -66,7 +66,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) =
                 </article>
             </main>
 
-            <Footer />
+            <Footer site={props.site} />
         </div>
     );
 });

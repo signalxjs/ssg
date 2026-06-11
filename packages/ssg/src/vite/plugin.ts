@@ -116,6 +116,11 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
             }
             ssgConfig = defineSSGConfig(merged);
 
+            // Fold in the theme's config contributions (markdown plugins,
+            // head tags, css, default layout) — site config wins (#60).
+            const { resolveThemeConfig } = await import('../theme');
+            ssgConfig = await resolveThemeConfig(ssgConfig, root);
+
             // Hand the resolved config to the MDX plugin. ssgConfig.markdown
             // already carries the file-config/plugin-options merge.
             mdxOptions.ssgConfig = ssgConfig;

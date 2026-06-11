@@ -47,7 +47,8 @@ export function generateNavigation(
     routes: SSGRoute[],
     collectionPath: string,
     showDrafts: 'dev' | 'never',
-    isDev: boolean
+    isDev: boolean,
+    sectionOrder?: Record<string, number>
 ): CollectionNavigation {
     // Filter routes for navigation
     const navRoutes = routes.filter((route) => {
@@ -107,7 +108,7 @@ export function generateNavigation(
     }
 
     // Convert to NavSection array
-    const sidebar = buildSections(context);
+    const sidebar = buildSections(context, sectionOrder);
 
     return { sidebar };
 }
@@ -174,24 +175,29 @@ const SECTION_ORDER: Record<string, number> = {
 };
 
 /**
- * Get sort order for a section/category title
+ * Get sort order for a section/category title. A custom per-title map
+ * (navigation.sectionOrder, #60) wins over the built-in defaults.
  */
-function getSectionOrder(title: string, explicitOrder?: number): number {
+function getSectionOrder(
+    title: string,
+    explicitOrder?: number,
+    sectionOrder?: Record<string, number>
+): number {
     if (explicitOrder !== undefined) {
         return explicitOrder;
     }
-    return SECTION_ORDER[title] ?? 50;
+    return sectionOrder?.[title] ?? SECTION_ORDER[title] ?? 50;
 }
 
 /**
  * Build NavSection array from context
  */
-function buildSections(context: NavBuildContext): NavSection[] {
+function buildSections(context: NavBuildContext, sectionOrder?: Record<string, number>): NavSection[] {
     const sections: NavSection[] = [];
 
     // Add categorized items
     for (const [, category] of context.categories) {
-        sections.push(buildSection(category));
+        sections.push(buildSection(category, sectionOrder));
     }
 
     // Add uncategorized items as a section if any exist
@@ -210,8 +216,8 @@ function buildSections(context: NavBuildContext): NavSection[] {
     }
 
     sections.sort((a, b) => {
-        const orderA = getSectionOrder(a.title, a.order);
-        const orderB = getSectionOrder(b.title, b.order);
+        const orderA = getSectionOrder(a.title, a.order, sectionOrder);
+        const orderB = getSectionOrder(b.title, b.order, sectionOrder);
         return orderA - orderB;
     });
 
@@ -221,7 +227,7 @@ function buildSections(context: NavBuildContext): NavSection[] {
 /**
  * Build a NavSection from a category
  */
-function buildSection(category: NavBuildCategory): NavSection {
+function buildSection(category: NavBuildCategory, sectionOrder?: Record<string, number>): NavSection {
     // Sort items
     const sortedItems = category.items
         .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
@@ -242,8 +248,8 @@ function buildSection(category: NavBuildCategory): NavSection {
 
     // Add nested sections as groups, sorted by section order
     for (const nested of childSections.sort((a, b) => {
-        const orderA = getSectionOrder(a.title, a.order);
-        const orderB = getSectionOrder(b.title, b.order);
+        const orderA = getSectionOrder(a.title, a.order, sectionOrder);
+        const orderB = getSectionOrder(b.title, b.order, sectionOrder);
         return orderA - orderB;
     })) {
         items.push(nested);
@@ -346,7 +352,7 @@ export function generateAllCollections(
 
     for (const [name, collectionConfig] of Object.entries(collections)) {
         const showDrafts = collectionConfig.showDrafts ?? config.navigation?.showDrafts ?? 'dev';
-        result[name] = generateNavigation(routes, collectionConfig.path, showDrafts, isDev);
+        result[name] = generateNavigation(routes, collectionConfig.path, showDrafts, isDev, config.navigation?.sectionOrder);
     }
 
     return result;

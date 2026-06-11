@@ -69,23 +69,8 @@ export async function scanLocalLayouts(config: SSGConfig, root: string): Promise
  */
 export async function loadThemeLayouts(themeName: string, root: string): Promise<LayoutInfo[]> {
     try {
-        // Import theme package from the project's context
-        // Use createRequire to resolve from the project root
-        const { createRequire } = await import('node:module');
-        const { pathToFileURL } = await import('node:url');
-        const require = createRequire(path.join(root, 'package.json'));
-        
-        // Resolve the theme package directory from the project
-        // Use require.resolve with the package.json to get the package directory
-        const themePackageJson = require.resolve(`${themeName}/package.json`);
-        const themeDir = path.dirname(themePackageJson);
-        
-        // Read the package.json to find the main export
-        const packageJson = JSON.parse(fs.readFileSync(themePackageJson, 'utf-8'));
-        const mainFile = packageJson.exports?.['.']?.import || packageJson.main || './dist/index.js';
-        const themePath = path.resolve(themeDir, mainFile);
-        
-        const themeModule = (await import(pathToFileURL(themePath).href)) as ThemeModule;
+        const { loadThemeModule } = await import('../theme');
+        const themeModule = await loadThemeModule(themeName, root);
 
         if (!themeModule.layouts) {
             return [];

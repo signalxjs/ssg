@@ -65,6 +65,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         }
     }
 
+    // Fold in the theme's config contributions (head tags, css, default
+    // layout) — site config wins (#60).
+    const { resolveThemeConfig } = await import('./theme');
+    const themedConfig = await resolveThemeConfig(resolvedConfig, root);
+    Object.assign(resolvedConfig, themedConfig);
+
     // Step 2: Scan routes
     console.log('🔍 Scanning pages...');
     const routes = await scanPages(resolvedConfig, root);
