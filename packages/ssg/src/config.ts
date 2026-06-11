@@ -111,7 +111,7 @@ export async function loadConfig(configPath?: string): Promise<SSGConfig> {
             const localTempFile = fsPath.join(configDir, `.ssg-config-temp-${Date.now()}.mjs`);
 
             fs.writeFileSync(localTempFile, result.outputFiles[0].text);
-            
+
             try {
                 const configModule = await import(pathToFileURL(localTempFile).href);
                 return defineSSGConfig(configModule.default || configModule);
@@ -124,7 +124,7 @@ export async function loadConfig(configPath?: string): Promise<SSGConfig> {
                 }
             }
         }
-        
+
         // For JS files, import directly
         const configModule = await import(pathToFileURL(foundPath).href);
         return defineSSGConfig(configModule.default || configModule);
