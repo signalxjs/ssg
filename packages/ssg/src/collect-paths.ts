@@ -85,7 +85,7 @@ export async function collectPaths(
                 code: ErrorCodes.DYNAMIC_ROUTE_NO_PATHS,
                 file: route.file,
                 suggestion:
-                    `getStaticPaths() threw while collecting paths for this route.\n` +
+                    `Loading the page module or running its getStaticPaths() failed.\n` +
                     `   Fix the error below — the build does not skip dynamic routes silently.`,
                 cause: err instanceof Error ? err : new Error(String(err)),
             });

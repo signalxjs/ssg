@@ -26,6 +26,11 @@ describe('generateRoutesModule — getStaticPaths exposure (#46)', () => {
         expect(code).toContain("'getStaticPaths' in Page1Module");
     });
 
+    it('guards the wiring behind import.meta.env.SSR so client bundles tree-shake it', () => {
+        const code = generateRoutesModule(ROUTES, CONFIG);
+        expect(code).toContain("getStaticPaths: import.meta.env.SSR && 'getStaticPaths' in Page1Module");
+    });
+
     it('still emits path/file/component fields', () => {
         const code = generateRoutesModule(ROUTES, CONFIG);
         expect(code).toContain("path: '/blog/:slug'");
