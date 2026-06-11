@@ -20,6 +20,23 @@ describe('theme init (#65)', () => {
         expect(resolveInitialTheme('bogus', true)).toBe('dark');
     });
 
+    it('the inline script still applies a theme when localStorage throws (private mode)', () => {
+        document.documentElement.removeAttribute('data-theme');
+        const throwingStorage = {
+            getItem() {
+                throw new Error('blocked');
+            },
+        };
+        const fakeMatchMedia = () => ({ matches: true });
+        // Run the emitted script with hostile globals.
+        new Function('localStorage', 'matchMedia', 'document', themeInitScript())(
+            throwingStorage,
+            fakeMatchMedia,
+            document
+        );
+        expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    });
+
     it('emits an inline script that sets data-theme before paint', () => {
         const script = themeInitScript();
         expect(script).toContain(THEME_STORAGE_KEY);

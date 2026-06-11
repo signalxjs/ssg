@@ -80,6 +80,12 @@ export default component<TOCProps>(({ props, signal, onMounted }) => {
             currentObserver = null;
         }
 
+        // Per-page opt-out (#65): no collection, no observers — a true no-op.
+        if (props.meta?.toc === false) {
+            state.items = [];
+            return;
+        }
+
         // Extract headings from the page
         const article = document.querySelector('article');
         if (!article) {

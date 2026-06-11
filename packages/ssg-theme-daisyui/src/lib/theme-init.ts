@@ -48,9 +48,14 @@ export function persistTheme(theme: ThemeName): void {
  * {@link resolveInitialTheme}, executed before first paint.
  */
 export function themeInitScript(): string {
+    // Storage and matchMedia are guarded separately: a throwing
+    // localStorage (private mode, blocked storage) must not skip the OS
+    // fallback — that would reintroduce FOUC exactly where storage fails.
     return (
-        `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');` +
-        `if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}` +
-        `document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`
+        `(function(){var t=null;` +
+        `try{t=localStorage.getItem('${THEME_STORAGE_KEY}');}catch(e){}` +
+        `if(t!=='light'&&t!=='dark'){` +
+        `try{t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}catch(e){t='light';}}` +
+        `document.documentElement.setAttribute('data-theme',t);})();`
     );
 }

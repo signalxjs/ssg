@@ -6,8 +6,9 @@
 import { component } from 'sigx';
 import { useRoute } from '@sigx/router';
 import { prevNextLinks } from '../lib/prev-next.js';
+import type { NavSection } from './Sidebar.js';
 
-let generatedNavigation: Record<string, { sidebar: Array<{ title: string; items: never[] }> }> = {};
+let generatedNavigation: Record<string, { sidebar: NavSection[] }> = {};
 let detectCollection: (path: string) => string | undefined = () => undefined;
 
 try {
