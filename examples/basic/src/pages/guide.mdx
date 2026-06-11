@@ -1,0 +1,26 @@
+---
+title: Guide
+description: Code fences, headings, and the package-manager switcher
+---
+
+# Guide
+
+## Install
+
+```bash
+npm install @sigx/ssg
+```
+
+## Highlighted code
+
+```ts
+import { defineSSGConfig } from '@sigx/ssg';
+
+export default defineSSGConfig({
+    site: { title: 'My Site' },
+});
+```
+
+### Nested heading
+
+Headings between `toc.minLevel` and `toc.maxLevel` are exported for the table of contents.

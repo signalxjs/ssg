@@ -39,14 +39,14 @@ npm install @sigx/ssg-theme-daisyui
 import { defineConfig } from '@sigx/ssg';
 
 export default defineConfig({
-  pagesDir: 'src/pages',
+  pages: 'src/pages',
   outDir: 'dist',
 });
 ```
 
 ```bash
-npx sigx-ssg dev    # dev server with HMR
-npx sigx-ssg build  # static build
+npx sigx ssg dev    # dev server with HMR (requires @sigx/cli)
+npx sigx ssg build  # static build
 ```
 
 Drop `.tsx` or `.mdx` files in `src/pages/` and they become routes:
@@ -66,6 +66,17 @@ src/pages/
 - **Islands architecture** via [`@sigx/ssr-islands`](https://sigx.dev/ssg/) — `client:load`, `client:visible`, `client:idle` directives for partial hydration.
 - **Streaming SSR** — render to a stream with async-component support.
 - **Built on Vite 8 + Rolldown** — fast dev, fast builds.
+
+## Examples
+
+[`examples/basic`](examples/basic) is a minimal runnable site (routing, MDX,
+a dynamic route, drafts, custom layout). From a clone:
+
+```bash
+pnpm install && pnpm build
+pnpm --filter @sigx-examples/basic dev         # dev server
+pnpm --filter @sigx-examples/basic build:site  # static build
+```
 
 ## Companion repos
 

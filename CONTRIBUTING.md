@@ -27,6 +27,8 @@ pnpm build
 packages/
   ssg/                  → @sigx/ssg
   ssg-theme-daisyui/    → @sigx/ssg-theme-daisyui
+examples/
+  basic/                → private example site; also the fixture for the e2e build test
 ```
 
 ## Common tasks
