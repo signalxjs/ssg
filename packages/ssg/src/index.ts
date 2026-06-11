@@ -54,6 +54,7 @@ export { loadThemeModule, applyThemeConfig, resolveThemeConfig } from './theme';
 // Redirect emission (#61)
 export { generateRedirectHtml, generateRedirectsFile, writeRedirects } from './redirects';
 export { extractSearchText, buildSearchIndex, writeSearchIndex } from './search';
+export type { SearchOptions, SearchIndexEntry } from './types';
 
 // Public-URL path normalization (shared by canonical/og:url/sitemap)
 export { normalizePagePath } from './url';

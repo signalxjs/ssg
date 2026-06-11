@@ -41,8 +41,11 @@ export default component<CommandPaletteProps>(({ props, signal, onMounted }) => 
                 entries = loaded;
                 state.error = null;
             })
-            .catch(() => {
-                state.error = 'Search is not available — the site was built without `search: true`.';
+            .catch((err: unknown) => {
+                // Surface the real failure (offline, wrong base/url, …) —
+                // loadSearchIndex's own message already explains the 404 /
+                // missing-index case.
+                state.error = err instanceof Error ? err.message : 'Search is not available.';
             })
             .finally(() => {
                 loading = null;
