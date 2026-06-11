@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { collectPaths } from '../build';
+import { collectPaths } from '../collect-paths';
 import type { SSGRoute } from '../types';
 
 const ROUTES: SSGRoute[] = [

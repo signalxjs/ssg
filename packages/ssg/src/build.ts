@@ -15,9 +15,10 @@ import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
-import type { SSGConfig, BuildOptions, BuildResult, PageBuildResult, SSGRoute, PageModule } from './types';
+import type { SSGConfig, BuildOptions, BuildResult, PageBuildResult } from './types';
 import { loadConfig, resolveConfigPaths } from './config';
-import { scanPages, isDynamicRoute, extractParams, expandDynamicRoute } from './routing/index';
+import { scanPages } from './routing/index';
+import { collectPaths, type PathToRender } from './collect-paths';
 import { discoverLayouts } from './layouts/index';
 import { writeSitemap } from './sitemap';
 import { generateHeadTags } from './head';
@@ -141,9 +142,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         console.log('📝 Collecting paths to render...');
         const pathsToRender = await collectPaths(routes, root, warnings, { drafts: options.drafts });
         console.log(`   ${pathsToRender.length} path(s) to render`);
-        const draftCount = routes.filter((route) => route.meta?.draft).length;
-        if (draftCount > 0 && !options.drafts) {
-            console.log(`   Skipped ${draftCount} draft page(s) (build with --drafts to include)`);
+        const skippedDraftRoutes = routes.filter((route) => route.meta?.draft).length;
+        if (skippedDraftRoutes > 0 && !options.drafts) {
+            console.log(`   Skipped ${skippedDraftRoutes} draft route(s) (build with --drafts to include)`);
         }
 
         // Pre-create all output directories to avoid mkdir contention during parallel rendering
@@ -311,87 +312,6 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         totalTime,
         warnings,
     };
-}
-
-/**
- * Path information for rendering
- */
-interface PathToRender {
-    path: string;
-    route: SSGRoute;
-    params: Record<string, string>;
-    props?: Record<string, unknown>;
-}
-
-/**
- * Collect all paths to render, expanding dynamic routes.
- *
- * Pages with `draft: true` frontmatter are excluded (they are thereby also
- * absent from the sitemap, which is generated from rendered pages) unless
- * `options.drafts` is set. Exported for tests.
- */
-export async function collectPaths(
-    routes: SSGRoute[],
-    root: string,
-    warnings: string[],
-    options: { drafts?: boolean } = {}
-): Promise<PathToRender[]> {
-    const paths: PathToRender[] = [];
-
-    for (const route of routes) {
-        if (route.meta?.draft && !options.drafts) {
-            continue;
-        }
-
-        if (isDynamicRoute(route)) {
-            // Load module and call getStaticPaths
-            try {
-                const moduleUrl = pathToFileURL(route.file).href;
-                const pageModule = (await import(moduleUrl)) as PageModule;
-
-                if (!pageModule.getStaticPaths) {
-                    const params = extractParams(route.path).join(', ');
-                    console.warn(
-                        `\n⚠️  SSG102: Dynamic route missing getStaticPaths()\n` +
-                        `   📁 ${route.file}\n` +
-                        `   Route: ${route.path} (params: ${params})\n` +
-                        `   💡 Export getStaticPaths() to generate static pages:\n\n` +
-                        `      export async function getStaticPaths() {\n` +
-                        `          return [{ params: { ${params.split(', ')[0]}: 'value' } }];\n` +
-                        `      }\n`
-                    );
-                    warnings.push(
-                        `Route ${route.path} has dynamic segments [${params}] but no getStaticPaths() export. Skipping.`
-                    );
-                    continue;
-                }
-
-                const staticPaths = await pageModule.getStaticPaths();
-
-                for (const staticPath of staticPaths) {
-                    const expandedPaths = expandDynamicRoute(route, [staticPath]);
-                    for (const expandedPath of expandedPaths) {
-                        paths.push({
-                            path: expandedPath,
-                            route,
-                            params: staticPath.params,
-                            props: staticPath.props,
-                        });
-                    }
-                }
-            } catch (err) {
-                warnings.push(`Failed to load ${route.file}: ${err}`);
-            }
-        } else {
-            paths.push({
-                path: route.path,
-                route,
-                params: {},
-            });
-        }
-    }
-
-    return paths;
 }
 
 /**
