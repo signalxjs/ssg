@@ -78,8 +78,9 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
     let routesCache: { routes: any[]; code: string } | null = null;
     let layoutsCache: { layouts: any[]; code: string } | null = null;
     let navigationCache: { code: string } | null = null;
-    // Loader results are memoized per build / dev-server lifetime (#59);
-    // reset alongside the other caches when the config file changes.
+    // Loader results are memoized for the build / dev-server lifetime (#59)
+    // — content edits never re-run loaders (they can hit the network); a
+    // config change needs a dev-server restart, like other config edits.
     let dataCache: Promise<string> | null = null;
     
     // Cache for frontmatter hashes to detect changes
@@ -166,8 +167,6 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                 if (isInsideDir(file, pagesDir)) {
                     routesCache = null;
                     navigationCache = null;
-                    dataCache = null;
-                    void import('../data').then(({ clearDataCache }) => clearDataCache(root));
                     invalidateModule(RESOLVED_VIRTUAL_ROUTES_ID);
                     invalidateModule(RESOLVED_VIRTUAL_NAVIGATION_ID);
                 } else if (isInsideDir(file, layoutsDir)) {
@@ -180,8 +179,6 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                 if (isInsideDir(file, pagesDir)) {
                     routesCache = null;
                     navigationCache = null;
-                    dataCache = null;
-                    void import('../data').then(({ clearDataCache }) => clearDataCache(root));
                     // Clean up frontmatter hash cache
                     frontmatterHashCache.delete(toPosix(file));
                     invalidateModule(RESOLVED_VIRTUAL_ROUTES_ID);
@@ -213,7 +210,6 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                     if (oldHash !== newHash) {
                         navigationCache = null;
                         routesCache = null;
-                        dataCache = null;
                         
                         const navMod = devServer.moduleGraph.getModuleById(RESOLVED_VIRTUAL_NAVIGATION_ID);
                         if (navMod) {
@@ -370,7 +366,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                 return navigationCache.code;
             }
 
-            // Generate virtual config module
+            // Build-time data loaders module (#59)
             if (id === RESOLVED_VIRTUAL_DATA_ID) {
                 if (!dataCache) {
                     const { loadDataOnce, generateDataModule } = await import('../data');
@@ -380,6 +376,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                 }
                 return dataCache;
             }
+            // Generate virtual config module
             if (id === RESOLVED_VIRTUAL_CONFIG_ID) {
                 return `export default ${JSON.stringify(ssgConfig)};`;
             }

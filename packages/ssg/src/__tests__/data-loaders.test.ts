@@ -51,6 +51,20 @@ describe('runDataLoaders — undefined values (#59)', () => {
     });
 });
 
+describe('runDataLoaders — value fidelity (#59)', () => {
+    it('returns the JSON-round-tripped value, exactly what gets baked in', async () => {
+        const values = await runDataLoaders({ stamp: () => new Date('2026-06-11T00:00:00Z') });
+        // A Date serializes to a string — the returned value must match the
+        // baked bundle value, not the live object (SSR/client parity).
+        expect(values.stamp).toBe('2026-06-11T00:00:00.000Z');
+    });
+
+    it('rejects reserved words as keys (they become named exports)', async () => {
+        await expect(runDataLoaders({ default: () => 1 })).rejects.toThrow(/default/);
+        await expect(runDataLoaders({ class: () => 1 })).rejects.toThrow(/class/);
+    });
+});
+
 describe('loadDataOnce (#59)', () => {
     it('runs loaders once per root across plugin instances (client + SSR builds)', async () => {
         clearDataCache('/proj');

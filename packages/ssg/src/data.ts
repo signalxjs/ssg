@@ -18,12 +18,22 @@ import type { DataLoaders } from './types';
 
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
+// Keys become `export const <key>` — reserved words would emit invalid ESM.
+const RESERVED = new Set([
+    'await', 'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
+    'default', 'delete', 'do', 'else', 'enum', 'export', 'extends', 'false',
+    'finally', 'for', 'function', 'if', 'implements', 'import', 'in',
+    'instanceof', 'interface', 'let', 'new', 'null', 'package', 'private',
+    'protected', 'public', 'return', 'static', 'super', 'switch', 'this',
+    'throw', 'true', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield',
+]);
+
 /** Run every loader and validate the results. Throws with the loader's key. */
 export async function runDataLoaders(loaders: DataLoaders): Promise<Record<string, unknown>> {
     const values: Record<string, unknown> = {};
 
     for (const [key, loader] of Object.entries(loaders)) {
-        if (!IDENTIFIER.test(key)) {
+        if (!IDENTIFIER.test(key) || RESERVED.has(key)) {
             throw new Error(
                 `data: key "${key}" is not a valid identifier — it becomes a named export of virtual:ssg-data.`
             );
@@ -53,7 +63,10 @@ export async function runDataLoaders(loaders: DataLoaders): Promise<Record<strin
                 `data: loader "${key}" returned ${typeof value} — values must be JSON-serializable.`
             );
         }
-        values[key] = value;
+        // Store the round-tripped value: Date/toJSON/NaN turn into their JSON
+        // forms — exactly what gets baked into the bundle, so the value seen
+        // here never diverges from what SSR and the client import.
+        values[key] = JSON.parse(serialized);
     }
 
     return values;

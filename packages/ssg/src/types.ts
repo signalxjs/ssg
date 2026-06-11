@@ -178,6 +178,8 @@ export interface SSGConfig {
      * @default false
      */
     search?: boolean | SearchOptions;
+
+    /**
      * Programmatic routes (#59): pages that don't come from the filesystem
      * scan — CMS-backed pages, tag archives, generated docs. Merged with the
      * scanned routes everywhere (dev, build, navigation). Each route points
