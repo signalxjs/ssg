@@ -5,6 +5,7 @@
  */
 
 import type { ComponentFactory } from 'sigx';
+import type { TrailingSlash } from './url';
 
 // ============================================================================
 // Configuration Types
@@ -63,7 +64,7 @@ export interface SSGConfig {
      * Use `'never'` only when the host serves the slash-less URL directly.
      * @default 'always'
      */
-    trailingSlash?: 'always' | 'never';
+    trailingSlash?: TrailingSlash;
 
     /**
      * Site-wide metadata
