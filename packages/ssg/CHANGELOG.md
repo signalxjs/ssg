@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `@sigx/ssg/styles.css` — a base stylesheet for the markup ssg emits (code-window chrome, npm/pnpm/yarn/bun switcher tabs, heading anchors, dual-theme Shiki switching via `prefers-color-scheme` or a `.dark`/`[data-theme="dark"]` toggle). CSS-variable driven (`--ssg-*`) so themes restyle without selector overrides; page typography is deliberately left to the site. Import once (e.g. `clientImports: ['@sigx/ssg/styles.css']`). Previously every consumer styled `.code-window*` from scratch — the docs site carries ~500 lines for this (part of [#64](https://github.com/signalxjs/ssg/issues/64); transformers/mermaid remain there).
+
 - `sitemap` config option carrying `SitemapOptions` (`exclude`, `additionalUrls`, `defaultChangefreq`, `defaultPriority` — previously dead API with no way to reach `writeSitemap`), or `sitemap: false` to disable generation. `PageBuildResult` now carries the page's `meta`, so build consumers (feeds, audits) can act on frontmatter ([#56](https://github.com/signalxjs/ssg/issues/56)).
 
 - `trailingSlash: 'always' | 'never'` config option (default `'always'`) controlling the policy above, and a `normalizePagePath` export implementing it ([#41](https://github.com/signalxjs/ssg/issues/41)).

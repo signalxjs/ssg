@@ -104,4 +104,19 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
     it('applies the custom layout', () => {
         expect(read('index.html')).toContain('Built with @sigx/ssg');
     });
+
+
+    it('ships the base stylesheet for ssg-emitted markup (#64)', () => {
+        const assets = path.join(DIST, 'assets');
+        const cssFiles = fs.readdirSync(assets).filter((f) => f.endsWith('.css'));
+        expect(cssFiles.length).toBeGreaterThan(0);
+        const css = cssFiles.map((f) => fs.readFileSync(path.join(assets, f), 'utf-8')).join('\n');
+        expect(css).toContain('.code-window');
+        expect(css).toContain('.heading-anchor');
+        // The example's own typography (zero-config global.css auto-import)
+        expect(css).toContain('.site');
+
+        const guide = read('guide', 'index.html');
+        expect(guide).toMatch(/<link rel="stylesheet"[^>]*\.css/);
+    });
 });

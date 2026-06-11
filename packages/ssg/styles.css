@@ -1,0 +1,230 @@
+/**
+ * @sigx/ssg base stylesheet (signalxjs/ssg#64, CSS portion)
+ *
+ * Styles ONLY the markup @sigx/ssg itself emits — code windows, the
+ * npm/pnpm/yarn/bun switcher tabs, heading anchors, and dual-theme Shiki
+ * switching. Page typography/layout is deliberately left to the site or
+ * theme. Everything is driven by `--ssg-*` custom properties so themes can
+ * restyle without overriding selectors.
+ *
+ * Import it once, e.g. from your entry or via `clientImports`:
+ *     import '@sigx/ssg/styles.css';
+ *
+ * Dark mode follows `prefers-color-scheme` and can be forced with a `.dark`
+ * class or `[data-theme="dark"]` on <html>.
+ */
+
+:root {
+    --ssg-code-radius: 10px;
+    --ssg-code-border: #d8dde3;
+    --ssg-code-header-bg: #f1f3f5;
+    --ssg-code-header-fg: #57606a;
+    --ssg-code-bg: #ffffff;
+    --ssg-code-font: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+    --ssg-tab-fg: #57606a;
+    --ssg-tab-active-fg: #1f2328;
+    --ssg-tab-active-bg: #ffffff;
+    --ssg-tab-active-border: #d8dde3;
+    --ssg-anchor-fg: #8c959f;
+}
+
+.dark,
+[data-theme='dark'] {
+    --ssg-code-border: #30363d;
+    --ssg-code-header-bg: #161b22;
+    --ssg-code-header-fg: #8b949e;
+    --ssg-code-bg: #0d1117;
+    --ssg-tab-fg: #8b949e;
+    --ssg-tab-active-fg: #e6edf3;
+    --ssg-tab-active-bg: #0d1117;
+    --ssg-tab-active-border: #30363d;
+    --ssg-anchor-fg: #6e7681;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not(.light):not([data-theme='light']) {
+        --ssg-code-border: #30363d;
+        --ssg-code-header-bg: #161b22;
+        --ssg-code-header-fg: #8b949e;
+        --ssg-code-bg: #0d1117;
+        --ssg-tab-fg: #8b949e;
+        --ssg-tab-active-fg: #e6edf3;
+        --ssg-tab-active-bg: #0d1117;
+        --ssg-tab-active-border: #30363d;
+        --ssg-anchor-fg: #6e7681;
+    }
+}
+
+/* ---------------------------------------------------------------- *
+ * Code window chrome
+ * ---------------------------------------------------------------- */
+
+.code-window {
+    margin: 1.25rem 0;
+    border: 1px solid var(--ssg-code-border);
+    border-radius: var(--ssg-code-radius);
+    background: var(--ssg-code-bg);
+    overflow: hidden;
+}
+
+.code-window-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.875rem;
+    background: var(--ssg-code-header-bg);
+    border-bottom: 1px solid var(--ssg-code-border);
+    font-size: 0.8125rem;
+    color: var(--ssg-code-header-fg);
+}
+
+.code-window-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-width: 0;
+}
+
+.code-window-dots {
+    display: flex;
+    gap: 6px;
+    flex: none;
+}
+
+.code-window-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+}
+
+.code-window-dot.dot-red { background: #ff5f57; }
+.code-window-dot.dot-yellow { background: #febc2e; }
+.code-window-dot.dot-green { background: #28c840; }
+
+.code-window-filename,
+.code-window-lang {
+    font-family: var(--ssg-code-font);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.code-window-content {
+    overflow-x: auto;
+}
+
+.code-window-content pre {
+    margin: 0;
+    padding: 0.875rem 1rem;
+    font-family: var(--ssg-code-font);
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.code-window-content code {
+    font-family: inherit;
+    background: none;
+    padding: 0;
+}
+
+/* ---------------------------------------------------------------- *
+ * Tabs (package-manager switcher + preview tabs)
+ * ---------------------------------------------------------------- */
+
+.code-window-tabs {
+    display: flex;
+    gap: 0.25rem;
+    flex: none;
+}
+
+.code-window-tab {
+    appearance: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ssg-tab-fg);
+    font: inherit;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+}
+
+.code-window-tab:hover {
+    color: var(--ssg-tab-active-fg);
+}
+
+.code-window-tab-active {
+    color: var(--ssg-tab-active-fg);
+    background: var(--ssg-tab-active-bg);
+    border-color: var(--ssg-tab-active-border);
+}
+
+.code-window-try-live {
+    appearance: none;
+    border: 1px solid var(--ssg-tab-active-border);
+    border-radius: 6px;
+    background: var(--ssg-tab-active-bg);
+    color: var(--ssg-tab-active-fg);
+    font: inherit;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- *
+ * Shiki dual-theme switching
+ *
+ * Shiki emits light-theme colors inline plus `--shiki-dark*` variables;
+ * these rules flip to the dark set. The code-window background is driven
+ * by the shiki theme itself so highlighted blocks match exactly.
+ * ---------------------------------------------------------------- */
+
+.shiki {
+    background-color: var(--ssg-code-bg) !important;
+}
+
+.dark .shiki,
+.dark .shiki span,
+[data-theme='dark'] .shiki,
+[data-theme='dark'] .shiki span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg, transparent) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not(.light):not([data-theme='light']) .shiki,
+    :root:not(.light):not([data-theme='light']) .shiki span {
+        color: var(--shiki-dark) !important;
+        background-color: var(--shiki-dark-bg, transparent) !important;
+        font-style: var(--shiki-dark-font-style) !important;
+        font-weight: var(--shiki-dark-font-weight) !important;
+        text-decoration: var(--shiki-dark-text-decoration) !important;
+    }
+}
+
+/* ---------------------------------------------------------------- *
+ * Heading anchors (rehype-autolink-headings, behavior: append)
+ * ---------------------------------------------------------------- */
+
+.heading-anchor {
+    margin-left: 0.35em;
+    text-decoration: none;
+    color: var(--ssg-anchor-fg);
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+h1:hover .heading-anchor,
+h2:hover .heading-anchor,
+h3:hover .heading-anchor,
+h4:hover .heading-anchor,
+h5:hover .heading-anchor,
+h6:hover .heading-anchor,
+.heading-anchor:focus-visible {
+    opacity: 1;
+}
