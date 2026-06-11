@@ -82,6 +82,12 @@ describe('installSpaNavigation (#35)', () => {
         expect(push).not.toHaveBeenCalled();
     });
 
+    it('intercepts hash links whose query string differs (real navigation)', () => {
+        (window as any).happyDOM?.setURL?.('http://localhost:3000/guide?tab=2');
+        click(makeAnchor({ href: '/guide?tab=1#section' }));
+        expect(push).toHaveBeenCalledWith('/guide?tab=1#section');
+    });
+
     it('ignores pure-hash links', () => {
         click(makeAnchor({ href: '#section' }));
         expect(push).not.toHaveBeenCalled();

@@ -135,8 +135,10 @@ export function installSpaNavigation(
         }
         if (url.origin !== location.origin) return; // external, mailto:, tel:, …
 
-        // Same-page hash → let the browser scroll natively.
-        if (url.pathname === location.pathname && url.hash) return;
+        // Same-document hash (same pathname AND search, only the fragment
+        // differs) → let the browser scroll natively. A differing query
+        // string is a real navigation and must stay intercepted.
+        if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
 
         // Strip the base at a path boundary; links outside it are not ours.
         let path = url.pathname;
