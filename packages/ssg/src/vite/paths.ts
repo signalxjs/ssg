@@ -7,7 +7,8 @@
  * `src/pages` on any OS.
  */
 
-function toPosix(p: string): string {
+/** Normalize separators to forward slashes (stable map keys, URLs). */
+export function toPosix(p: string): string {
     return p.replace(/\\/g, '/');
 }
 

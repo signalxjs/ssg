@@ -21,7 +21,7 @@ import { discoverLayouts } from '../layouts/resolver';
 import { generateLayoutsModule, VIRTUAL_LAYOUTS_ID, RESOLVED_VIRTUAL_LAYOUTS_ID } from '../layouts/virtual';
 import { mdxPlugin, type MDXPluginOptions } from '../mdx/plugin';
 import { parseFrontmatter } from '../mdx/frontmatter';
-import { isInsideDir } from './paths';
+import { isInsideDir, toPosix } from './paths';
 import {
     detectCustomEntries,
     generateClientEntry,
@@ -80,8 +80,11 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
     // Must serialize exactly like the change handler (JSON of the parsed data).
     function seedFrontmatterCache(routes: Array<{ file: string; meta?: unknown }>) {
         for (const route of routes) {
-            if (/\.mdx?$/.test(route.file) && !frontmatterHashCache.has(route.file)) {
-                frontmatterHashCache.set(route.file, JSON.stringify(route.meta ?? {}));
+            // Keys are posix-normalized: scanPages yields OS-native paths while
+            // watcher callbacks may hand out forward slashes on Windows (#54).
+            const key = toPosix(route.file);
+            if (/\.mdx?$/.test(route.file) && !frontmatterHashCache.has(key)) {
+                frontmatterHashCache.set(key, JSON.stringify(route.meta ?? {}));
             }
         }
     }
@@ -161,7 +164,7 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                     routesCache = null;
                     navigationCache = null;
                     // Clean up frontmatter hash cache
-                    frontmatterHashCache.delete(file);
+                    frontmatterHashCache.delete(toPosix(file));
                     invalidateModule(RESOLVED_VIRTUAL_ROUTES_ID);
                     invalidateModule(RESOLVED_VIRTUAL_NAVIGATION_ID);
                 } else if (isInsideDir(file, layoutsDir)) {
@@ -179,10 +182,10 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                     const content = await fs.promises.readFile(file, 'utf-8');
                     const { data: newFrontmatter } = parseFrontmatter(content);
                     const newHash = JSON.stringify(newFrontmatter);
-                    const oldHash = frontmatterHashCache.get(file);
+                    const oldHash = frontmatterHashCache.get(toPosix(file));
                     
                     // Update the cache
-                    frontmatterHashCache.set(file, newHash);
+                    frontmatterHashCache.set(toPosix(file), newHash);
 
                     // If frontmatter changed, invalidate navigation (titles,
                     // categories may have changed). The cache is seeded when
