@@ -702,6 +702,13 @@ export interface BuildOptions {
      * @default 10
      */
     concurrency?: number;
+
+    /**
+     * Include pages with `draft: true` frontmatter in the build.
+     * Drafts are excluded from production builds (and the sitemap) by default.
+     * @default false
+     */
+    drafts?: boolean;
 }
 
 /**
