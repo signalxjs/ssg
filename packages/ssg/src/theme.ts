@@ -9,8 +9,8 @@
  * - markdown remark/rehype plugins: theme's run first, the site's after
  * - head tags: theme's are prepended (site tags and per-page meta override
  *   via the dedup in head.ts)
- * - css: appended to `clientImports` (entries are import specifiers, e.g.
- *   '@my/theme/styles.css')
+ * - css: prepended to `clientImports` (entries are import specifiers, e.g.
+ *   '@my/theme/styles.css'), so site CSS can override theme CSS
  * - defaultLayout: used only when the site doesn't set its own
  */
 
@@ -32,7 +32,16 @@ export async function loadThemeModule(themeName: string, root: string): Promise<
     const themeDir = path.dirname(themePackageJson);
 
     const packageJson = JSON.parse(fs.readFileSync(themePackageJson, 'utf-8'));
-    const mainFile = packageJson.exports?.['.']?.import || packageJson.main || './dist/index.js';
+    // `exports` may be a string, a conditions object, or a subpath map whose
+    // '.' entry is itself a string or conditions object.
+    const exportsField = packageJson.exports;
+    const dot = typeof exportsField === 'string' ? exportsField : exportsField?.['.'];
+    const importCondition = typeof dot === 'string' ? dot : dot?.import;
+    const mainFile =
+        (typeof importCondition === 'string' ? importCondition : importCondition?.default) ||
+        (typeof dot === 'string' ? dot : dot?.default) ||
+        packageJson.main ||
+        './dist/index.js';
     const themePath = path.resolve(themeDir, mainFile);
 
     return (await import(pathToFileURL(themePath).href)) as ThemeModule;

@@ -25,7 +25,7 @@ const THEME: ThemeModule = {
 };
 
 describe('applyThemeConfig (#60)', () => {
-    it('appends theme css to clientImports', () => {
+    it('prepends theme css to clientImports (site CSS can override)', () => {
         const config = applyThemeConfig({ clientImports: ['./mine.css'] }, THEME);
         expect(config.clientImports).toEqual(['@test/theme/styles.css', './mine.css']);
     });

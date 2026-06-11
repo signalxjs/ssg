@@ -61,9 +61,11 @@ export default component<HeaderProps>(({ props, signal }) => {
                 {/* Desktop navigation (from site.nav) */}
                 <div class="flex-none hidden lg:block">
                     <ul class="menu menu-horizontal px-1">
-                        {siteNavItems(props.site).map((item) => (
-                            <li><a href={item.href ?? '#'}>{item.title}</a></li>
-                        ))}
+                        {siteNavItems(props.site)
+                            .filter((item) => item.href)
+                            .map((item) => (
+                                <li><a href={item.href}>{item.title}</a></li>
+                            ))}
                     </ul>
                 </div>
 

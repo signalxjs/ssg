@@ -25,8 +25,8 @@ export default component<FooterProps>(({ props }) => {
             <footer class="footer footer-center p-10 bg-base-200 text-base-content border-t border-base-300">
                 {nav.length > 0 && (
                     <nav class="grid grid-flow-col gap-4">
-                        {nav.map((item) => (
-                            <a href={item.href ?? '#'} class="link link-hover">{item.title}</a>
+                        {nav.filter((item) => item.href).map((item) => (
+                            <a href={item.href} class="link link-hover">{item.title}</a>
                         ))}
                     </nav>
                 )}
