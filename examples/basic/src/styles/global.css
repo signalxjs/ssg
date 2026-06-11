@@ -1,0 +1,103 @@
+/**
+ * Site-level styles. Auto-imported by @sigx/ssg's zero-config mode
+ * (src/styles/global.css is on the detection list). Code-block / switcher
+ * chrome comes from `@sigx/ssg/styles.css` — this file is only typography
+ * and page layout, which an SSG deliberately leaves to the site.
+ */
+
+:root {
+    color-scheme: light dark;
+    --fg: #1f2328;
+    --fg-muted: #57606a;
+    --link: #0969da;
+    --border: #d8dde3;
+    --bg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --fg: #e6edf3;
+        --fg-muted: #8b949e;
+        --link: #4493f8;
+        --border: #30363d;
+        --bg: #0d1117;
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--fg);
+    background: var(--bg);
+}
+
+.site {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+}
+
+.site > header {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.site > header a {
+    font-weight: 650;
+    color: var(--fg);
+    text-decoration: none;
+}
+
+.site > footer {
+    margin-top: 3rem;
+    padding: 1.25rem 0 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--fg-muted);
+    font-size: 0.875rem;
+}
+
+main h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+    margin: 0 0 1rem;
+}
+
+main h2 {
+    font-size: 1.4rem;
+    margin: 2rem 0 0.75rem;
+}
+
+main h3 {
+    font-size: 1.15rem;
+    margin: 1.5rem 0 0.5rem;
+}
+
+a {
+    color: var(--link);
+}
+
+p, ul, ol {
+    margin: 0.75rem 0;
+}
+
+li {
+    margin: 0.25rem 0;
+}
+
+/* Inline code (fenced blocks are styled by @sigx/ssg/styles.css) */
+:not(pre) > code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    background: color-mix(in srgb, var(--fg) 8%, transparent);
+    padding: 0.125em 0.375em;
+    border-radius: 4px;
+}

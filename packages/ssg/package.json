@@ -28,14 +28,16 @@
         },
         "./virtual": {
             "types": "./src/client.d.ts"
-        }
+        },
+        "./styles.css": "./styles.css"
     },
     "sigx-cli": {
         "plugin": "./dist/plugin.js"
     },
     "files": [
         "dist",
-        "src/client.d.ts"
+        "src/client.d.ts",
+        "styles.css"
     ],
     "scripts": {
         "build": "vite build && tsgo --emitDeclarationOnly",
