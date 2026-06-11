@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-06-12
+
 ### Added
 
 - `SiteConfig.search` ([#116](https://github.com/signalxjs/ssg/issues/116)): ask the theme to show its search UI (the daisyui ⌘K palette) — a pure pass-through to layouts via `LayoutProps.site`; pair with the top-level `search: true`.
