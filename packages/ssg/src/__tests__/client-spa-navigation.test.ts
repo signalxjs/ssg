@@ -159,3 +159,27 @@ describe('generated client entry wiring (#35)', () => {
         expect(code).not.toContain('installSpaNavigation');
     });
 });
+
+describe('container-level data-no-spa (#95)', () => {
+    it('skips anchors inside a data-no-spa container', () => {
+        const container = document.createElement('div');
+        container.setAttribute('data-no-spa', '');
+        const a = document.createElement('a');
+        a.setAttribute('href', '/guide');
+        a.textContent = 'preview link';
+        container.appendChild(a);
+        document.body.appendChild(container);
+
+        click(a);
+        expect(push).not.toHaveBeenCalled();
+    });
+
+    it('still intercepts anchors outside such containers', () => {
+        const container = document.createElement('div');
+        container.setAttribute('data-no-spa', '');
+        document.body.appendChild(container);
+
+        click(makeAnchor({ href: '/guide' }));
+        expect(push).toHaveBeenCalledWith('/guide');
+    });
+});

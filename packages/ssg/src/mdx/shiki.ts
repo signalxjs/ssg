@@ -127,6 +127,7 @@ export async function highlightCode(
         // Use code-window styling for consistency with the nice terminal look
         const html = `<div 
     class="live-preview-island" 
+    data-no-spa
     data-island="LivePreview" 
     data-island-strategy="visible"
     data-island-props="${escapeHtml(JSON.stringify({
