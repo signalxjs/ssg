@@ -56,6 +56,7 @@ export function generateRoutesModule(routes: SSGRoute[], config: SSGConfig): str
         component: ${componentName},
         meta: ${metaName},
         layout: ${metaName}.layout || '${config.defaultLayout || 'default'}',
+        getStaticPaths: import.meta.env.SSR && 'getStaticPaths' in ${componentName}Module ? ${componentName}Module.getStaticPaths : undefined,
     }`);
     }
 

@@ -124,9 +124,24 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         const ssrOutDir = buildConfigs.ssr.build!.outDir!;
         await vite.build(buildConfigs.ssr);
 
+        // Pre-load the SSR module once — it renders every page AND resolves
+        // getStaticPaths for dynamic routes (raw .tsx/.mdx sources cannot be
+        // import()ed from Node, #46).
+        const ssrEntryBasename = path.basename(ssrEntry, path.extname(ssrEntry));
+        const ssrEntryName = ssrEntryBasename + '.js';
+        const entryPath = path.join(ssrOutDir, ssrEntryName);
+        const entryModule = await import(pathToFileURL(entryPath).href);
+
         // Step 6: Collect all paths to render
         console.log('📝 Collecting paths to render...');
-        const pathsToRender = await collectPaths(routes, root, warnings, { drafts: options.drafts });
+        const loadStaticPaths =
+            typeof entryModule.getStaticPathsForRoute === 'function'
+                ? (route: { path: string }) => entryModule.getStaticPathsForRoute(route.path)
+                : undefined; // Custom SSR entry without the export: collectPaths falls back to source import
+        const pathsToRender = await collectPaths(routes, root, warnings, {
+            drafts: options.drafts,
+            loadStaticPaths,
+        });
         console.log(`   ${pathsToRender.length} path(s) to render`);
         const skippedDraftRoutes = routes.filter((route) => route.meta?.draft).length;
         if (skippedDraftRoutes > 0 && !options.drafts) {
@@ -145,14 +160,6 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
         // Step 7: Render each path to HTML
         console.log('🎨 Rendering pages...');
-
-        // Determine the SSR entry output name (based on input file name)
-        const ssrEntryBasename = path.basename(ssrEntry, path.extname(ssrEntry));
-        const ssrEntryName = ssrEntryBasename + '.js';
-
-        // Pre-load the SSR module once for all pages
-        const entryPath = path.join(ssrOutDir, ssrEntryName);
-        const entryModule = await import(pathToFileURL(entryPath).href);
 
         // Load HTML template once
         const templatePath = path.join(resolvedConfig.outDir!, 'index.html');

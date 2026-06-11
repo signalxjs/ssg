@@ -235,6 +235,20 @@ export async function render(url, context) {
     const html = await renderToString(app);
     return html;
 }
+
+/**
+ * Resolve a dynamic route's getStaticPaths from the bundled page modules.
+ * The build calls this instead of import()ing raw .tsx/.mdx sources, which
+ * Node cannot load (#46). Returns null when the route has no
+ * getStaticPaths export.
+ */
+export async function getStaticPathsForRoute(routePath) {
+    const route = routes.find((r) => r.path === routePath);
+    if (!route || typeof route.getStaticPaths !== 'function') {
+        return null;
+    }
+    return route.getStaticPaths();
+}
 `;
 }
 
