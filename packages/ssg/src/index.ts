@@ -55,6 +55,7 @@ export { loadThemeModule, applyThemeConfig, resolveThemeConfig } from './theme';
 export { generateRedirectHtml, generateRedirectsFile, writeRedirects } from './redirects';
 export { extractSearchText, buildSearchIndex, writeSearchIndex } from './search';
 export type { SearchOptions, SearchIndexEntry } from './types';
+export { runDataLoaders, generateDataModule } from './data';
 
 // Public-URL path normalization (shared by canonical/og:url/sitemap)
 export { normalizePagePath } from './url';

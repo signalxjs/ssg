@@ -85,6 +85,12 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         const paths = index.entries.map((e: { path: string }) => e.path);
         expect(paths).not.toContain('/drafts-demo');
         expect(paths.some((p: string) => p.startsWith('/404'))).toBe(false);
+    it('builds programmatic routes with data-loader values baked in (#59)', () => {
+        const generated = read('generated', 'index.html');
+        expect(generated).toContain('This page was added by config.routes');
+        // virtual:ssg-data value rendered into the page.
+        expect(generated).toContain('data-loaders');
+        expect(generated).toContain('<title>Generated route');
     });
 
     it('excludes draft pages from the output and the sitemap (#48)', () => {

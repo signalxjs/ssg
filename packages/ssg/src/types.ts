@@ -178,6 +178,20 @@ export interface SSGConfig {
      * @default false
      */
     search?: boolean | SearchOptions;
+     * Programmatic routes (#59): pages that don't come from the filesystem
+     * scan — CMS-backed pages, tag archives, generated docs. Merged with the
+     * scanned routes everywhere (dev, build, navigation). Each route points
+     * at a component file; a path collision with a scanned page is an error.
+     */
+    routes?: (ctx: RoutesContext) => ProgrammaticRoute[] | Promise<ProgrammaticRoute[]>;
+
+    /**
+     * Build-time data loaders (#59): each runs once per build (and per dev
+     * server start); results are exposed via `virtual:ssg-data` as named
+     * exports. Values must be JSON-serializable — they are baked into the
+     * bundle. Replaces fetch-data-before-build scripts.
+     */
+    data?: DataLoaders;
 }
 
 /**
@@ -588,6 +602,27 @@ export interface SearchIndexEntry {
 /**
  * Route record for SSG
  */
+/** Context passed to `config.routes` (#59). */
+export interface RoutesContext {
+    config: SSGConfig;
+    root: string;
+}
+
+/** A route added by `config.routes` rather than the filesystem scan (#59). */
+export interface ProgrammaticRoute {
+    /** URL path — concrete (`/tags/sigx`) or with params (`/tags/:tag`). */
+    path: string;
+    /** Component file, absolute or relative to the project root. */
+    file: string;
+    /** Layout name, like a scanned page's `layout` frontmatter. */
+    layout?: string;
+    /** Page metadata (title, description, … — used for head/sitemap). */
+    meta?: PageMeta;
+}
+
+/** Build-time data loaders for `virtual:ssg-data` (#59). */
+export type DataLoaders = Record<string, () => unknown | Promise<unknown>>;
+
 export interface SSGRoute {
     /**
      * URL path pattern (e.g., '/blog/:slug')

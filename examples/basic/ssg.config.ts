@@ -22,6 +22,19 @@ export default defineSSGConfig({
     // Static redirects (#61): old URLs keep working after content moves.
     // Built-in search (#62): emits search-index.json over the rendered pages.
     search: true,
+    // Programmatic routes (#59): pages that don't come from src/pages.
+    routes: () => [
+        {
+            path: '/generated',
+            file: 'src/templates/generated.tsx',
+            meta: { title: 'Generated route', description: 'Added via config.routes' },
+        },
+    ],
+
+    // Build-time data loaders (#59): exposed via virtual:ssg-data.
+    data: {
+        buildInfo: () => ({ generator: '@sigx/ssg', demo: 'data-loaders' }),
+    },
 
     redirects: {
         '/old-guide': '/guide/',
