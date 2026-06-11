@@ -30,88 +30,22 @@ export interface MDXPluginOptions {
 
 /**
  * Create the MDX Vite plugin
+ *
+ * `options` is read lazily (on first transform, after every plugin's
+ * configResolved has run), so ssgPlugin can fill in the SSG config loaded
+ * from ssg.config.ts after construction — see #47. Do not destructure
+ * `options` at construction time.
  */
 export function mdxPlugin(options: MDXPluginOptions = {}): Plugin {
-    const { markdown = {} } = options;
-
-    let mdxRollup: any;
+    let mdxRollupPromise: Promise<any> | null = null;
     let viteConfig: ResolvedConfig;
 
     return {
         name: 'sigx-ssg-mdx',
         enforce: 'pre',
 
-        async configResolved(config) {
+        configResolved(config) {
             viteConfig = config;
-            // Dynamically import @mdx-js/rollup
-            const mdxModule = await import('@mdx-js/rollup');
-            const remarkFrontmatter = (await import('remark-frontmatter')).default;
-            const remarkMdxFrontmatter = (await import('remark-mdx-frontmatter')).default;
-            const remarkGfm = (await import('remark-gfm')).default;
-            const rehypeSlug = (await import('rehype-slug')).default;
-            const rehypeAutolinkHeadings = (await import('rehype-autolink-headings')).default;
-
-            // Get TOC config from SSG config
-            const tocConfig = options.ssgConfig?.toc || { minLevel: 2, maxLevel: 3 };
-
-            // Build rehype plugins array
-            const rehypePlugins: any[] = [];
-
-            // Add rehype-slug first to generate heading IDs
-            rehypePlugins.push(rehypeSlug);
-
-            // Add autolink headings (clickable anchor links)
-            rehypePlugins.push([rehypeAutolinkHeadings, {
-                behavior: 'append',
-                properties: {
-                    class: 'heading-anchor',
-                    ariaHidden: true,
-                    tabIndex: -1,
-                },
-                content: {
-                    type: 'element',
-                    tagName: 'span',
-                    properties: { class: 'heading-anchor-icon' },
-                    children: [{ type: 'text', value: '#' }],
-                },
-            }]);
-
-            // Add heading extraction for TOC
-            rehypePlugins.push([rehypeExtractHeadings, tocConfig]);
-
-            // Add Shiki if enabled
-            if (markdown.shiki !== false) {
-                const shikiConfig = typeof markdown.shiki === 'object' ? markdown.shiki : undefined;
-                rehypePlugins.push([rehypeShiki, shikiConfig]);
-            }
-
-            // Add custom rehype plugins
-            if (markdown.rehypePlugins) {
-                rehypePlugins.push(...markdown.rehypePlugins);
-            }
-
-            // Build remark plugins array
-            const remarkPlugins: any[] = [
-                remarkFrontmatter,
-                [remarkMdxFrontmatter, { name: 'frontmatter' }],
-                remarkGfm,
-            ];
-
-            // Add custom remark plugins
-            if (markdown.remarkPlugins) {
-                remarkPlugins.push(...markdown.remarkPlugins);
-            }
-
-            // Create MDX plugin
-            // Use jsx: false to output function calls instead of JSX syntax
-            // This avoids needing esbuild to process .mdx files as JSX
-            mdxRollup = mdxModule.default({
-                jsx: false,
-                jsxImportSource: 'sigx',
-                remarkPlugins,
-                rehypePlugins,
-                providerImportSource: undefined,
-            });
         },
 
         async transform(code, id) {
@@ -131,10 +65,11 @@ export function mdxPlugin(options: MDXPluginOptions = {}): Plugin {
                 }
             }
 
-            // Transform MDX content
-            if (!mdxRollup?.transform) {
-                throw new Error('MDX plugin not initialized');
+            // Build the MDX pipeline on first use (memoized)
+            if (!mdxRollupPromise) {
+                mdxRollupPromise = createMdxRollup(options);
             }
+            const mdxRollup = await mdxRollupPromise;
 
             const result = await mdxRollup.transform(code, id);
 
@@ -167,8 +102,86 @@ export function mdxPlugin(options: MDXPluginOptions = {}): Plugin {
 }
 
 /**
+ * Build the @mdx-js/rollup instance with the remark/rehype chain derived from
+ * the (by now fully resolved) plugin options.
+ */
+async function createMdxRollup(options: MDXPluginOptions): Promise<any> {
+    const markdown = options.markdown ?? {};
+
+    // Dynamically import @mdx-js/rollup
+    const mdxModule = await import('@mdx-js/rollup');
+    const remarkFrontmatter = (await import('remark-frontmatter')).default;
+    const remarkMdxFrontmatter = (await import('remark-mdx-frontmatter')).default;
+    const remarkGfm = (await import('remark-gfm')).default;
+    const rehypeSlug = (await import('rehype-slug')).default;
+    const rehypeAutolinkHeadings = (await import('rehype-autolink-headings')).default;
+
+    // Get TOC config from SSG config
+    const tocConfig = options.ssgConfig?.toc || { minLevel: 2, maxLevel: 3 };
+
+    // Build rehype plugins array
+    const rehypePlugins: any[] = [];
+
+    // Add rehype-slug first to generate heading IDs
+    rehypePlugins.push(rehypeSlug);
+
+    // Add autolink headings (clickable anchor links)
+    rehypePlugins.push([rehypeAutolinkHeadings, {
+        behavior: 'append',
+        properties: {
+            class: 'heading-anchor',
+            ariaHidden: true,
+            tabIndex: -1,
+        },
+        content: {
+            type: 'element',
+            tagName: 'span',
+            properties: { class: 'heading-anchor-icon' },
+            children: [{ type: 'text', value: '#' }],
+        },
+    }]);
+
+    // Add heading extraction for TOC
+    rehypePlugins.push([rehypeExtractHeadings, tocConfig]);
+
+    // Add Shiki if enabled
+    if (markdown.shiki !== false) {
+        const shikiConfig = typeof markdown.shiki === 'object' ? markdown.shiki : undefined;
+        rehypePlugins.push([rehypeShiki, shikiConfig]);
+    }
+
+    // Add custom rehype plugins
+    if (markdown.rehypePlugins) {
+        rehypePlugins.push(...markdown.rehypePlugins);
+    }
+
+    // Build remark plugins array
+    const remarkPlugins: any[] = [
+        remarkFrontmatter,
+        [remarkMdxFrontmatter, { name: 'frontmatter' }],
+        remarkGfm,
+    ];
+
+    // Add custom remark plugins
+    if (markdown.remarkPlugins) {
+        remarkPlugins.push(...markdown.remarkPlugins);
+    }
+
+    // Create MDX plugin
+    // Use jsx: false to output function calls instead of JSX syntax
+    // This avoids needing esbuild to process .mdx files as JSX
+    return mdxModule.default({
+        jsx: false,
+        jsxImportSource: 'sigx',
+        remarkPlugins,
+        rehypePlugins,
+        providerImportSource: undefined,
+    });
+}
+
+/**
  * Wrap MDX output in a SignalX component
- * 
+ *
  * Note: remark-mdx-frontmatter already exports `frontmatter`, so we only add the layout export
  * 
  * In dev mode, we:
