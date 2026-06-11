@@ -156,4 +156,14 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         expect(manifest.rendered).toContain('/guide');
         expect(manifest.rendered.length).toBe(manifest.pages.length);
     });
+
+    it('emits configured redirects (#61)', () => {
+        const redirect = read('old-guide', 'index.html');
+        expect(redirect).toContain('http-equiv="refresh"');
+        expect(redirect).toContain('url=/guide/');
+        expect(redirect).toContain('<meta name="robots" content="noindex">');
+        expect(read('_redirects')).toContain('/old-guide /guide/ 301');
+        // redirects are not crawlable content
+        expect(read('sitemap.xml')).not.toContain('old-guide');
+    });
 });

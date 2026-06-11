@@ -51,6 +51,9 @@ export type { SitemapEntry, SitemapOptions } from './sitemap';
 // Theme module loading + config contributions (#60)
 export { loadThemeModule, applyThemeConfig, resolveThemeConfig } from './theme';
 
+// Redirect emission (#61)
+export { generateRedirectHtml, generateRedirectsFile, writeRedirects } from './redirects';
+
 // Public-URL path normalization (shared by canonical/og:url/sitemap)
 export { normalizePagePath } from './url';
 export type { TrailingSlash } from './url';

@@ -19,6 +19,10 @@ export default defineSSGConfig({
     // heading anchors). Site typography lives in src/styles/global.css,
     // which zero-config mode auto-imports.
     clientImports: ['@sigx/ssg/styles.css'],
+    // Static redirects (#61): old URLs keep working after content moves.
+    redirects: {
+        '/old-guide': '/guide/',
+    },
     // Build pipeline hooks (#58): transform every page's HTML, observe each
     // rendered page, and run once after the build — the extension points for
     // search indexing, OG images, link checking, redirects, …

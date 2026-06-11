@@ -359,8 +359,16 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             }
         }
 
+        // Static redirects (#61)
+        if (resolvedConfig.redirects && Object.keys(resolvedConfig.redirects).length > 0) {
+            console.log('↪️  Writing redirects...');
+            const { writeRedirects } = await import('./redirects');
+            await writeRedirects(resolvedConfig.redirects, resolvedConfig, resolvedConfig.outDir!);
+            console.log(`   ✓ ${Object.keys(resolvedConfig.redirects).length} redirect(s) + _redirects`);
+        }
+
         // postBuild hook (#58) — everything is on disk; search indexes,
-        // link checkers, redirects files etc. run here.
+        // link checkers etc. run here.
         if (resolvedConfig.hooks?.postBuild) {
             console.log('🪝 Running postBuild hook...');
             await resolvedConfig.hooks.postBuild(
