@@ -4,8 +4,9 @@
  * Styles ONLY the markup @sigx/ssg itself emits — code windows, the
  * npm/pnpm/yarn/bun switcher tabs, heading anchors, and dual-theme Shiki
  * switching. Page typography/layout is deliberately left to the site or
- * theme. Everything is driven by `--ssg-*` custom properties so themes can
- * restyle without overriding selectors.
+ * theme. Colors and surfaces are exposed as `--ssg-*` custom properties so
+ * themes can recolor without overriding selectors; structural values
+ * (spacing, font sizes, the traffic-light dot colors) are fixed.
  *
  * Import it once, e.g. from your entry or via `clientImports`:
  *     import '@sigx/ssg/styles.css';
@@ -177,8 +178,9 @@
  * Shiki dual-theme switching
  *
  * Shiki emits light-theme colors inline plus `--shiki-dark*` variables;
- * these rules flip to the dark set. The code-window background is driven
- * by the shiki theme itself so highlighted blocks match exactly.
+ * these rules flip to the dark set. The block background is unified to
+ * `--ssg-code-bg` (overriding the Shiki theme's own background) so
+ * highlighted code always matches the window chrome.
  * ---------------------------------------------------------------- */
 
 .shiki {
