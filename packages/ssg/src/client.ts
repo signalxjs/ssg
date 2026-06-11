@@ -11,7 +11,7 @@ export { ssrClientPlugin } from '@sigx/server-renderer/client';
 
 // Package-manager command parsing/translation — public API (#63). Pure and
 // dependency-free; the same functions the build-time switcher uses.
-import { DEFAULT_PM, type Pm } from './mdx/package-manager';
+import { DEFAULT_PM, PMS, type Pm } from './mdx/package-manager';
 export {
     parse as parsePackageManagerCommand,
     render as renderPackageManagerCommand,
@@ -183,7 +183,9 @@ export function installSpaNavigation(
 // bug that broke the old docs-side DOM enhancer; see issue #40).
 
 const PM_STORAGE_KEY = 'sigx-pm';
-const VALID_PMS = ['pnpm', 'npm', 'yarn', 'bun'];
+// Single source of truth with the parser exports (PACKAGE_MANAGERS) — typed
+// as plain strings so unvalidated input can be `.includes()`-checked.
+const VALID_PMS: readonly string[] = PMS;
 
 let pmSwitcherInstalled = false;
 
@@ -200,7 +202,8 @@ function readStoredPm(): Pm | null {
 /** Show the chosen variant + mark its tab active in every PM window. */
 function applyPm(pm: string): void {
     // setPackageManager is public API — callable where no DOM exists (SSR,
-    // tests); the selection still updates and persists.
+    // tests); the in-memory selection still updates, and persistence happens
+    // when localStorage is available.
     if (typeof document === 'undefined' || !document) return;
     for (const win of document.querySelectorAll<HTMLElement>('.code-window-pm')) {
         if (win.dataset.pm === pm) continue; // already applied — skip redundant DOM writes
