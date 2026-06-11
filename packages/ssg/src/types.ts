@@ -723,6 +723,13 @@ export interface PageMeta {
      */
     headings?: TocHeading[];
 
+    /**
+     * True when `title` was derived from the content's first H1 rather than
+     * frontmatter — layouts rendering their own `<h1>{title}</h1>` should
+     * skip it to avoid a double heading (#65).
+     */
+    titleFromContent?: boolean;
+
     // ========================================================================
     // SEO Fields
     // ========================================================================

@@ -514,3 +514,49 @@ export async function loadSearchIndex(
     const data = (await res.json()) as { entries?: SearchIndexEntry[] };
     return data.entries ?? [];
 }
+
+// ---------------------------------------------------------------------------
+// Copy-code button (#65)
+// ---------------------------------------------------------------------------
+
+let codeCopyInstalled = false;
+
+/**
+ * Wire the copy buttons shiki emits in every code-window header (#65). One
+ * delegated listener; package-manager windows copy only the visible
+ * variant. Returns a disposer. Safe to call on pages without code blocks.
+ */
+export function installCodeCopy(): () => void {
+    if (codeCopyInstalled || typeof document === 'undefined') return () => {};
+    codeCopyInstalled = true;
+
+    const onClick = (e: MouseEvent) => {
+        const btn = (e.target as Element | null)?.closest?.('.code-window-copy') as HTMLElement | null;
+        if (!btn) return;
+        const win = btn.closest('.code-window');
+        if (!win) return;
+
+        // The visible content pane: PM windows have one per manager, only
+        // one of which is displayed; plain windows have exactly one.
+        const panes = Array.from(win.querySelectorAll<HTMLElement>('.code-window-content'));
+        const visible = panes.find((p) => p.style.display !== 'none') ?? panes[0];
+        const text = visible?.textContent ?? '';
+
+        if (!navigator.clipboard?.writeText) return;
+        navigator.clipboard.writeText(text).then(
+            () => {
+                btn.classList.add('code-window-copy-done');
+                setTimeout(() => btn.classList.remove('code-window-copy-done'), 1500);
+            },
+            () => {
+                /* permission denied / insecure context — nothing to do */
+            }
+        );
+    };
+
+    document.addEventListener('click', onClick);
+    return () => {
+        document.removeEventListener('click', onClick);
+        codeCopyInstalled = false;
+    };
+}

@@ -9,7 +9,7 @@
 
 import type { Plugin, ResolvedConfig } from 'vite';
 import type { SSGConfig, MarkdownConfig, PageMeta, TocHeading } from '../types';
-import { parseFrontmatter, extractTitleFromContent } from './frontmatter';
+import { parseFrontmatter, applyTitleFallback } from './frontmatter';
 import { rehypeShiki } from './shiki';
 import { rehypeExtractHeadings } from './rehype-headings';
 
@@ -57,13 +57,9 @@ export function mdxPlugin(options: MDXPluginOptions = {}): Plugin {
             // Parse frontmatter first
             const { data: frontmatter, content } = parseFrontmatter(code);
 
-            // Extract title from content if not in frontmatter
-            if (!frontmatter.title) {
-                const extractedTitle = extractTitleFromContent(content);
-                if (extractedTitle) {
-                    frontmatter.title = extractedTitle;
-                }
-            }
+            // Extract title from content if not in frontmatter (marks
+            // titleFromContent so layouts skip their own <h1>, #65)
+            applyTitleFallback(frontmatter, content);
 
             // Build the MDX pipeline on first use (memoized)
             if (!mdxRollupPromise) {
@@ -326,13 +322,8 @@ export function markdownPlugin(options: MDXPluginOptions = {}): Plugin {
             // Parse frontmatter
             const { data: frontmatter, content } = parseFrontmatter(code);
 
-            // Extract title if not in frontmatter
-            if (!frontmatter.title) {
-                const extractedTitle = extractTitleFromContent(content);
-                if (extractedTitle) {
-                    frontmatter.title = extractedTitle;
-                }
-            }
+            // Extract title if not in frontmatter (#65: see above)
+            applyTitleFallback(frontmatter, content);
 
             // Convert markdown to simple HTML using a lightweight parser
             // For full MD support, the MDX plugin should be used

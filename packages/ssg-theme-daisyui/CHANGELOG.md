@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `CommandPalette` component ([#62](https://github.com/signalxjs/ssg/issues/62)): ⌘K / Ctrl+K search over the build-time index (`search: true` in ssg.config.ts) — lazy index load, keyboard navigation (arrows/Enter/Escape), heading deep-links. Opt in via the new `Header` prop `search` (`true` or `{ base }` for subpath deploys), or compose `components.CommandPalette` directly.
+- `PrevNext` component ([#65](https://github.com/signalxjs/ssg/issues/65)): previous/next page links in sidebar reading order (from `virtual:ssg-navigation`), rendered by the docs layout under the article.
+- No-FOUC theme init ([#65](https://github.com/signalxjs/ssg/issues/65)): the theme contributes an inline head script that applies the persisted (or OS-preferred) light/dark theme before first paint.
+- Collapsible sidebar section groups (native `<details>`, open by default).
+- `TOC` options ([#65](https://github.com/signalxjs/ssg/issues/65)): `minLevel`/`maxLevel` props, per-page `toc: false` and `toc.minLevel/maxLevel` frontmatter via the new `meta` prop (the docs layout passes it), and `data-toc-ignore` to skip individual headings.
+
+### Fixed
+
+- The header theme toggle now persists the choice and respects `prefers-color-scheme` — it used to default to light on every load ([#65](https://github.com/signalxjs/ssg/issues/65)).
+- Docs layout no longer renders a duplicate `<h1>` when the page's title comes from its leading `# Heading` ([#65](https://github.com/signalxjs/ssg/issues/65)).
 
 ## [0.7.1] - 2026-06-11
 

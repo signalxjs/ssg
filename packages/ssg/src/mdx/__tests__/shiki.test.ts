@@ -304,3 +304,16 @@ describe('shiki.skipLanguages escape hatch (#64)', () => {
         expect(findByClass(tree, 'code-window')).toBeTruthy();
     });
 });
+
+describe('copy-code button (#65)', () => {
+    it('emits a copy button in the plain code-window header', async () => {
+        const html = await highlightCode('const x = 1;', 'ts');
+        expect(html).toContain('class="code-window-copy"');
+        expect(html).toContain('aria-label="Copy code"');
+    });
+
+    it('emits a single copy button on package-manager windows', async () => {
+        const html = await highlightCode('pnpm add foo', 'bash');
+        expect((html.match(/code-window-copy"/g) ?? []).length).toBe(1);
+    });
+});
