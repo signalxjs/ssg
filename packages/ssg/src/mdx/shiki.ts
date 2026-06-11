@@ -74,7 +74,7 @@ export async function highlightCode(
     const loadedLangs = highlighter.getLoadedLanguages();
     let effectiveLang = lang;
     if (!loadedLangs.includes(lang as BundledLanguage)) {
-        if (lang in bundledLanguages) {
+        if (Object.hasOwn(bundledLanguages, lang)) {
             try {
                 await highlighter.loadLanguage(lang as BundledLanguage);
             } catch {

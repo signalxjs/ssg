@@ -72,14 +72,16 @@ async function fileToRouteWithMeta(filePath: string, pagesDir: string): Promise<
     const ext = path.extname(filePath).toLowerCase();
     if (ext === '.mdx' || ext === '.md') {
         try {
-            const content = fs.readFileSync(route.file, 'utf-8');
-            const { data } = parseFrontmatter(content);
+            const source = fs.readFileSync(route.file, 'utf-8');
+            const { data, content: body } = parseFrontmatter(source);
             route.meta = data;
 
             // Fall back to the first H1 so pages titled only by content get
             // a real <title>/og:title instead of the site default (#55).
+            // Search the body only — a `# comment` line inside the YAML
+            // frontmatter block must not become the title.
             if (!route.meta.title) {
-                const title = extractTitleFromContent(content);
+                const title = extractTitleFromContent(body);
                 if (title) route.meta.title = title;
             }
         } catch (err) {
