@@ -199,3 +199,29 @@ describe('rehypeShiki — per-fence label meta', () => {
         expect(await triggerLabelFor('live data-label="x"')).toBe('⚡ Try Live');
     });
 });
+
+describe('highlightCode — language aliases (#55)', () => {
+    it('highlights `ts` fences via the typescript grammar', async () => {
+        const html = await highlightCode('const x: number = 1;', 'ts');
+        expect(html).toContain('shiki');
+        expect(html).toContain('<span style');
+        expect(html).toContain('>TypeScript</span>');
+    });
+
+    it('highlights `js` fences via the javascript grammar', async () => {
+        const html = await highlightCode('const x = 1;', 'js');
+        expect(html).toContain('<span style');
+        expect(html).toContain('>JavaScript</span>');
+    });
+
+    it('loads bundled languages outside the default list on demand', async () => {
+        const html = await highlightCode('def f():\n    return 1', 'python');
+        expect(html).toContain('<span style');
+        expect(html).toContain('>Python</span>');
+    });
+
+    it('still falls back to text for unknown languages', async () => {
+        const html = await highlightCode('whatever', 'not-a-language');
+        expect(html).toContain('code-window');
+    });
+});

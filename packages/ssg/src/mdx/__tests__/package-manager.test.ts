@@ -132,3 +132,29 @@ describe('translate', () => {
         expect(translate('sigx prebuild', 'npm' as Pm)).toBe('sigx prebuild');
     });
 });
+
+describe('parse — never produce a wrong command (#55)', () => {
+    it('bails on installs with manager-specific flags', () => {
+        // `pnpm add --legacy-peer-deps` would be a wrong command — leave the
+        // line untranslated rather than misclassify the flag as a package.
+        expect(parse('npm install --legacy-peer-deps')).toBeNull();
+        expect(parse('pnpm install --frozen-lockfile')).toBeNull();
+        expect(parse('npm install --legacy-peer-deps foo')).toBeNull();
+    });
+
+    it('bails on compound commands', () => {
+        expect(parse('npm install && npm run dev')).toBeNull();
+        expect(parse('pnpm add foo; pnpm run dev')).toBeNull();
+        expect(parse('npm install | tee log')).toBeNull();
+    });
+
+    it('still recognizes dev/global flags', () => {
+        expect(parse('npm install -D foo')).toMatchObject({ action: 'add', dev: true, args: 'foo' });
+        expect(parse('npm install -g foo')).toMatchObject({ action: 'add', global: true, args: 'foo' });
+    });
+
+    it('translate leaves bailed lines untouched', () => {
+        expect(translate('npm install --legacy-peer-deps', 'pnpm')).toBe('npm install --legacy-peer-deps');
+        expect(translate('npm install && npm run dev', 'pnpm')).toBe('npm install && npm run dev');
+    });
+});

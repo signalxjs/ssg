@@ -35,15 +35,23 @@ const DEV_FLAGS = new Set(['-D', '--save-dev', '--dev', '-d']);
 const GLOBAL_FLAGS = new Set(['-g', '--global']);
 
 /** Pull dev/global flags out of an argument token list. */
-function stripFlags(tokens: string[]): { dev: boolean; global: boolean; args: string[] } {
+function stripFlags(tokens: string[]): {
+    dev: boolean;
+    global: boolean;
+    args: string[];
+    /** A dash-token we don't understand (e.g. `--legacy-peer-deps`). */
+    unknownFlag: boolean;
+} {
     let dev = false;
     let global = false;
+    let unknownFlag = false;
     const args = tokens.filter((t) => {
         if (DEV_FLAGS.has(t)) return (dev = true), false;
         if (GLOBAL_FLAGS.has(t)) return (global = true), false;
+        if (t.startsWith('-')) unknownFlag = true;
         return true;
     });
-    return { dev, global, args };
+    return { dev, global, args, unknownFlag };
 }
 
 function finalize(
@@ -51,8 +59,18 @@ function finalize(
     tokens: string[],
     comment: string,
     globalFromSub = false,
-): Parsed {
-    const { dev, global, args } = stripFlags(tokens);
+): Parsed | null {
+    // dlx/create/run arguments (including flags) belong to the executed tool,
+    // not the package manager — preserve them verbatim.
+    if (action === 'dlx' || action === 'create' || action === 'run') {
+        return { action, dev: false, global: globalFromSub, args: tokens.join(' '), comment };
+    }
+
+    const { dev, global, args, unknownFlag } = stripFlags(tokens);
+    // Manager-specific flags (`--legacy-peer-deps`, `--frozen-lockfile`, …)
+    // cannot be translated — bail so the line is left untouched rather than
+    // rendered as a wrong command for the other managers (#55).
+    if (unknownFlag) return null;
     return { action, dev, global: global || globalFromSub, args: args.join(' '), comment };
 }
 
@@ -70,6 +88,10 @@ export function parse(raw: string): Parsed | null {
     const comment = hashIdx === -1 ? '' : raw.slice(hashIdx);
     const body = (hashIdx === -1 ? raw : raw.slice(0, hashIdx)).trim();
     if (!body) return null;
+
+    // Compound commands (`npm install && npm run dev`) can't be translated as
+    // a unit — translating one segment produces mixed-manager output (#55).
+    if (/&&|;|\|/.test(body)) return null;
 
     const tokens = body.split(/\s+/);
     const pmTok = tokens[0];
