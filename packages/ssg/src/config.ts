@@ -130,8 +130,15 @@ export async function loadConfig(configPath?: string): Promise<SSGConfig> {
         const configModule = await import(pathToFileURL(foundPath).href);
         return defineSSGConfig(configModule.default || configModule);
     } catch (err) {
-        console.error(`Failed to load config from ${foundPath}:`, err);
-        return defineSSGConfig({});
+        // A broken config must fail loudly — silently falling back to the
+        // defaults builds the site with the wrong dirs/site metadata (#52).
+        const { SSGError, ErrorCodes } = await import('./errors');
+        throw new SSGError(`Failed to load config from ${foundPath}`, {
+            code: ErrorCodes.CONFIG_INVALID,
+            file: foundPath,
+            suggestion: 'Fix the error below in your ssg.config — the build does not fall back to defaults.',
+            cause: err instanceof Error ? err : new Error(String(err)),
+        });
     }
 }
 

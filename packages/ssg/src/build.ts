@@ -20,6 +20,9 @@ import type { SSGConfig, BuildOptions, BuildResult, PageBuildResult } from './ty
 import { loadConfig, resolveConfigPaths } from './config';
 import { scanPages } from './routing/index';
 import { collectPaths, type PathToRender } from './collect-paths';
+import { injectIntoTemplate } from './template';
+import { registerProcessCleanup } from './cleanup';
+import { hasViteConfigFile, assembleZeroConfigPlugins, ZERO_CONFIG_OXC } from './vite/zero-config';
 import { discoverLayouts } from './layouts/index';
 import { writeSitemap } from './sitemap';
 import { generateHeadTags } from './head';
@@ -100,6 +103,18 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     fsSync.writeFileSync(htmlTemplatePath, htmlContent, 'utf-8');
     cleanupHtml = entryDetection.useVirtualHtml; // Only cleanup (delete) if we generated it
 
+    // Restore the user's index.html / remove temp entries on SIGINT/SIGTERM
+    // too — the `finally` below doesn't run when the process is killed (#52).
+    const restoreProjectFiles = () => {
+        if (cleanupHtml) {
+            try { fsSync.unlinkSync(htmlTemplatePath); } catch { /* ignore */ }
+        } else if (originalHtmlContent !== null) {
+            try { fsSync.writeFileSync(htmlTemplatePath, originalHtmlContent, 'utf-8'); } catch { /* ignore */ }
+        }
+        cleanupTempEntriesSync(root);
+    };
+    const unregisterCleanup = registerProcessCleanup(restoreProjectFiles);
+
     // Step 5: Build with Vite
     console.log('🔨 Building with Vite...');
     const vite = await import('vite');
@@ -117,6 +132,17 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             ssrEntry,
             options.verbose
         );
+
+        // Without a vite.config the SSG plugins (which resolve the virtual
+        // modules the entries import) have to be injected, exactly like the
+        // zero-config dev server does (#52).
+        if (!hasViteConfigFile(root)) {
+            console.log('📦 Zero-config Vite build (no vite.config found)');
+            buildConfigs.client.plugins = await assembleZeroConfigPlugins(options.configPath);
+            buildConfigs.ssr.plugins = await assembleZeroConfigPlugins(options.configPath);
+            (buildConfigs.client as any).oxc = ZERO_CONFIG_OXC;
+            (buildConfigs.ssr as any).oxc = ZERO_CONFIG_OXC;
+        }
 
         await vite.build(buildConfigs.client);
 
@@ -176,6 +202,10 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             renderTime: number;
         }
 
+        // Pages whose render rejected or produced an SSR error marker — the
+        // build must NOT exit 0 with pages missing or broken (#52).
+        const renderFailures: Array<{ path: string; message: string }> = [];
+
         // Render a single page (CPU-bound, no I/O)
         async function renderPage(pathInfo: PathToRender): Promise<RenderResult | null> {
             const renderStart = Date.now();
@@ -187,10 +217,16 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                     props: pathInfo.props,
                 });
 
-                // Inject into template
-                let html = template.replace('<!--app-html-->', appHtml);
+                // The SSR renderer swallows component errors into marker
+                // comments — a page rendering `<!--ssr-error…-->` instead of
+                // content is a failed render, not a success.
+                if (typeof appHtml === 'string' && appHtml.includes('<!--ssr-error')) {
+                    throw new Error('component threw during SSR (the output contains an <!--ssr-error--> marker)');
+                }
+
+                // Inject into template (replacer-safe, see template.ts)
                 const headTags = generateHeadTags(pathInfo, resolvedConfig);
-                html = html.replace('<!--head-tags-->', headTags);
+                const html = injectIntoTemplate(template, appHtml, headTags);
 
                 const outputPath = getOutputPath(pathInfo.path, resolvedConfig.outDir!);
                 const renderTime = Date.now() - renderStart;
@@ -199,7 +235,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : String(err);
                 console.error(`   ❌ ${pathInfo.path}: ${errorMessage}`);
-                warnings.push(`Failed to render ${pathInfo.path}: ${errorMessage}`);
+                renderFailures.push({ path: pathInfo.path, message: errorMessage });
                 return null;
             }
         }
@@ -208,17 +244,34 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         console.log('   Phase 1: Rendering...');
         const renderPhaseStart = Date.now();
         const renderResults: RenderResult[] = [];
-        
+
         for (let i = 0; i < pathsToRender.length; i += CONCURRENCY) {
             const batch = pathsToRender.slice(i, i + CONCURRENCY);
             const results = await Promise.all(batch.map(renderPage));
-            
+
             for (const result of results) {
                 if (result) {
                     renderResults.push(result);
                 }
             }
         }
+
+        // All failures are reported above; now fail the build — deploying a
+        // site with silently missing pages is never OK (#52).
+        if (renderFailures.length > 0) {
+            const { SSGError, ErrorCodes } = await import('./errors');
+            const list = renderFailures
+                .map((f) => `   - ${f.path}: ${f.message}`)
+                .join('\n');
+            throw new SSGError(
+                `${renderFailures.length} page(s) failed to render:\n${list}`,
+                {
+                    code: ErrorCodes.BUILD_RENDER_FAILED,
+                    suggestion: 'Fix the page errors above. The build does not skip failed pages.',
+                }
+            );
+        }
+
         const renderPhaseDuration = Date.now() - renderPhaseStart;
         console.log(`   Phase 1 complete: ${renderResults.length} pages in ${renderPhaseDuration}ms (${Math.round(renderPhaseDuration / renderResults.length)}ms avg)`);
 
@@ -265,25 +318,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         }
 
     } finally {
-        // Clean up temporary entry files
-        await cleanupTempEntries(root);
-        
-        // Clean up or restore HTML template
-        if (cleanupHtml) {
-            // We generated a virtual HTML, remove it
-            try {
-                await fs.unlink(htmlTemplatePath);
-            } catch {
-                // Ignore
-            }
-        } else if (originalHtmlContent !== null) {
-            // We modified a custom HTML, restore the original
-            try {
-                await fs.writeFile(htmlTemplatePath, originalHtmlContent, 'utf-8');
-            } catch {
-                // Ignore
-            }
-        }
+        unregisterCleanup();
+        // Restore the user's index.html and remove temporary entry files
+        restoreProjectFiles();
     }
 
     // Done
@@ -359,40 +396,6 @@ export function createViteBuildConfigs(
 }
 
 /**
- * Render a page to HTML
- */
-async function renderPage(
-    pathInfo: PathToRender,
-    config: SSGConfig,
-    ssrOutDir: string,
-    ssrEntryName: string
-): Promise<string> {
-    // Load the SSR entry module
-    // This should export a render function that returns HTML string
-    const entryPath = path.join(ssrOutDir, ssrEntryName);
-    const entryModule = await import(pathToFileURL(entryPath).href);
-
-    // Render the app - the entry module's render function handles SSR
-    const appHtml = await entryModule.render(pathInfo.path, {
-        params: pathInfo.params,
-        props: pathInfo.props,
-    });
-
-    // Load HTML template
-    const templatePath = path.join(config.outDir!, 'index.html');
-    let template = await fs.readFile(templatePath, 'utf-8');
-
-    // Inject app HTML
-    template = template.replace('<!--app-html-->', appHtml);
-
-    // Inject head tags if any
-    const headTags = generateHeadTags(pathInfo, config);
-    template = template.replace('<!--head-tags-->', headTags);
-
-    return template;
-}
-
-/**
  * Get output file path for a URL path.
  *
  * - `/`         → `<outDir>/index.html`
@@ -454,17 +457,18 @@ async function getClientEntryPoint(config: SSGConfig, root: string): Promise<str
 }
 
 /**
- * Clean up temporary entry files
+ * Clean up temporary entry files. Sync so it can also run from a signal
+ * handler (#52).
  */
-async function cleanupTempEntries(root: string): Promise<void> {
+function cleanupTempEntriesSync(root: string): void {
     const tempFiles = [
         path.join(root, '.ssg-temp-entry-server.tsx'),
         path.join(root, '.ssg-temp-entry-client.tsx'),
     ];
-    
+
     for (const file of tempFiles) {
         try {
-            await fs.unlink(file);
+            fsSync.unlinkSync(file);
         } catch {
             // Ignore if file doesn't exist
         }

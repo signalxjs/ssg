@@ -99,8 +99,16 @@ export async function loadThemeLayouts(themeName: string, root: string): Promise
             source: themeName,
         }));
     } catch (err) {
-        console.warn(`Failed to load theme ${themeName}:`, err);
-        return [];
+        // An explicitly configured theme that can't be loaded must fail
+        // loudly — a silent warn built the site without any theme layouts (#52).
+        const { SSGError, ErrorCodes } = await import('../errors');
+        throw new SSGError(`Theme package "${themeName}" could not be loaded`, {
+            code: ErrorCodes.CONFIG_THEME_NOT_FOUND,
+            suggestion:
+                `Install the theme package (npm install ${themeName}) or remove ` +
+                `the \`theme\` field from your ssg.config.`,
+            cause: err instanceof Error ? err : new Error(String(err)),
+        });
     }
 }
 
