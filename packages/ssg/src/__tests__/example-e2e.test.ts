@@ -151,5 +151,9 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         const manifest = JSON.parse(read('build-manifest.json'));
         expect(manifest.pages.length).toBeGreaterThanOrEqual(8);
         expect(manifest.pages.map((p: { path: string }) => p.path)).toContain('/guide');
+
+        // onPageRendered ran for every page (collected into the manifest)
+        expect(manifest.rendered).toContain('/guide');
+        expect(manifest.rendered.length).toBe(manifest.pages.length);
     });
 });

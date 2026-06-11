@@ -178,6 +178,11 @@ export interface BuildHookPage {
 
 /**
  * Build pipeline hooks (production builds only).
+ *
+ * The per-page hooks (`transformHtml`, `onPageRendered`) run inside the
+ * parallel render/write phases — they may be invoked CONCURRENTLY and in no
+ * guaranteed order. Avoid unsynchronized shared state beyond append-only
+ * collection. `postBuild` runs exactly once, after everything else.
  */
 export interface BuildHooks {
     /**

@@ -1,5 +1,8 @@
 import { defineSSGConfig } from '@sigx/ssg';
 
+// Collected by the onPageRendered hook below, emitted into the manifest.
+const renderedPaths: string[] = [];
+
 export default defineSSGConfig({
     site: {
         title: 'SSG Basic Example',
@@ -21,16 +24,20 @@ export default defineSSGConfig({
     // search indexing, OG images, link checking, redirects, …
     hooks: {
         transformHtml(html) {
-            return html.replace(
-                '</head>',
-                '    <meta name="generator" content="@sigx/ssg">\n</head>'
-            );
+            // Replacer-function form: a string replacement would corrupt
+            // pages containing `$&`-style patterns.
+            return html.replace('</head>', () => '    <meta name="generator" content="@sigx/ssg">\n</head>');
+        },
+        // Per-page observation (may run concurrently — append-only here)
+        onPageRendered(page) {
+            renderedPaths.push(page.path);
         },
         async postBuild(result, ctx) {
             const { writeFile } = await import('node:fs/promises');
             const { join } = await import('node:path');
             const manifest = {
                 pages: result.pages.map((page) => ({ path: page.path, size: page.size })),
+                rendered: renderedPaths.sort(),
             };
             await writeFile(join(ctx.outDir, 'build-manifest.json'), JSON.stringify(manifest, null, 2));
         },

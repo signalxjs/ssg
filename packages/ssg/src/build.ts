@@ -245,6 +245,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                         meta: pathInfo.route.meta,
                         route: pathInfo.route,
                     });
+                    if (typeof html !== 'string') {
+                        throw new Error(`hooks.transformHtml must return a string (got ${typeof html} for ${pathInfo.path})`);
+                    }
                 }
 
                 const outputPath = getOutputPath(pathInfo.path, resolvedConfig.outDir!);
