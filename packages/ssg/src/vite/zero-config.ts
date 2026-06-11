@@ -16,6 +16,8 @@ const VITE_CONFIG_FILES = [
     'vite.config.js',
     'vite.config.mjs',
     'vite.config.mts',
+    'vite.config.cjs',
+    'vite.config.cts',
 ];
 
 /** Whether the project supplies its own Vite config. */

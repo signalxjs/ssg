@@ -118,6 +118,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // Step 5: Build with Vite
     console.log('🔨 Building with Vite...');
     const vite = await import('vite');
+    let ssrOutDir: string | undefined;
 
     try {
         // Build client bundle
@@ -147,7 +148,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         await vite.build(buildConfigs.client);
 
         // Build SSR bundle
-        const ssrOutDir = buildConfigs.ssr.build!.outDir!;
+        ssrOutDir = buildConfigs.ssr.build!.outDir!;
         await vite.build(buildConfigs.ssr);
 
         // Pre-load the SSR module once — it renders every page AND resolves
@@ -273,7 +274,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         }
 
         const renderPhaseDuration = Date.now() - renderPhaseStart;
-        console.log(`   Phase 1 complete: ${renderResults.length} pages in ${renderPhaseDuration}ms (${Math.round(renderPhaseDuration / renderResults.length)}ms avg)`);
+        const avgRender = renderResults.length > 0 ? ` (${Math.round(renderPhaseDuration / renderResults.length)}ms avg)` : '';
+        console.log(`   Phase 1 complete: ${renderResults.length} pages in ${renderPhaseDuration}ms${avgRender}`);
 
         // Write all files in parallel with limited concurrency
         console.log('   Phase 2: Writing files...');
@@ -306,10 +308,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             console.log(`   ✓ Rendered ${renderResults.length} pages`);
         }
 
-        // Step 8: Clean up SSR build
-        await fs.rm(ssrOutDir, { recursive: true, force: true });
-
-        // Step 9: Generate sitemap and robots.txt
+        // Step 8: Generate sitemap and robots.txt
         if (pages.length > 0) {
             console.log('🗺️  Generating sitemap...');
             await writeSitemap(pages, resolvedConfig, resolvedConfig.outDir!);
@@ -321,6 +320,11 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         unregisterCleanup();
         // Restore the user's index.html and remove temporary entry files
         restoreProjectFiles();
+        // Remove the SSR build dir on failed builds too — stale dist/.ssg
+        // artifacts must not accumulate
+        if (ssrOutDir) {
+            await fs.rm(ssrOutDir, { recursive: true, force: true }).catch(() => {});
+        }
     }
 
     // Done
