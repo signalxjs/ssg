@@ -284,6 +284,29 @@ export interface SitemapOptions {
     defaultChangefreq?: SitemapEntry['changefreq'];
     /** Default priority */
     defaultPriority?: number;
+
+    /**
+     * Derive `<lastmod>` from each page's source file (#38): `'git'` uses
+     * the last commit date (one repo-wide `git log` walk; needs full history
+     * — `fetch-depth: 0` in CI), `'mtime'` the filesystem timestamp. Explicit
+     * per-page `meta.lastmod` always wins.
+     * @default false
+     */
+    lastmod?: 'git' | 'mtime' | false;
+
+    /**
+     * Per-entry escape hatch (#38): adjust an entry or drop it by returning
+     * `null`/`undefined`. Runs after defaults, per-page meta, and derived
+     * lastmod are applied.
+     */
+    transform?: (entry: SitemapEntry, page: PageBuildResult) => SitemapEntry | null | undefined;
+
+    /**
+     * Derived lastmod per page path — filled by the build from the `lastmod`
+     * mode; explicit `meta.lastmod` still wins. (Internal plumbing; set it
+     * directly only when calling `writeSitemap` programmatically.)
+     */
+    lastmodByPath?: Map<string, string>;
 }
 
 // ============================================================================
@@ -820,6 +843,15 @@ export interface PageMeta {
      */
     sourceFile?: string;
 
+    /** Sitemap override: exact `<lastmod>` for this page (#38). */
+    lastmod?: Date | string;
+
+    /** Sitemap override: change frequency for this page (#38). */
+    changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+
+    /** Sitemap override: priority for this page (#38). */
+    priority?: number;
+
     // ========================================================================
     // SEO Fields
     // ========================================================================
@@ -1047,6 +1079,12 @@ export interface PageBuildResult {
      * feeds, …) can act on it.
      */
     meta?: PageMeta;
+
+    /**
+     * Absolute path of the page's source file (#38) — what git/mtime
+     * `sitemap.lastmod` derivation reads.
+     */
+    source?: string;
 }
 
 /**

@@ -117,17 +117,26 @@ export function pagesToSitemapEntries(
                 priority = 0.6; // Second-level pages
             }
 
-            // meta.date is a freshness signal crawlers can use (#56)
+            // Freshness: explicit meta.lastmod wins, then the derived map
+            // (git/mtime, #38), then meta.date (#56).
+            const metaLastmod = page.meta?.lastmod;
             const date = page.meta?.date;
-            const lastmod = date instanceof Date && !Number.isNaN(date.getTime()) ? date : undefined;
+            const lastmod =
+                metaLastmod ??
+                options.lastmodByPath?.get(page.path) ??
+                (date instanceof Date && !Number.isNaN(date.getTime()) ? date : undefined);
 
-            return {
+            const entry: SitemapEntry = {
                 path: page.path,
-                changefreq: defaultChangefreq,
-                priority,
+                changefreq: (page.meta?.changefreq as SitemapEntry['changefreq']) ?? defaultChangefreq,
+                priority: page.meta?.priority ?? priority,
                 ...(lastmod ? { lastmod } : {}),
             };
-        });
+
+            // Per-entry escape hatch (#38): adjust or drop (null) entries.
+            return options.transform ? options.transform(entry, page) : entry;
+        })
+        .filter((entry): entry is SitemapEntry => entry != null);
 }
 
 /**

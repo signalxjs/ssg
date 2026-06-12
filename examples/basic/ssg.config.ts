@@ -23,6 +23,15 @@ export default defineSSGConfig({
     // Built-in search (#62): emits search-index.json over the rendered pages.
     search: true,
 
+    // Sitemap freshness (#38): derive <lastmod> from source files. 'mtime'
+    // here for CI determinism; real sites usually want 'git' (with full
+    // history checked out). The transform drops the demo redirect target's
+    // noise and bumps the guide's priority.
+    sitemap: {
+        lastmod: 'mtime',
+        transform: (entry) => (entry.path === '/guide' ? { ...entry, priority: 0.9 } : entry),
+    },
+
     // Internal link validation (#99): fail the build on dead hrefs/anchors.
     linkCheck: 'error',
     // Programmatic routes (#59): pages that don't come from src/pages.
