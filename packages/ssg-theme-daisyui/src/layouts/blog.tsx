@@ -7,6 +7,7 @@
 import { component } from 'sigx';
 import type { LayoutProps, LayoutSlots } from '@sigx/ssg';
 import Header from '../components/Header.js';
+import { AnnouncementBar } from '../components/PageChrome.js';
 import Footer from '../components/Footer.js';
 
 export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) => {
@@ -15,6 +16,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) =
 
     return () => (
         <div class="min-h-screen flex flex-col">
+            <AnnouncementBar site={props.site} />
             <Header site={props.site} search={props.site?.search} />
 
             <main class="flex-1">
@@ -42,7 +44,9 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) =
 
                             <div class="flex items-center justify-center gap-4 text-sm text-base-content/60">
                                 {meta.author && (
-                                    <span>By {meta.author as string}</span>
+                                    // Single-expression child: the SSR renderer drops an
+                                    // expression adjacent to literal text (renderer bug).
+                                    <span>{`By ${meta.author as string}`}</span>
                                 )}
                                 {date && (
                                     <time dateTime={date.toISOString()}>

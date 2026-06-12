@@ -12,6 +12,9 @@ theme ships:
   the top-level `search: true` that emits the index)
 - **Docs shell** — collapsible sidebar, table of contents, prev/next links
 - **Code windows** — copy buttons + the npm/pnpm/yarn/bun switcher
+- **Per-page chrome** — announcement bar, breadcrumbs, edit-this-page, last-updated
+- **Blog layout** — frontmatter-driven hero (tags/author/date)
+- **Per-collection `sectionOrder`** — explicit category order for the docs sidebar
 - **Tailwind v4 + daisyUI v5** — see `src/styles/global.css`; note the
   explicit `@source` file glob pointing at the theme package (Tailwind's
   directory form skips `dist` directories)

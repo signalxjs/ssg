@@ -14,10 +14,24 @@ export default defineSSGConfig({
         // Show the theme's ⌘K palette (works because `search: true` below
         // emits the index it queries).
         search: true,
+        // Edit-this-page links: editBase + the page's source path (#65).
+        editBase: 'https://github.com/signalxjs/ssg/edit/main/examples/theme/',
+        // Dismissible announcement bar above the header (#65).
+        announcement: {
+            id: 'showcase-v1',
+            text: 'This entire site is @sigx/ssg-theme-daisyui — zero layout code.',
+            href: '/docs/getting-started',
+        },
     },
 
     collections: {
-        docs: { path: '/docs', layout: 'docs' },
+        docs: {
+            path: '/docs',
+            layout: 'docs',
+            // Per-collection category order (#100): explicit list, listed first.
+            sectionOrder: ['Guide', 'Reference'],
+        },
+        blog: { path: '/blog', layout: 'blog' },
     },
 
     // Base styles for ssg-emitted markup. The Tailwind/daisyUI CSS lives in

@@ -11,6 +11,7 @@ import Footer from '../components/Footer.js';
 import Sidebar from '../components/Sidebar.js';
 import TOC from '../components/TOC.js';
 import PrevNext from '../components/PrevNext.js';
+import { AnnouncementBar, Breadcrumbs, PageFooter } from '../components/PageChrome.js';
 
 export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props, signal }) => {
     const state = signal({
@@ -23,6 +24,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props, sig
 
     return () => (
         <div class="min-h-screen flex flex-col">
+            <AnnouncementBar site={props.site} />
             <Header onMenuClick={toggleSidebar} site={props.site} search={props.site?.search} />
 
             <div class="flex-1 flex">
@@ -54,10 +56,12 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props, sig
                         <div class="flex gap-8">
                             {/* Article content */}
                             <article class="flex-1 min-w-0 prose prose-lg max-w-none">
+                                <Breadcrumbs />
                                 {props.meta?.title && !props.meta?.titleFromContent && (
                                     <h1>{props.meta.title}</h1>
                                 )}
                                 {slots.default()}
+                                <PageFooter site={props.site} meta={props.meta} />
                                 <PrevNext />
                             </article>
 
