@@ -89,7 +89,9 @@ function main() {
         scripts: { smoke: 'tsx smoke.ts' },
         dependencies: {
             ...deps,
-            sigx: '^0.4.3',
+            '@sigx/router': '^0.6.0',
+            '@sigx/server-renderer': '^0.6.1',
+            sigx: '^0.6.1',
             vite: rootPkg.devDependencies.vite,
         },
         devDependencies: {
