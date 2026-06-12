@@ -35,6 +35,9 @@ importers:
       '@sigx/router':
         specifier: ^0.6.0
         version: 0.6.0(@sigx/reactivity@0.6.1)(@sigx/runtime-core@0.6.1)(@sigx/runtime-dom@0.6.1)(sigx@0.6.1)
+      '@sigx/server-renderer':
+        specifier: ^0.6.1
+        version: 0.6.1
       '@sigx/ssg':
         specifier: workspace:^
         version: link:../../packages/ssg
@@ -54,6 +57,9 @@ importers:
       '@sigx/router':
         specifier: ^0.6.0
         version: 0.6.0(@sigx/reactivity@0.6.1)(@sigx/runtime-core@0.6.1)(@sigx/runtime-dom@0.6.1)(sigx@0.6.1)
+      '@sigx/server-renderer':
+        specifier: ^0.6.1
+        version: 0.6.1
       '@sigx/ssg':
         specifier: workspace:^
         version: link:../../packages/ssg
