@@ -27,8 +27,8 @@ function sidebarTitles(config: Parameters<typeof generateAllCollections>[1]): st
 }
 
 describe('normalizeSectionOrder (#100)', () => {
-    it('turns a list into position weights', () => {
-        expect(normalizeSectionOrder(['First', 'Second'])).toEqual({ First: 0, Second: 1 });
+    it('turns a list into position weights below every built-in weight', () => {
+        expect(normalizeSectionOrder(['First', 'Second'])).toEqual({ First: -2, Second: -1 });
     });
 
     it('passes maps through and handles undefined', () => {
@@ -45,6 +45,18 @@ describe('sectionOrder list form (#100)', () => {
         });
         // The three listed come first in list order; 'Guides' (unlisted,
         // built-in weight 40) follows.
+        expect(titles).toEqual(['Screens', 'Navigators', 'Chrome', 'Guides']);
+    });
+
+    it('long lists never interleave with built-in weights (index 10+ collision)', () => {
+        // 11 filler entries push real categories to indexes >= 10, where raw
+        // indexes would tie with built-in weights ('Getting Started' = 10).
+        const filler = Array.from({ length: 11 }, (_, i) => `Filler${i}`);
+        const titles = sidebarTitles({
+            collections: { docs: { path: '/docs' } },
+            navigation: { sectionOrder: [...filler, 'Screens', 'Navigators', 'Chrome'] },
+        });
+        // All listed categories still come before unlisted 'Guides' (40).
         expect(titles).toEqual(['Screens', 'Navigators', 'Chrome', 'Guides']);
     });
 

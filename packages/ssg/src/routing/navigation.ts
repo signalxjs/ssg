@@ -364,16 +364,16 @@ export function generateAllCollections(
 
 /**
  * Normalize a section order to the name → weight form (#100). A list maps
- * each title to its position — positions (0..n) sort ahead of every
- * built-in weight (10+), so listed categories come first in list order and
- * unlisted ones follow per the built-in defaults.
+ * each title to a negative weight (position − length), so listed categories
+ * always sort ahead of every built-in weight (10+) regardless of list
+ * length, in list order; unlisted ones follow per the built-in defaults.
  */
 export function normalizeSectionOrder(
     order?: Record<string, number> | string[]
 ): Record<string, number> | undefined {
     if (!order) return undefined;
     if (!Array.isArray(order)) return order;
-    return Object.fromEntries(order.map((title, index) => [title, index]));
+    return Object.fromEntries(order.map((title, index) => [title, index - order.length]));
 }
 
 /**
