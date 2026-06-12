@@ -68,8 +68,11 @@ export function generateRedirectsFile(redirects: Record<string, string>, config:
 
 /**
  * Write all redirect pages and the `_redirects` file into `outDir`.
- * Refuses to overwrite an existing redirect *page* — a redirect shadowing a
- * real rendered page is a config error, not something to clobber silently.
+ * Refuses to overwrite a *rendered page* — a redirect shadowing one is a
+ * config error, not something to clobber silently. Pass `renderedPaths`
+ * (the paths rendered this run) for an exact guard; without it, an on-disk
+ * existence check is used, which can trip on this build's own artifacts
+ * from a previous run (#120).
  * A user-managed `_redirects` (shipped via `public/`) is appended to, with
  * the user's rules kept first — Netlify/Cloudflare match top-down, so
  * hand-written rules keep precedence over config-generated ones.
@@ -77,11 +80,22 @@ export function generateRedirectsFile(redirects: Record<string, string>, config:
 export async function writeRedirects(
     redirects: Record<string, string>,
     config: SSGConfig,
-    outDir: string
+    outDir: string,
+    renderedPaths?: Iterable<string>
 ): Promise<void> {
+    // Guard against the pages rendered THIS run when known — checking the
+    // filesystem trips on this build's own artifacts from a previous run
+    // (outDir is not cleaned between builds; the template lives there) (#120).
+    const rendered = renderedPaths
+        ? new Set(Array.from(renderedPaths, (p) => (p === '/' ? '/' : p.replace(/\/+$/, ''))))
+        : null;
+
     for (const [from, to] of Object.entries(redirects)) {
         const outputPath = getOutputPath(from, outDir);
-        if (fsSync.existsSync(outputPath)) {
+        const collides = rendered
+            ? rendered.has(from === '/' ? '/' : from.replace(/\/+$/, ''))
+            : fsSync.existsSync(outputPath);
+        if (collides) {
             throw new Error(
                 `redirects: "${from}" would overwrite an existing page (${path.relative(outDir, outputPath)}). ` +
                 `Remove the page or the redirect.`

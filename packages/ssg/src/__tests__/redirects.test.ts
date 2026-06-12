@@ -111,4 +111,25 @@ describe('writeRedirects (#61)', () => {
             fs.rmSync(outDir, { recursive: true, force: true });
         }
     });
+
+    it('guards against pages rendered THIS run, not stale files from a previous build (#120)', async () => {
+        const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ssg-redir3-'));
+        try {
+            // A previous build left this redirect page behind (outDir is not
+            // cleaned between builds — the template lives there).
+            fs.mkdirSync(path.join(outDir, 'old-guide'), { recursive: true });
+            fs.writeFileSync(path.join(outDir, 'old-guide', 'index.html'), 'stale redirect page');
+
+            // Rendered paths this run do NOT include /old-guide → overwrite is ours, allowed.
+            await writeRedirects({ '/old-guide': '/guide/' }, { base: '/' }, outDir, ['/guide', '/']);
+            expect(fs.readFileSync(path.join(outDir, 'old-guide', 'index.html'), 'utf-8')).toContain('url=/guide/');
+
+            // A redirect shadowing a page rendered THIS run still fails loudly.
+            await expect(
+                writeRedirects({ '/guide': '/elsewhere/' }, { base: '/' }, outDir, ['/guide', '/'])
+            ).rejects.toThrow(/guide/);
+        } finally {
+            fs.rmSync(outDir, { recursive: true, force: true });
+        }
+    });
 });

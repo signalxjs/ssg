@@ -371,7 +371,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         if (resolvedConfig.redirects && Object.keys(resolvedConfig.redirects).length > 0) {
             console.log('↪️  Writing redirects...');
             const { writeRedirects } = await import('./redirects');
-            await writeRedirects(resolvedConfig.redirects, resolvedConfig, resolvedConfig.outDir!);
+            await writeRedirects(
+                resolvedConfig.redirects,
+                resolvedConfig,
+                resolvedConfig.outDir!,
+                pages.map((p) => p.path) // exact guard: only THIS run's pages (#120)
+            );
             console.log(`   ✓ ${Object.keys(resolvedConfig.redirects).length} redirect(s) + _redirects`);
         }
 
