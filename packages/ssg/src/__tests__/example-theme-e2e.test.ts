@@ -31,11 +31,13 @@ if (!distBuilt) {
 }
 
 function read(...segments: string[]): string {
-    // The renderer emits <!--t--> markers between adjacent text children
-    // (hydration text boundaries, signalxjs/core#97 — works as designed).
-    // Strip them so substring assertions can't silently depend on where a
-    // boundary falls (the misdiagnosis behind signalxjs/ssg#133).
-    return fs.readFileSync(path.join(DIST, ...segments), 'utf-8').replace(/<!--t-->/g, '');
+    const raw = fs.readFileSync(path.join(DIST, ...segments), 'utf-8');
+    // For HTML only: strip the renderer's <!--t--> hydration text-boundary
+    // markers (signalxjs/core#97 — works as designed) so substring
+    // assertions can't silently depend on where a boundary falls (the
+    // misdiagnosis behind signalxjs/ssg#133). Non-HTML artifacts (JSON,
+    // CSS, _redirects) are returned byte-exact.
+    return segments[segments.length - 1].endsWith('.html') ? raw.replace(/<!--t-->/g, '') : raw;
 }
 
 describe.skipIf(!distBuilt)('examples/theme — end-to-end production build on the daisyui theme', () => {
