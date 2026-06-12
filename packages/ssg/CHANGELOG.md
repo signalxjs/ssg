@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Internal link & anchor validation ([#99](https://github.com/signalxjs/ssg/issues/99)): after rendering, every internal `<a href>` is checked — the path must resolve to an emitted page (or redirect source / on-disk asset, `base`-aware, trailing-slash/query insensitive) and any `#fragment` must match an element id on the target page. `linkCheck: 'warn'` (default) reports `page → href` findings; `'error'` fails the build for CI gating; `'off'` disables. Checker exported as `checkLinks`/`formatLinkCheckReport`.
 - Configurable sidebar category order ([#100](https://github.com/signalxjs/ssg/issues/100)): `navigation.sectionOrder` now also accepts an explicit list (`['Getting Started', 'Components', …]` — listed categories first in list order, unlisted follow the built-in defaults), and collections can override with their own `sectionOrder`. Removes the "edit the published package to reorder your own nav" cliff for custom category names.
 
+### Fixed
+
+- Running `ssg build` twice into the same `outDir` no longer fails when `redirects` are configured ([#120](https://github.com/signalxjs/ssg/issues/120)): the overwrite guard now checks against the pages rendered *this* run instead of the filesystem, so it can't trip on the previous build's own redirect artifacts (outDir isn't cleaned between builds — the HTML template lives there).
+
 ## [0.8.1] - 2026-06-12
 
 ### Added
