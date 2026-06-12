@@ -380,6 +380,19 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             console.log(`   ✓ ${Object.keys(resolvedConfig.redirects).length} redirect(s) + _redirects`);
         }
 
+        // Default 404 page (#65) — only when the site doesn't render its own
+        // (the /404 page convention from #57 takes precedence).
+        const has404 = pages.some((p) => p.path === '/404' || p.path === '/404.html');
+        if (!has404) {
+            const { generateDefault404 } = await import('./default-404');
+            await fs.writeFile(
+                path.join(resolvedConfig.outDir!, '404.html'),
+                generateDefault404(resolvedConfig),
+                'utf-8'
+            );
+            console.log('   ✓ 404.html (default — add a /404 page to customize)');
+        }
+
         // Internal link & anchor validation (#99)
         const linkCheckMode = resolvedConfig.linkCheck ?? 'warn';
         if (linkCheckMode !== 'off' && linkDocs.length > 0) {

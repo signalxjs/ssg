@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `meta.sourceFile` ([#60](https://github.com/signalxjs/ssg/issues/60)): every page's root-relative source path is embedded into its route meta by the generated routes module — with the new `site.editBase`, themes render edit-this-page links (`editBase + sourceFile`).
+- `site.announcement` ([#65](https://github.com/signalxjs/ssg/issues/65)): site-wide announcement bar config (`{ text, href?, id? }`) — rendered by the theme, `id` keys the visitor's dismissal.
+- Theme-contributed build hooks ([#60](https://github.com/signalxjs/ssg/issues/60)): `ThemeConfig.hooks` composes with the site's — the theme's run first, `transformHtml` chains through both.
+- Default `404.html` ([#65](https://github.com/signalxjs/ssg/issues/65)): emitted when the site has no `/404` page of its own (the #57 convention takes precedence) — GitHub Pages/Netlify/Cloudflare serve it for unknown URLs.
+
 ## [0.9.0] - 2026-06-12
 
 ### Added

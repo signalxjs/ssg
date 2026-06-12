@@ -82,6 +82,18 @@ export function applyThemeConfig(config: SSGConfig, theme: ThemeModule): SSGConf
         };
     }
 
+    // Build hooks: the theme's run first, then the site's — transformHtml
+    // chains its output through both (#60).
+    if (contribution.hooks) {
+        const themeHooks = contribution.hooks;
+        const siteHooks = config.hooks;
+        merged.hooks = {
+            transformHtml: composeTransformHtml(themeHooks.transformHtml, siteHooks?.transformHtml),
+            onPageRendered: composeSequential(themeHooks.onPageRendered, siteHooks?.onPageRendered),
+            postBuild: composeSequential(themeHooks.postBuild, siteHooks?.postBuild),
+        };
+    }
+
     // 'default' is the defineSSGConfig default value, i.e. "not explicitly
     // set" — only an explicit site choice beats the theme's default layout.
     if (contribution.defaultLayout && (!config.defaultLayout || config.defaultLayout === 'default')) {
@@ -89,6 +101,30 @@ export function applyThemeConfig(config: SSGConfig, theme: ThemeModule): SSGConf
     }
 
     return merged;
+}
+
+function composeTransformHtml<P>(
+    first?: (html: string, page: P) => string | Promise<string>,
+    second?: (html: string, page: P) => string | Promise<string>
+): ((html: string, page: P) => Promise<string>) | undefined {
+    if (!first && !second) return undefined;
+    return async (html, page) => {
+        let out = html;
+        if (first) out = await first(out, page);
+        if (second) out = await second(out, page);
+        return out;
+    };
+}
+
+function composeSequential<A extends unknown[]>(
+    first?: (...args: A) => unknown,
+    second?: (...args: A) => unknown
+): ((...args: A) => Promise<void>) | undefined {
+    if (!first && !second) return undefined;
+    return async (...args) => {
+        if (first) await first(...args);
+        if (second) await second(...args);
+    };
 }
 
 /**

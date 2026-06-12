@@ -330,8 +330,8 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                     seedFrontmatterCache(routes);
                     // Use lazy loading in dev mode for proper HMR and MDX processing
                     const code = config.command === 'serve'
-                        ? generateLazyRoutesModule(routes, ssgConfig)
-                        : generateRoutesModule(routes, ssgConfig);
+                        ? generateLazyRoutesModule(routes, ssgConfig, root)
+                        : generateRoutesModule(routes, ssgConfig, root);
                     routesCache = { routes, code };
                 }
                 return routesCache.code;
@@ -355,8 +355,8 @@ export function ssgPlugin(options: SSGPluginOptions = {}): Plugin[] {
                         const routes = await scanPages(ssgConfig, root);
                         seedFrontmatterCache(routes);
                         const routesCode = config.command === 'serve'
-                            ? generateLazyRoutesModule(routes, ssgConfig)
-                            : generateRoutesModule(routes, ssgConfig);
+                            ? generateLazyRoutesModule(routes, ssgConfig, root)
+                            : generateRoutesModule(routes, ssgConfig, root);
                         routesCache = { routes, code: routesCode };
                     }
                     const isDev = config.command === 'serve';

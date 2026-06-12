@@ -6,6 +6,7 @@
  */
 
 import type { SSGRoute, SSGConfig } from '../types';
+import path from 'node:path';
 import { scanPages } from './scanner';
 
 /**
@@ -45,7 +46,18 @@ function fallbackLayout(routePath: string, config: SSGConfig): string {
 /**
  * Generate the virtual routes module code
  */
-export function generateRoutesModule(routes: SSGRoute[], config: SSGConfig): string {
+/**
+ * Root-relative posix source path embedded into route meta (#60/#65) — what
+ * edit-this-page links append to `site.editBase`. Empty when root is unknown.
+ */
+function sourceFileEntry(route: SSGRoute, root?: string): string {
+    if (!root) return '';
+    const rel = path.relative(root, route.file).replace(/\\/g, '/');
+    if (rel.startsWith('..')) return '';
+    return `, sourceFile: ${JSON.stringify(rel)}`;
+}
+
+export function generateRoutesModule(routes: SSGRoute[], config: SSGConfig, root?: string): string {
     const imports: string[] = [];
     const routeDefinitions: string[] = [];
 
@@ -63,7 +75,7 @@ export function generateRoutesModule(routes: SSGRoute[], config: SSGConfig): str
         // For MDX pages, frontmatter might be attached to the default export
         // Also include headings for table of contents (exported by MDX plugin)
         imports.push(
-            `const ${metaName} = { ...('meta' in ${componentName}Module ? ${componentName}Module.meta : ${componentName}Module.default?.frontmatter || ${JSON.stringify(route.meta || {})}), headings: 'headings' in ${componentName}Module ? ${componentName}Module.headings : [] };`
+            `const ${metaName} = { ...('meta' in ${componentName}Module ? ${componentName}Module.meta : ${componentName}Module.default?.frontmatter || ${JSON.stringify(route.meta || {})}), headings: 'headings' in ${componentName}Module ? ${componentName}Module.headings : []${sourceFileEntry(route, root)} };`
         );
         imports.push(
             `const ${componentName} = ${componentName}Module.default || ${componentName}Module;`
@@ -94,7 +106,7 @@ export default routes;
 /**
  * Generate lazy-loading routes module (for development with HMR)
  */
-export function generateLazyRoutesModule(routes: SSGRoute[], config: SSGConfig): string {
+export function generateLazyRoutesModule(routes: SSGRoute[], config: SSGConfig, root?: string): string {
     const imports: string[] = [];
     const routeDefinitions: string[] = [];
 
@@ -108,7 +120,7 @@ export function generateLazyRoutesModule(routes: SSGRoute[], config: SSGConfig):
         imports.push(`import * as ${componentName}Module from '${normalizedFile}';`);
         // Build meta with safe access to avoid Rollup warnings about missing exports
         imports.push(
-            `const ${metaName} = { ...('meta' in ${componentName}Module ? ${componentName}Module.meta : ${componentName}Module.default?.frontmatter || ${JSON.stringify(route.meta || {})}), headings: 'headings' in ${componentName}Module ? ${componentName}Module.headings : [] };`
+            `const ${metaName} = { ...('meta' in ${componentName}Module ? ${componentName}Module.meta : ${componentName}Module.default?.frontmatter || ${JSON.stringify(route.meta || {})}), headings: 'headings' in ${componentName}Module ? ${componentName}Module.headings : []${sourceFileEntry(route, root)} };`
         );
 
         routeDefinitions.push(`
@@ -140,7 +152,7 @@ export async function loadRoutesModule(
     root: string
 ): Promise<{ routes: SSGRoute[]; code: string }> {
     const routes = await scanPages(config, root);
-    const code = generateRoutesModule(routes, config);
+    const code = generateRoutesModule(routes, config, root);
 
     return { routes, code };
 }
