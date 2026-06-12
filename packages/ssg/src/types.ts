@@ -180,6 +180,16 @@ export interface SSGConfig {
     search?: boolean | SearchOptions;
 
     /**
+     * Internal link & anchor validation (#99). After rendering, every
+     * internal `<a href>` is checked: the path must be an emitted page (or
+     * redirect source / on-disk asset) and any `#fragment` must match an
+     * element id on the target page. `'warn'` reports findings; `'error'`
+     * fails the build (use in CI); `'off'` disables.
+     * @default 'warn'
+     */
+    linkCheck?: 'off' | 'warn' | 'error';
+
+    /**
      * Programmatic routes (#59): pages that don't come from the filesystem
      * scan — CMS-backed pages, tag archives, generated docs. Merged with the
      * scanned routes everywhere (dev, build, navigation). Each route points

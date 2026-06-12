@@ -25,4 +25,7 @@ export default defineSSGConfig({
     clientImports: ['@sigx/ssg/styles.css'],
 
     search: true,
+
+    // Internal link validation (#99): fail the build on dead hrefs/anchors.
+    linkCheck: 'error',
 });

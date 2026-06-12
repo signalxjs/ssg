@@ -25,6 +25,7 @@ import { registerProcessCleanup } from './cleanup';
 import { hasViteConfigFile, assembleZeroConfigPlugins, ZERO_CONFIG_OXC } from './vite/zero-config';
 import { discoverLayouts } from './layouts/index';
 import { writeSitemap } from './sitemap';
+import { isInsideDir } from './vite/paths';
 import { generateHeadTags, pagePropsScript } from './head';
 import {
     detectCustomEntries,
@@ -46,6 +47,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // Rendered HTML per page, collected only when `search` is enabled (#62) —
     // the index extracts visible text from the final HTML.
     const searchDocs: Array<{ page: PageBuildResult; html: string }> = [];
+    // Same shape, separate gate: link validation needs every page's HTML (#99).
+    const linkDocs: Array<{ path: string; html: string }> = [];
 
     console.log('\n🚀 @sigx/ssg - Building static site...\n');
 
@@ -327,6 +330,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                 };
                 pages.push(pageResult);
                 if (resolvedConfig.search) searchDocs.push({ page: pageResult, html: result.html });
+                if ((resolvedConfig.linkCheck ?? 'warn') !== 'off') linkDocs.push({ path: pageResult.path, html: result.html });
 
                 // onPageRendered hook (#58) — page written, final HTML in hand
                 if (resolvedConfig.hooks?.onPageRendered) {
@@ -369,6 +373,40 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             const { writeRedirects } = await import('./redirects');
             await writeRedirects(resolvedConfig.redirects, resolvedConfig, resolvedConfig.outDir!);
             console.log(`   ✓ ${Object.keys(resolvedConfig.redirects).length} redirect(s) + _redirects`);
+        }
+
+        // Internal link & anchor validation (#99)
+        const linkCheckMode = resolvedConfig.linkCheck ?? 'warn';
+        if (linkCheckMode !== 'off' && linkDocs.length > 0) {
+            console.log('🔗 Checking internal links...');
+            const { checkLinks, formatLinkCheckReport } = await import('./link-check');
+            const { SSGError, ErrorCodes } = await import('./errors');
+            const fsSyncMod = await import('node:fs');
+            const broken = checkLinks(linkDocs, {
+                base: resolvedConfig.base,
+                redirects: resolvedConfig.redirects,
+                // Assets from public/ are already copied into outDir here.
+                // Resolve inside outDir only — '..' segments must not let a
+                // link validate against files outside the build output.
+                fileExists: (p) => {
+                    const resolved = path.resolve(resolvedConfig.outDir!, '.' + p);
+                    if (!isInsideDir(resolvedConfig.outDir!, resolved)) return false;
+                    return fsSyncMod.existsSync(resolved);
+                },
+            });
+            if (broken.length === 0) {
+                console.log('   ✓ all internal links resolve');
+            } else {
+                const report = formatLinkCheckReport(broken);
+                if (linkCheckMode === 'error') {
+                    throw new SSGError(`Link check failed — ${report}`, {
+                        code: ErrorCodes.BUILD_LINK_CHECK_FAILED,
+                        suggestion: "Fix the links above, or relax with linkCheck: 'warn'.",
+                    });
+                }
+                console.warn(`⚠️  ${report}`);
+                warnings.push(`${broken.length} broken internal link(s) — set linkCheck: 'error' to fail the build.`);
+            }
         }
 
         // Built-in search index (#62)

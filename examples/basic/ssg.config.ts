@@ -22,6 +22,9 @@ export default defineSSGConfig({
     // Static redirects (#61): old URLs keep working after content moves.
     // Built-in search (#62): emits search-index.json over the rendered pages.
     search: true,
+
+    // Internal link validation (#99): fail the build on dead hrefs/anchors.
+    linkCheck: 'error',
     // Programmatic routes (#59): pages that don't come from src/pages.
     routes: () => [
         {
