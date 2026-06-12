@@ -44,7 +44,7 @@
         "tailwindcss": ">=4.0.0"
     },
     "devDependencies": {
-        "@sigx/router": "^0.6.0",
+        "@sigx/router": "^0.6.1",
         "@sigx/ssg": "workspace:^",
         "sigx": "^0.6.1",
         "typescript": "^6.0.3"

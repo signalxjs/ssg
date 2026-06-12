@@ -64,7 +64,7 @@
     },
     "dependencies": {
         "@mdx-js/rollup": "^3.1.0",
-        "esbuild": "^0.28.0",
+        "esbuild": "^0.28.1",
         "fast-glob": "^3.3.2",
         "gray-matter": "^4.0.3",
         "hast-util-from-html": "^2.0.3",
@@ -77,7 +77,7 @@
         "remark-mdx-frontmatter": "^5.0.0",
         "remark-parse": "^11.0.0",
         "remark-rehype": "^11.1.1",
-        "shiki": "^4.0.2",
+        "shiki": "^4.2.0",
         "unified": "^11.0.5",
         "unist-util-visit": "^5.0.0"
     },
@@ -94,7 +94,7 @@
         }
     },
     "devDependencies": {
-        "@sigx/router": "^0.6.0",
+        "@sigx/router": "^0.6.1",
         "@sigx/server-renderer": "^0.6.1",
         "@sigx/vite": "^0.6.1",
         "@types/node": "^25.7.0",
