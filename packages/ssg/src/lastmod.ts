@@ -35,8 +35,13 @@ export function gitLastModifiedMap(root: string): Map<string, string> {
     for (const line of output.split('\n')) {
         if (line.startsWith('\x00')) {
             currentDate = line.slice(1).trim(); // commit marker line (%x00%cI)
-        } else if (line.trim() && currentDate && !map.has(line.trim())) {
-            map.set(line.trim(), currentDate);
+        } else {
+            // Strip only a Windows \r — paths may legitimately start or end
+            // with spaces, and trimming would corrupt the lookup key.
+            const file = line.endsWith('\r') ? line.slice(0, -1) : line;
+            if (file && currentDate && !map.has(file)) {
+                map.set(file, currentDate);
+            }
         }
     }
     return map;

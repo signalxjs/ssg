@@ -52,6 +52,20 @@ describe('gitLastModifiedMap (#38)', () => {
         expect(map.get('src/fresh.mdx')).toContain('2026-06-01');
     });
 
+    it('preserves filenames with leading spaces (no trim corruption)', () => {
+        const env = {
+            ...process.env,
+            GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t',
+            GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t',
+            GIT_COMMITTER_DATE: '2026-06-02T00:00:00Z', GIT_AUTHOR_DATE: '2026-06-02T00:00:00Z',
+        };
+        fs.writeFileSync(path.join(repo, ' padded.mdx'), 'x');
+        execFileSync('git', ['add', '.'], { cwd: repo, env });
+        execFileSync('git', ['commit', '-q', '-m', 'padded'], { cwd: repo, env });
+        const map = gitLastModifiedMap(repo);
+        expect(map.get(' padded.mdx')).toContain('2026-06-02');
+    });
+
     it('returns an empty map outside a git repo', () => {
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ssg-nogit-'));
         try {
@@ -96,6 +110,17 @@ describe('per-page sitemap meta + transform (#38)', () => {
         );
         expect(entries.find((e) => e.path === '/derived')?.lastmod).toBe('2026-05-05');
         expect(entries.find((e) => e.path === '/explicit')?.lastmod).toBe('2026-02-02');
+    });
+
+    it('ignores malformed frontmatter overrides instead of throwing', () => {
+        const entries = pagesToSitemapEntries(
+            [page('/messy', { priority: '0.9', changefreq: 'sometimes', lastmod: 12345 } as never)],
+            {}
+        );
+        // numeric-string priority coerced; bogus changefreq/lastmod ignored
+        expect(entries[0].priority).toBe(0.9);
+        expect(entries[0].changefreq).not.toBe('sometimes');
+        expect(entries[0].lastmod).toBeUndefined();
     });
 
     it('transform adjusts entries and drops them by returning null', () => {

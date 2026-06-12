@@ -25,8 +25,8 @@ export default defineSSGConfig({
 
     // Sitemap freshness (#38): derive <lastmod> from source files. 'mtime'
     // here for CI determinism; real sites usually want 'git' (with full
-    // history checked out). The transform drops the demo redirect target's
-    // noise and bumps the guide's priority.
+    // history checked out). The transform bumps the guide's priority —
+    // return null from it to drop an entry entirely.
     sitemap: {
         lastmod: 'mtime',
         transform: (entry) => (entry.path === '/guide' ? { ...entry, priority: 0.9 } : entry),
