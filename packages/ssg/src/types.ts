@@ -346,6 +346,13 @@ export interface CollectionConfig {
      * @default 'dev'
      */
     showDrafts?: 'dev' | 'never';
+
+    /**
+     * Category order for THIS collection's sidebar — wins over the
+     * site-wide `navigation.sectionOrder` (#100). Same forms: name → weight
+     * map or explicit list.
+     */
+    sectionOrder?: Record<string, number> | string[];
 }
 
 // ============================================================================
@@ -377,10 +384,13 @@ export interface NavigationConfig {
     showDrafts?: 'dev' | 'never';
 
     /**
-     * Sort order per section/category title, merged over the built-in
-     * defaults. Lower numbers come first; unlisted titles default to 50 (#60).
+     * Category order for the sidebar (#100): either a name → weight map
+     * (lower first, merged over the built-in defaults) or an explicit list
+     * (listed categories come first in list order; unlisted follow per the
+     * built-in defaults). Collections can override with their own
+     * `sectionOrder`.
      */
-    sectionOrder?: Record<string, number>;
+    sectionOrder?: Record<string, number> | string[];
 }
 
 /**

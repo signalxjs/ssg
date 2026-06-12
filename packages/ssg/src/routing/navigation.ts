@@ -352,10 +352,28 @@ export function generateAllCollections(
 
     for (const [name, collectionConfig] of Object.entries(collections)) {
         const showDrafts = collectionConfig.showDrafts ?? config.navigation?.showDrafts ?? 'dev';
-        result[name] = generateNavigation(routes, collectionConfig.path, showDrafts, isDev, config.navigation?.sectionOrder);
+        // Per-collection order wins over the site-wide setting (#100).
+        const sectionOrder = normalizeSectionOrder(
+            collectionConfig.sectionOrder ?? config.navigation?.sectionOrder
+        );
+        result[name] = generateNavigation(routes, collectionConfig.path, showDrafts, isDev, sectionOrder);
     }
 
     return result;
+}
+
+/**
+ * Normalize a section order to the name → weight form (#100). A list maps
+ * each title to a negative weight (position − length), so listed categories
+ * always sort ahead of every built-in weight (10+) regardless of list
+ * length, in list order; unlisted ones follow per the built-in defaults.
+ */
+export function normalizeSectionOrder(
+    order?: Record<string, number> | string[]
+): Record<string, number> | undefined {
+    if (!order) return undefined;
+    if (!Array.isArray(order)) return order;
+    return Object.fromEntries(order.map((title, index) => [title, index - order.length]));
 }
 
 /**
