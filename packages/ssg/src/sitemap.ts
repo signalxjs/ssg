@@ -65,6 +65,25 @@ Sitemap: ${siteUrl}${base}${sitemapPath}
 /**
  * Convert page build results to sitemap entries
  */
+const CHANGEFREQS = new Set(['always', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'never']);
+
+function coerceChangefreq(value: unknown): SitemapEntry['changefreq'] | undefined {
+    return typeof value === 'string' && CHANGEFREQS.has(value)
+        ? (value as SitemapEntry['changefreq'])
+        : undefined;
+}
+
+function coercePriority(value: unknown): number | undefined {
+    const n = typeof value === 'string' ? Number(value) : value;
+    return typeof n === 'number' && Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : undefined;
+}
+
+function coerceLastmod(value: unknown): Date | string | undefined {
+    if (typeof value === 'string' && value) return value;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+    return undefined;
+}
+
 export function pagesToSitemapEntries(
     pages: PageBuildResult[],
     options: SitemapOptions = {}
@@ -117,17 +136,29 @@ export function pagesToSitemapEntries(
                 priority = 0.6; // Second-level pages
             }
 
-            // meta.date is a freshness signal crawlers can use (#56)
+            // Freshness: explicit meta.lastmod wins, then the derived map
+            // (git/mtime, #38), then meta.date (#56).
+            // Frontmatter is untyped — coerce/validate the overrides so a
+            // stray `priority: "0.9"` or bogus changefreq can't break
+            // generation (#38 review).
+            const metaLastmod = coerceLastmod(page.meta?.lastmod);
             const date = page.meta?.date;
-            const lastmod = date instanceof Date && !Number.isNaN(date.getTime()) ? date : undefined;
+            const lastmod =
+                metaLastmod ??
+                options.lastmodByPath?.get(page.path) ??
+                (date instanceof Date && !Number.isNaN(date.getTime()) ? date : undefined);
 
-            return {
+            const entry: SitemapEntry = {
                 path: page.path,
-                changefreq: defaultChangefreq,
-                priority,
+                changefreq: coerceChangefreq(page.meta?.changefreq) ?? defaultChangefreq,
+                priority: coercePriority(page.meta?.priority) ?? priority,
                 ...(lastmod ? { lastmod } : {}),
             };
-        });
+
+            // Per-entry escape hatch (#38): adjust or drop (null) entries.
+            return options.transform ? options.transform(entry, page) : entry;
+        })
+        .filter((entry): entry is SitemapEntry => entry != null);
 }
 
 /**

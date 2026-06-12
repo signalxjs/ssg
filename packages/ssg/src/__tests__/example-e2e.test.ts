@@ -71,6 +71,14 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         expect(second).not.toContain('window.__SSG_PROPS__');
     });
 
+    it('emits <lastmod> derived from source files and honors the transform (#38)', () => {
+        const sitemap = read('sitemap.xml');
+        expect(sitemap).toContain('<lastmod>');
+        // transform bumped /guide's priority
+        const guideBlock = sitemap.split('<url>').find((b) => b.includes('/guide/</loc>'));
+        expect(guideBlock).toContain('<priority>0.9</priority>');
+    });
+
     it('emits a default 404.html when the site has none (#65)', () => {
         const html = read('404.html');
         expect(html).toContain('404');
