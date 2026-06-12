@@ -92,4 +92,47 @@ describe.skipIf(!distBuilt)('examples/theme — end-to-end production build on t
         expect(css).toContain('.navbar'); // daisyui component class used by Header
         expect(css).toContain('.menu'); // sidebar/palette lists
     });
+
+    describe('per-page chrome (#65) and showcase pages', () => {
+    it('renders the announcement bar markup in every layout', () => {
+        for (const file of [['index.html'], ['docs', 'configuration', 'index.html'], ['blog', 'hello-theme', 'index.html']]) {
+            expect(read(...file)).toContain('announcement-bar');
+        }
+        expect(read('index.html')).toContain('zero layout code');
+    });
+
+    it('renders breadcrumbs from the collection sidebar', () => {
+        const html = read('docs', 'configuration', 'index.html');
+        expect(html).toContain('breadcrumbs');
+        expect(html).toContain('Guide'); // section crumb
+    });
+
+    it('renders the edit-this-page link from editBase + sourceFile', () => {
+        const html = read('docs', 'configuration', 'index.html');
+        expect(html).toContain(
+            'https://github.com/signalxjs/ssg/edit/main/examples/theme/src/pages/docs/configuration.mdx'
+        );
+        expect(html).toContain('Edit this page');
+    });
+
+    it('renders last-updated from frontmatter', () => {
+        const html = read('docs', 'configuration', 'index.html');
+        expect(html).toContain('Last updated');
+        expect(html).toContain('2026-06-11');
+    });
+
+    it('renders the blog layout hero for posts', () => {
+        const html = read('blog', 'hello-theme', 'index.html');
+        expect(html).toContain('Hello from the blog layout');
+        expect(html).toContain('By SignalX');
+    });
+
+    it('honors per-collection sectionOrder (Guide before Reference)', () => {
+        const html = read('docs', 'getting-started', 'index.html');
+        const guidePos = html.indexOf('>Guide<');
+        const refPos = html.indexOf('>Reference<');
+        expect(guidePos).toBeGreaterThan(-1);
+        expect(refPos).toBeGreaterThan(guidePos);
+    });
+    });
 });

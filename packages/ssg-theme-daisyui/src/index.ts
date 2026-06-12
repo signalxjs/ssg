@@ -18,6 +18,7 @@ import Sidebar from './components/Sidebar.js';
 import TOC from './components/TOC.js';
 import CommandPalette from './components/CommandPalette.js';
 import PrevNext from './components/PrevNext.js';
+import { AnnouncementBar, Breadcrumbs, PageFooter } from './components/PageChrome.js';
 import { themeInitScript } from './lib/theme-init.js';
 
 // Re-export component types
@@ -63,6 +64,9 @@ export const components = {
     TOC,
     CommandPalette,
     PrevNext,
+    AnnouncementBar,
+    Breadcrumbs,
+    PageFooter,
 };
 
 /**
