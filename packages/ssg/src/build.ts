@@ -327,6 +327,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                     time: result.renderTime,
                     size,
                     meta: result.pathInfo.route.meta,
+                    source: result.pathInfo.route.file,
                 };
                 pages.push(pageResult);
                 if (resolvedConfig.search) searchDocs.push({ page: pageResult, html: result.html });
@@ -361,7 +362,13 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                 warnings.push('Sitemap skipped: site.url is not configured.');
             } else {
                 console.log('🗺️  Generating sitemap...');
-                await writeSitemap(pages, resolvedConfig, resolvedConfig.outDir!, resolvedConfig.sitemap ?? {});
+                const sitemapOptions = { ...resolvedConfig.sitemap };
+                // Derive <lastmod> from source files when configured (#38).
+                if (sitemapOptions.lastmod === 'git' || sitemapOptions.lastmod === 'mtime') {
+                    const { resolveLastmods } = await import('./lastmod');
+                    sitemapOptions.lastmodByPath = resolveLastmods(pages, sitemapOptions.lastmod, root);
+                }
+                await writeSitemap(pages, resolvedConfig, resolvedConfig.outDir!, sitemapOptions);
                 console.log('   ✓ sitemap.xml');
                 console.log('   ✓ robots.txt');
             }
