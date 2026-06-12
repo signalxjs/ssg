@@ -1,6 +1,6 @@
 {
     "name": "@sigx/ssg",
-    "version": "0.10.0",
+    "version": "0.11.0",
     "description": "Static Site Generator for SignalX with file-based routing, MDX support, and pluggable themes",
     "type": "module",
     "main": "./dist/index.js",

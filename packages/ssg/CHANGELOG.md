@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-06-12
+
 ### Changed
 
 - **Aligned `@sigx/*` dependency pins with the 0.6 core line** ([#135](https://github.com/signalxjs/ssg/issues/135)): `@sigx/router` and `@sigx/server-renderer` moved from `dependencies` to `peerDependencies` with range `>=0.6.0 <0.7.0`, and the `sigx` peer range widened from `^0.4.3` to `>=0.6.0 <0.7.0`. Companion packages now share the consumer app's single copy of the SignalX core, so duplicate reactivity engines (with untracked cross-copy signals) are structurally impossible. Consumers must depend on `@sigx/router` and `@sigx/server-renderer` themselves (most package managers auto-install peers).

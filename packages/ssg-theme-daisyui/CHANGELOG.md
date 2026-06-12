@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-06-12
+
 ### Changed
 
 - **Aligned `@sigx/*` dependency pins with the 0.6 core line** ([#135](https://github.com/signalxjs/ssg/issues/135)): `@sigx/router` and `@sigx/ssg` moved from `dependencies` to `peerDependencies` (`@sigx/router` at `>=0.6.0 <0.7.0`), and the `sigx` peer range widened from `^0.4.3` to `>=0.6.0 <0.7.0` — the theme now always shares the consumer app's copies of the router, the SSG, and the SignalX core. Consumers must depend on `@sigx/router` and `@sigx/ssg` themselves (most package managers auto-install peers; every `@sigx/ssg` site already depends on both).
