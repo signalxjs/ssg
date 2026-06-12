@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-06-12
+
 ### Added
 
 - `meta.sourceFile` ([#60](https://github.com/signalxjs/ssg/issues/60)): every page's root-relative source path is embedded into its route meta by the generated routes module — with the new `site.editBase`, themes render edit-this-page links (`editBase + sourceFile`).

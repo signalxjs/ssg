@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-06-12
+
 ### Added
 
 - Per-page chrome ([#65](https://github.com/signalxjs/ssg/issues/65)): `AnnouncementBar` (dismissible, `site.announcement`, rendered by all three layouts), `Breadcrumbs` (collection sidebar trail, docs layout), and `PageFooter` (edit-this-page from `site.editBase` + `meta.sourceFile`, last-updated from frontmatter `updated`/`date`) — all config-driven, no site code needed.
