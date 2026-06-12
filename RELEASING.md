@@ -6,7 +6,7 @@ Publishing happens **only** from GitHub Actions via npm Trusted Publishing (OIDC
 
 - [ ] `pnpm install`, `pnpm build`, `pnpm test`, `pnpm typecheck`, `pnpm lint` all pass on `main`.
 - [ ] `pnpm publish:dry` succeeds.
-- [ ] `CHANGELOG.md` entries added.
+- [ ] Per-package `CHANGELOG.md` entries added (`packages/ssg/`, `packages/ssg-theme-daisyui/`).
 - [ ] Each package's `repository`, `homepage`, and `bugs` fields point at `signalxjs/ssg`.
 
 ## Cutting a release
@@ -54,6 +54,6 @@ Workflow per release:
 2. Run smoke tests against `signalxjs/signalxjs.github.io` checked out locally with the new versions installed.
 3. Soak ≥ 24 h. Watch for issues.
 4. Promote: `npm dist-tag add <pkg>@<version> latest` for each package.
-5. Update `CHANGELOG.md`, draft GitHub Release notes.
+5. Roll the per-package `CHANGELOG.md`s (`[Unreleased]` → the new version), draft GitHub Release notes.
 
 Patch versions for urgent fixes follow the same path. Pre-release identifiers (`0.1.0-rc.1`) are reserved for breaking changes that deserve broader review.
