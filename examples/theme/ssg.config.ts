@@ -14,9 +14,6 @@ export default defineSSGConfig({
         // Show the theme's ⌘K palette (works because `search: true` below
         // emits the index it queries).
         search: true,
-
-    // Internal link validation (#99): fail the build on dead hrefs/anchors.
-    linkCheck: 'error',
     },
 
     collections: {
@@ -28,4 +25,7 @@ export default defineSSGConfig({
     clientImports: ['@sigx/ssg/styles.css'],
 
     search: true,
+
+    // Internal link validation (#99): fail the build on dead hrefs/anchors.
+    linkCheck: 'error',
 });

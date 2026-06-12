@@ -25,6 +25,7 @@ import { registerProcessCleanup } from './cleanup';
 import { hasViteConfigFile, assembleZeroConfigPlugins, ZERO_CONFIG_OXC } from './vite/zero-config';
 import { discoverLayouts } from './layouts/index';
 import { writeSitemap } from './sitemap';
+import { isInsideDir } from './vite/paths';
 import { generateHeadTags, pagePropsScript } from './head';
 import {
     detectCustomEntries,
@@ -385,7 +386,13 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                 base: resolvedConfig.base,
                 redirects: resolvedConfig.redirects,
                 // Assets from public/ are already copied into outDir here.
-                fileExists: (p) => fsSyncMod.existsSync(path.join(resolvedConfig.outDir!, p)),
+                // Resolve inside outDir only — '..' segments must not let a
+                // link validate against files outside the build output.
+                fileExists: (p) => {
+                    const resolved = path.resolve(resolvedConfig.outDir!, '.' + p);
+                    if (!isInsideDir(resolvedConfig.outDir!, resolved)) return false;
+                    return fsSyncMod.existsSync(resolved);
+                },
             });
             if (broken.length === 0) {
                 console.log('   ✓ all internal links resolve');

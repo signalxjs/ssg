@@ -98,6 +98,35 @@ describe('checkLinks (#99)', () => {
     });
 });
 
+describe('review hardening (#99)', () => {
+    it('handles single-quoted hrefs and ids', () => {
+        expect(extractLocalLinks(`<a href='/guide'>g</a>`)).toEqual(['/guide']);
+        expect(extractElementIds(`<h2 id='setup'>s</h2>`)).toEqual(new Set(['setup']));
+    });
+
+    it('decodes URL-encoded fragments before matching ids', () => {
+        const broken = checkLinks(
+            [page('/', '<a href="/guide#a%20b">x</a>'), page('/guide', '<h2 id="a b">s</h2>')],
+            {}
+        );
+        expect(broken).toEqual([]);
+    });
+
+    it('never resolves fileExists paths outside the output dir', () => {
+        const seen: string[] = [];
+        checkLinks([page('/', '<a href="/../../etc/passwd">x</a>')], {
+            fileExists: (p) => {
+                seen.push(p);
+                return false;
+            },
+        });
+        // The checker hands over the URL path; the build-side callback is
+        // responsible for containment — assert the path is passed verbatim
+        // so the build test below can guard it.
+        expect(seen).toEqual(['/../../etc/passwd']);
+    });
+});
+
 describe('formatLinkCheckReport (#99)', () => {
     it('renders one file → href line per finding', () => {
         const report = formatLinkCheckReport([

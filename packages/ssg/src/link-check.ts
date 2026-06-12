@@ -35,8 +35,8 @@ export interface LinkCheckOptions {
 /** Internal hrefs in the HTML — externals and scheme links are skipped. */
 export function extractLocalLinks(html: string): string[] {
     const links: string[] = [];
-    for (const m of html.matchAll(/<a\s[^>]*?href="([^"]*)"/gi)) {
-        const href = m[1];
+    for (const m of html.matchAll(/<a\s[^>]*?href=(?:"([^"]*)"|'([^']*)')/gi)) {
+        const href = m[1] ?? m[2];
         if (!href) continue;
         if (href.startsWith('//')) continue; // protocol-relative external
         if (/^[a-z][a-z0-9+.-]*:/i.test(href)) continue; // http:, mailto:, tel:, …
@@ -48,8 +48,8 @@ export function extractLocalLinks(html: string): string[] {
 /** Every element id in the HTML — anchors may target any element. */
 export function extractElementIds(html: string): Set<string> {
     const ids = new Set<string>();
-    for (const m of html.matchAll(/<[a-z][^>]*?\bid="([^"]+)"/gi)) {
-        ids.add(m[1]);
+    for (const m of html.matchAll(/<[a-z][^>]*?\bid=(?:"([^"]+)"|'([^']+)')/gi)) {
+        ids.add(m[1] ?? m[2]);
     }
     return ids;
 }
@@ -79,7 +79,15 @@ export function checkLinks(
         for (const href of extractLocalLinks(doc.html)) {
             // Split off fragment and query (query never affects static targets).
             const hashIndex = href.indexOf('#');
-            const fragment = hashIndex === -1 ? null : href.slice(hashIndex + 1);
+            let fragment = hashIndex === -1 ? null : href.slice(hashIndex + 1);
+            // Hrefs may carry URL-encoded fragments; ids are plain text.
+            if (fragment) {
+                try {
+                    fragment = decodeURIComponent(fragment);
+                } catch {
+                    /* malformed escape — compare raw */
+                }
+            }
             let pathPart = hashIndex === -1 ? href : href.slice(0, hashIndex);
             const queryIndex = pathPart.indexOf('?');
             if (queryIndex !== -1) pathPart = pathPart.slice(0, queryIndex);
