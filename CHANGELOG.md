@@ -1,5 +1,11 @@
 # Changelog
 
+> **Changelogs are kept per package** — see
+> [`packages/ssg/CHANGELOG.md`](packages/ssg/CHANGELOG.md) and
+> [`packages/ssg-theme-daisyui/CHANGELOG.md`](packages/ssg-theme-daisyui/CHANGELOG.md).
+> The entries below predate that convention (≤ 0.4.x) and are kept for history.
+
+
 All notable changes to packages in this repo. Each package may also keep its own `packages/<name>/CHANGELOG.md`.
 
 ## [Unreleased]
