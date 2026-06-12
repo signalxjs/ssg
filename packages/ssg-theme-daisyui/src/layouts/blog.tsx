@@ -44,8 +44,10 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) =
 
                             <div class="flex items-center justify-center gap-4 text-sm text-base-content/60">
                                 {meta.author && (
-                                    // Single-expression child: the SSR renderer drops an
-                                    // expression adjacent to literal text (renderer bug).
+                                    // Single-expression child keeps the SSR output free of the
+                                    // <!--t--> text-boundary marker the renderer inserts between
+                                    // adjacent text children (works-as-designed hydration aid,
+                                    // signalxjs/core#97) — purely cosmetic, mixed children work too.
                                     <span>{`By ${meta.author as string}`}</span>
                                 )}
                                 {date && (

@@ -31,7 +31,11 @@ if (!distBuilt) {
 }
 
 function read(...segments: string[]): string {
-    return fs.readFileSync(path.join(DIST, ...segments), 'utf-8');
+    // The renderer emits <!--t--> markers between adjacent text children
+    // (hydration text boundaries, signalxjs/core#97 — works as designed).
+    // Strip them so substring assertions can't silently depend on where a
+    // boundary falls (the misdiagnosis behind signalxjs/ssg#133).
+    return fs.readFileSync(path.join(DIST, ...segments), 'utf-8').replace(/<!--t-->/g, '');
 }
 
 describe.skipIf(!distBuilt)('examples/theme — end-to-end production build on the daisyui theme', () => {
