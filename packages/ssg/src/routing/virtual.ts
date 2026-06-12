@@ -53,7 +53,9 @@ function fallbackLayout(routePath: string, config: SSGConfig): string {
 function sourceFileEntry(route: SSGRoute, root?: string): string {
     if (!root) return '';
     const rel = path.relative(root, route.file).replace(/\\/g, '/');
-    if (rel.startsWith('..')) return '';
+    // Outside root — or, on Windows, a different drive (path.relative then
+    // returns an absolute path): never leak machine-local paths into meta.
+    if (rel.startsWith('..') || path.isAbsolute(rel)) return '';
     return `, sourceFile: ${JSON.stringify(rel)}`;
 }
 
