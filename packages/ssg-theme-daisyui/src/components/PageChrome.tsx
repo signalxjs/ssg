@@ -8,8 +8,9 @@ import { component } from 'sigx';
 import { useRoute } from '@sigx/router';
 import type { PageMeta, SiteConfig } from '@sigx/ssg';
 import { editUrl, breadcrumbs, lastUpdated, announcementKey } from '../lib/page-chrome.js';
+import type { NavSection } from './Sidebar.js';
 
-let generatedNavigation: Record<string, { sidebar: never[] }> = {};
+let generatedNavigation: Record<string, { sidebar: NavSection[] }> = {};
 let detectCollection: (path: string) => string | undefined = () => undefined;
 
 try {
@@ -132,7 +133,7 @@ export const PageFooter = component<PageFooterProps>(({ props }) => {
                     <span>
                         <span>Last updated </span>
                         <time dateTime={updated.toISOString()}>
-                            {updated.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            {updated.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
                         </time>
                     </span>
                 )}

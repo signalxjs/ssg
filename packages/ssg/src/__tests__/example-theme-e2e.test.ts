@@ -92,9 +92,8 @@ describe.skipIf(!distBuilt)('examples/theme — end-to-end production build on t
         expect(css).toContain('.navbar'); // daisyui component class used by Header
         expect(css).toContain('.menu'); // sidebar/palette lists
     });
-});
 
-describe('per-page chrome (#65) and showcase pages', () => {
+    describe('per-page chrome (#65) and showcase pages', () => {
     it('renders the announcement bar markup in every layout', () => {
         for (const file of [['index.html'], ['docs', 'configuration', 'index.html'], ['blog', 'hello-theme', 'index.html']]) {
             expect(read(...file)).toContain('announcement-bar');
@@ -134,5 +133,6 @@ describe('per-page chrome (#65) and showcase pages', () => {
         const refPos = html.indexOf('>Reference<');
         expect(guidePos).toBeGreaterThan(-1);
         expect(refPos).toBeGreaterThan(guidePos);
+    });
     });
 });
