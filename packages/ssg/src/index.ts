@@ -57,6 +57,7 @@ export { extractSearchText, buildSearchIndex, writeSearchIndex } from './search'
 export type { SearchOptions, SearchIndexEntry } from './types';
 export { runDataLoaders, generateDataModule } from './data';
 export { checkLinks, extractLocalLinks, extractElementIds, formatLinkCheckReport } from './link-check';
+export { generateDefault404 } from './default-404';
 export type { BrokenLink, LinkCheckOptions } from './link-check';
 
 // Public-URL path normalization (shared by canonical/og:url/sitemap)

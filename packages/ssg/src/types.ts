@@ -470,6 +470,21 @@ export interface SiteConfig {
      * index filenames.
      */
     search?: boolean | { base?: string; url?: string };
+
+    /**
+     * Base URL for edit-this-page links (#65) — the page's root-relative
+     * source path (`meta.sourceFile`) is appended. E.g.
+     * `'https://github.com/org/repo/edit/main/'`. Themes render the link
+     * when both this and the source path are present.
+     */
+    editBase?: string;
+
+    /**
+     * Site-wide announcement bar (#65) — rendered by the theme above the
+     * header. `id` keys the visitor's dismissal (change it to re-show a new
+     * announcement).
+     */
+    announcement?: { text: string; href?: string; id?: string };
     /** Site description for meta tags */
     description?: string;
     /** Site author */
@@ -798,6 +813,13 @@ export interface PageMeta {
      */
     titleFromContent?: boolean;
 
+    /**
+     * Root-relative posix path of the page's source file, embedded by the
+     * generated routes module (#60/#65) — `site.editBase` + this is the
+     * edit-this-page URL.
+     */
+    sourceFile?: string;
+
     // ========================================================================
     // SEO Fields
     // ========================================================================
@@ -937,6 +959,13 @@ export interface ThemeConfig {
      * own `defaultLayout` (#60).
      */
     defaultLayout?: string;
+
+    /**
+     * Build hooks this theme contributes (#60) — composed with the site's:
+     * the theme's run first, then the site's (`transformHtml` chains its
+     * output through both).
+     */
+    hooks?: BuildHooks;
 
     /**
      * Markdown plugins this theme contributes. They run before the site's
