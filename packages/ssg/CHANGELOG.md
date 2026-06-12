@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Aligned `@sigx/*` dependency pins with the 0.6 core line** ([#135](https://github.com/signalxjs/ssg/issues/135)): `@sigx/router` and `@sigx/server-renderer` moved from `dependencies` to `peerDependencies` with range `>=0.6.0 <0.7.0`, and the `sigx` peer range widened from `^0.4.3` to `>=0.6.0 <0.7.0`. Companion packages now share the consumer app's single copy of the SignalX core, so duplicate reactivity engines (with untracked cross-copy signals) are structurally impossible. Consumers must depend on `@sigx/router` and `@sigx/server-renderer` themselves (most package managers auto-install peers).
+
 ### Added
 
 - Sitemap freshness signals ([#38](https://github.com/signalxjs/ssg/issues/38)): `sitemap.lastmod: 'git' | 'mtime'` derives `<lastmod>` from each page's source file (`'git'` = last commit date via one repo-wide log walk — use `fetch-depth: 0` in CI; `'mtime'` = filesystem). Per-page frontmatter `lastmod`/`changefreq`/`priority` override the defaults, and the new `sitemap.transform(entry, page)` adjusts or drops entries programmatically (return `null` to drop).

@@ -10,12 +10,12 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@sigx/router": "^0.4.5",
+        "@sigx/router": "^0.6.0",
         "@sigx/ssg": "workspace:^",
-        "sigx": "^0.4.3"
+        "sigx": "^0.6.1"
     },
     "devDependencies": {
-        "@sigx/vite": "^0.4.3",
+        "@sigx/vite": "^0.6.1",
         "vite": "^8.0.3"
     }
 }

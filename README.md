@@ -26,7 +26,7 @@ Full guides, API reference and live examples → **<https://sigx.dev/ssg/>**
 ## Install
 
 ```bash
-npm install @sigx/ssg sigx
+npm install @sigx/ssg @sigx/router @sigx/server-renderer sigx
 # optional
 npm install @sigx/ssg-theme-daisyui
 ```
