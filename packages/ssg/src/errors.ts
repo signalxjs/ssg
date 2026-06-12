@@ -82,6 +82,7 @@ export const ErrorCodes = {
     // Build errors
     BUILD_RENDER_FAILED: 'SSG300',
     BUILD_VITE_FAILED: 'SSG301',
+    BUILD_LINK_CHECK_FAILED: 'SSG310',
     
     // MDX errors
     MDX_PARSE_ERROR: 'SSG400',

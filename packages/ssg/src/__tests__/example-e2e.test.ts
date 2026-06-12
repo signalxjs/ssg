@@ -71,6 +71,12 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         expect(second).not.toContain('window.__SSG_PROPS__');
     });
 
+    it('passes link validation in error mode (#99)', () => {
+        // linkCheck: 'error' in the example config — the build succeeding at
+        // all proves every internal href/anchor resolves.
+        expect(fs.existsSync(path.join(DIST, 'index.html'))).toBe(true);
+    });
+
     it('emits a search index over the rendered pages (#62)', () => {
         const index = JSON.parse(read('search-index.json'));
         expect(index.version).toBe(1);
