@@ -7,11 +7,13 @@
 import { component } from 'sigx';
 import type { LayoutProps, LayoutSlots } from '@sigx/ssg';
 import Header from '../components/Header.js';
+import { AnnouncementBar } from '../components/PageChrome.js';
 import Footer from '../components/Footer.js';
 
 export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) => {
     return () => (
         <div class="min-h-screen flex flex-col">
+            <AnnouncementBar site={props.site} />
             <Header site={props.site} search={props.site?.search} />
 
             <main class="flex-1 container mx-auto px-4 py-8">

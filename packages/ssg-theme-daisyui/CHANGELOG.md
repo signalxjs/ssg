@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Per-page chrome ([#65](https://github.com/signalxjs/ssg/issues/65)): `AnnouncementBar` (dismissible, `site.announcement`, rendered by all three layouts), `Breadcrumbs` (collection sidebar trail, docs layout), and `PageFooter` (edit-this-page from `site.editBase` + `meta.sourceFile`, last-updated from frontmatter `updated`/`date`) — all config-driven, no site code needed.
+
+### Fixed
+
+- Blog layout author line renders under SSR (worked around the renderer dropping an expression adjacent to literal text).
+
 ## [0.9.0] - 2026-06-12
 
 No changes — version aligned with `@sigx/ssg` 0.9.0.
