@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Nested collection paths no longer cross-contaminate navigation ([#143](https://github.com/signalxjs/ssg/issues/143)): when one collection's `path` was a string prefix of another's (e.g. `/modules/updates` and `/modules/updates-ui`), the shorter collection absorbed the longer one's pages because matching used a raw `startsWith`. Pages are now assigned on a path-segment boundary and to the longest matching collection only, so `/modules/updates-ui/*` belongs to `updates-ui-docs` alone. Affects generated sidebars (`navigation[collection].sidebar`) and `detectCollection`.
+
 ## [0.11.0] - 2026-06-12
 
 ### Changed

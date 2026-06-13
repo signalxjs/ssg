@@ -82,7 +82,10 @@ export function detectCollection(path) {
     );
 
     for (const [name, config] of sorted) {
-        if (path.startsWith(config.path)) {
+        // Match on a path-segment boundary so '/modules/updates-ui/x' is not
+        // claimed by the '/modules/updates' collection (signalxjs/ssg#143).
+        const prefix = config.path.replace(/\\/+$/, '');
+        if (path === prefix || path.startsWith(prefix + '/')) {
             return name;
         }
     }
