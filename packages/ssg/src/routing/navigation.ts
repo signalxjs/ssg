@@ -36,24 +36,52 @@ interface NavBuildItem {
 }
 
 /**
+ * Whether a route belongs to a collection path. A page belongs only when its
+ * route equals the collection path or sits under it on a path-segment
+ * boundary — `/modules/updates-ui/x` is NOT under `/modules/updates` even
+ * though the raw string is a prefix (signalxjs/ssg#143).
+ */
+export function isUnderCollectionPath(routePath: string, collectionPath: string): boolean {
+    const prefix = collectionPath.replace(/\/+$/, '');
+    return routePath === prefix || routePath.startsWith(prefix + '/');
+}
+
+/**
  * Generate navigation structure from routes for a specific collection path
  *
  * @param routes - Scanned SSG routes
  * @param collectionPath - Path prefix for the collection (e.g., '/docs')
  * @param showDrafts - Whether to show draft pages
  * @param isDev - Whether running in development mode
+ * @param sectionOrder - Optional per-title sort weights
+ * @param allCollectionPaths - All configured collection paths; when a route
+ *   matches several, the longest path wins so a page is assigned to its most
+ *   specific collection only (signalxjs/ssg#143)
  */
 export function generateNavigation(
     routes: SSGRoute[],
     collectionPath: string,
     showDrafts: 'dev' | 'never',
     isDev: boolean,
-    sectionOrder?: Record<string, number>
+    sectionOrder?: Record<string, number>,
+    allCollectionPaths?: string[]
 ): CollectionNavigation {
+    // Other collections nested more deeply than this one — a route under any
+    // of these belongs to that more specific collection, not this one.
+    const ownLength = collectionPath.replace(/\/+$/, '').length;
+    const deeperPaths = (allCollectionPaths ?? []).filter(
+        (p) => p.replace(/\/+$/, '').length > ownLength
+    );
+
     // Filter routes for navigation
     const navRoutes = routes.filter((route) => {
-        // Must be under collection path
-        if (!route.path.startsWith(collectionPath)) {
+        // Must be under collection path, on a segment boundary
+        if (!isUnderCollectionPath(route.path, collectionPath)) {
+            return false;
+        }
+
+        // A more specific (longer) collection claims this route instead.
+        if (deeperPaths.some((p) => isUnderCollectionPath(route.path, p))) {
             return false;
         }
 
@@ -349,6 +377,7 @@ export function generateAllCollections(
 ): Record<string, CollectionNavigation> {
     const collections = config.collections || {};
     const result: Record<string, CollectionNavigation> = {};
+    const allCollectionPaths = Object.values(collections).map((c) => c.path);
 
     for (const [name, collectionConfig] of Object.entries(collections)) {
         const showDrafts = collectionConfig.showDrafts ?? config.navigation?.showDrafts ?? 'dev';
@@ -356,7 +385,14 @@ export function generateAllCollections(
         const sectionOrder = normalizeSectionOrder(
             collectionConfig.sectionOrder ?? config.navigation?.sectionOrder
         );
-        result[name] = generateNavigation(routes, collectionConfig.path, showDrafts, isDev, sectionOrder);
+        result[name] = generateNavigation(
+            routes,
+            collectionConfig.path,
+            showDrafts,
+            isDev,
+            sectionOrder,
+            allCollectionPaths
+        );
     }
 
     return result;
@@ -387,13 +423,16 @@ export function detectCollection(
     path: string,
     collections: Record<string, CollectionConfig>
 ): string | undefined {
-    // Sort by path length descending to match most specific path first
+    // Sort by normalized (trailing-slash-trimmed) path length descending so
+    // the most specific collection wins, using the same normalization as the
+    // boundary match below (signalxjs/ssg#143).
+    const normLength = (p: string) => p.replace(/\/+$/, '').length;
     const sorted = Object.entries(collections).sort(
-        ([, a], [, b]) => b.path.length - a.path.length
+        ([, a], [, b]) => normLength(b.path) - normLength(a.path)
     );
 
     for (const [name, config] of sorted) {
-        if (path.startsWith(config.path)) {
+        if (isUnderCollectionPath(path, config.path)) {
             return name;
         }
     }

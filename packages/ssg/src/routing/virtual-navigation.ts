@@ -76,13 +76,19 @@ export function getCollectionNav(name) {
  * @returns The collection name if found, undefined otherwise
  */
 export function detectCollection(path) {
-    // Sort by path length descending to match most specific path first
+    // Sort by normalized (trailing-slash-trimmed) path length descending so the
+    // most specific collection wins, matching the boundary check below
+    // (signalxjs/ssg#143).
+    const normLength = (p) => p.replace(/\\/+$/, '').length;
     const sorted = Object.entries(collections).sort(
-        ([, a], [, b]) => b.path.length - a.path.length
+        ([, a], [, b]) => normLength(b.path) - normLength(a.path)
     );
 
     for (const [name, config] of sorted) {
-        if (path.startsWith(config.path)) {
+        // Match on a path-segment boundary so '/modules/updates-ui/x' is not
+        // claimed by the '/modules/updates' collection (signalxjs/ssg#143).
+        const prefix = config.path.replace(/\\/+$/, '');
+        if (path === prefix || path.startsWith(prefix + '/')) {
             return name;
         }
     }
