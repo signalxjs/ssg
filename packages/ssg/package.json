@@ -96,12 +96,12 @@
     "devDependencies": {
         "@sigx/router": "^0.6.0",
         "@sigx/server-renderer": "^0.6.1",
-        "@sigx/vite": "^0.6.1",
-        "@types/node": "^25.7.0",
+        "@sigx/vite": "^0.6.3",
+        "@types/node": "^25.9.3",
         "sigx": "^0.6.1",
-        "tsx": "^4.19.0",
+        "tsx": "^4.22.4",
         "typescript": "^6.0.3",
-        "vite": "^8.0.3"
+        "vite": "^8.0.16"
     },
     "publishConfig": {
         "access": "public"
