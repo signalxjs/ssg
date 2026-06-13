@@ -423,9 +423,12 @@ export function detectCollection(
     path: string,
     collections: Record<string, CollectionConfig>
 ): string | undefined {
-    // Sort by path length descending to match most specific path first
+    // Sort by normalized (trailing-slash-trimmed) path length descending so
+    // the most specific collection wins, using the same normalization as the
+    // boundary match below (signalxjs/ssg#143).
+    const normLength = (p: string) => p.replace(/\/+$/, '').length;
     const sorted = Object.entries(collections).sort(
-        ([, a], [, b]) => b.path.length - a.path.length
+        ([, a], [, b]) => normLength(b.path) - normLength(a.path)
     );
 
     for (const [name, config] of sorted) {

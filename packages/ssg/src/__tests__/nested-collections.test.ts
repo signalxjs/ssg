@@ -90,8 +90,9 @@ describe('detectCollection (#143)', () => {
 
 describe('generated detectCollection (#143)', () => {
     // The virtual module ships its own copy of detectCollection as a string;
-    // make sure the escaped boundary regex it emits is valid and behaves like
-    // the source implementation.
+    // make sure the regex it emits to trim trailing slashes is valid and that
+    // it behaves like the source implementation — including the trailing-slash
+    // path, which must still sort as the most specific match.
     const config: SSGConfig = {
         collections: {
             'updates-docs': { path: '/modules/updates' },
