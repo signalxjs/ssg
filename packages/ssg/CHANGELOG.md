@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Aligned `@sigx/*` dependency pins with the 0.7 core line** ([#152](https://github.com/signalxjs/ssg/issues/152)): the `@sigx/router`, `@sigx/server-renderer`, and `sigx` peer ranges moved from `>=0.6.0 <0.7.0` to `>=0.7.0 <0.8.0` (development pins and the example sites likewise bumped to `^0.7.0`). The 0.7 SignalX core is now published, and pinning the 0.6 line forced consumers onto a second, older copy of the core — the duplicate-reactivity-engine hazard [#135](https://github.com/signalxjs/ssg/issues/135) fixed. `@sigx/cli` stays `*` and the `vite` peer is unchanged.
+
+### Fixed
+
+- LivePreview blocks are now progressively enhanced ([#149](https://github.com/signalxjs/ssg/issues/149)): the SSR HTML carries the full, highlighted code window and the client enhances it in place instead of rendering an island over it. This removes the structural mismatch that, under core 0.6+, caused page hydration to self-heal-remount the widget (duplicated preview + stuck "Loading preview…") and keeps the code in the HTML for SEO, AI agents, and no-JS. The markup drops `data-island*` markers in favour of `data-live-preview`/`data-live-code` delegation hooks.
+
 ## [0.11.1] - 2026-06-13
 
 ### Fixed

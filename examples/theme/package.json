@@ -10,14 +10,14 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@sigx/router": "^0.6.0",
-        "@sigx/server-renderer": "^0.6.1",
+        "@sigx/router": "^0.7.0",
+        "@sigx/server-renderer": "^0.7.0",
         "@sigx/ssg": "workspace:^",
         "@sigx/ssg-theme-daisyui": "workspace:^",
-        "sigx": "^0.6.1"
+        "sigx": "^0.7.0"
     },
     "devDependencies": {
-        "@sigx/vite": "^0.6.1",
+        "@sigx/vite": "^0.7.0",
         "@tailwindcss/vite": "^4.1.0",
         "daisyui": "^5.0.0",
         "tailwindcss": "^4.1.0",
