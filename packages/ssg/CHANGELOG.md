@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-06-15
+
 ### Changed
 
 - **Aligned `@sigx/*` dependency pins with the 0.7 core line** ([#152](https://github.com/signalxjs/ssg/issues/152)): the `@sigx/router`, `@sigx/server-renderer`, and `sigx` peer ranges moved from `>=0.6.0 <0.7.0` to `>=0.7.0 <0.8.0` (development pins and the example sites likewise bumped to `^0.7.0`). The 0.7 SignalX core is now published, and pinning the 0.6 line forced consumers onto a second, older copy of the core — the duplicate-reactivity-engine hazard [#135](https://github.com/signalxjs/ssg/issues/135) fixed. `@sigx/cli` stays `*` and the `vite` peer is unchanged.
