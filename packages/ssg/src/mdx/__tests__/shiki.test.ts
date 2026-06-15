@@ -262,6 +262,22 @@ describe('LivePreview block — progressive-enhancement contract (#149)', () => 
         expect(html).toContain('data-pane="code"');
     });
 
+    it('gives clickable buttons type="button" so they never submit a wrapping form', async () => {
+        const html = await previewHtml();
+        // Every code-window button (tabs + Try-Live) is an explicit non-submit.
+        const buttons = html.match(/<button[^>]*>/g) ?? [];
+        expect(buttons.length).toBeGreaterThan(0);
+        for (const btn of buttons) expect(btn).toContain('type="button"');
+    });
+
+    it('always emits data-filename (possibly empty) for a consistent client contract', async () => {
+        const html = await highlightCode(LIVE_CODE, 'tsx', undefined, {
+            live: true,
+            tabs: ['preview', 'code'],
+        });
+        expect(html).toContain('data-filename=""');
+    });
+
     it('gives the preview pane a uniquely-id\'d run container and an error slot', async () => {
         const html = await previewHtml();
         expect(html).toMatch(/class="code-window-preview-container" id="sigx-preview-\d+"/);

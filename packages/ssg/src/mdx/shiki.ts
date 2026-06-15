@@ -137,20 +137,22 @@ export async function highlightCode(
         const tabButtonsHtml = tabs.map((tab, i) => {
             const label = tab.charAt(0).toUpperCase() + tab.slice(1);
             const isActive = i === 0;
-            return `<button class="code-window-tab${isActive ? ' code-window-tab-active' : ''}" data-tab="${tab}">${label}</button>`;
+            return `<button type="button" class="code-window-tab${isActive ? ' code-window-tab-active' : ''}" data-tab="${tab}">${label}</button>`;
         }).join('\n                ');
 
         // Try-Live shares the data contract of non-preview Try-Live blocks, so the
         // same delegated client handler opens the playground modal.
         const tryLiveBtn = isLive
-            ? `<button class="code-window-try-live" data-live-code="${base64Code}" data-lang="${effectiveLang}" data-filename="${escapeHtml(filename)}" title="Open in Live Playground">${triggerLabel}</button>`
+            ? `<button type="button" class="code-window-try-live" data-live-code="${base64Code}" data-lang="${effectiveLang}" data-filename="${escapeHtml(filename)}" title="Open in Live Playground">${triggerLabel}</button>`
             : '';
 
         // Block config the client reads to enhance in place (no island props blob).
+        // `data-filename` is always present (possibly empty) so the enhancer sees
+        // the same contract as non-preview Try-Live blocks.
         const dataAttrs = [
             `data-live-code="${base64Code}"`,
             `data-lang="${effectiveLang}"`,
-            filename ? `data-filename="${escapeHtml(filename)}"` : '',
+            `data-filename="${escapeHtml(filename)}"`,
             `data-tabs="${tabs.join(',')}"`,
             isLive ? 'data-live="true"' : '',
         ].filter(Boolean).join(' ');
