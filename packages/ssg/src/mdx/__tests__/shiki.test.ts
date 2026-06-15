@@ -25,7 +25,7 @@ describe('highlightCode — live trigger label', () => {
         expect(html).not.toContain('Run</button>');
     });
 
-    it('applies the label to the LivePreview island SSR fallback too', async () => {
+    it('applies the label to the preview block Try-Live button too', async () => {
         const html = await highlightCode(LIVE_CODE, 'tsx', { triggerLabel: '⚡ Run' }, {
             live: true,
             tabs: ['preview', 'code'],
@@ -34,7 +34,7 @@ describe('highlightCode — live trigger label', () => {
         expect(html).toContain('>⚡ Run</button>');
     });
 
-    it('omits the island SSR trigger button when the block is not live', async () => {
+    it('omits the preview block Try-Live button when the block is not live', async () => {
         const html = await highlightCode(LIVE_CODE, 'tsx', { triggerLabel: '⚡ Run' }, {
             live: false,
             tabs: ['preview', 'code'],
@@ -223,6 +223,71 @@ describe('highlightCode — language aliases (#55)', () => {
     it('still falls back to text for unknown languages', async () => {
         const html = await highlightCode('whatever', 'not-a-language');
         expect(html).toContain('code-window');
+    });
+});
+
+describe('LivePreview block — progressive-enhancement contract (#149)', () => {
+    const previewHtml = () =>
+        highlightCode(LIVE_CODE, 'tsx', { triggerLabel: '⚡ Run' }, {
+            live: true,
+            filename: 'demo.tsx',
+            tabs: ['preview', 'code'],
+        });
+
+    it('keeps the highlighted code visible in the SSR HTML (SEO / AI / no-JS)', async () => {
+        const html = await previewHtml();
+        // The code pane ships the real highlighted source, not a base64 blob.
+        expect(html).toContain('class="code-window-content"');
+        expect(html).toContain('<pre');
+        expect(html).toContain('render');
+    });
+
+    it('emits enhancement hooks instead of island-wipe markers', async () => {
+        const html = await previewHtml();
+        // No bespoke-island markers any more — nothing for the client to hydrate.
+        expect(html).not.toContain('data-island=');
+        expect(html).not.toContain('data-island-strategy');
+        expect(html).not.toContain('data-island-props');
+        // Enhancement hooks the client reads in place.
+        expect(html).toContain('data-live-preview');
+        expect(html).toContain('data-live-code="');
+        expect(html).toContain('data-tabs="preview,code"');
+    });
+
+    it('marks tab buttons and panes for delegated switching', async () => {
+        const html = await previewHtml();
+        expect(html).toContain('data-tab="preview"');
+        expect(html).toContain('data-tab="code"');
+        expect(html).toContain('data-pane="preview"');
+        expect(html).toContain('data-pane="code"');
+    });
+
+    it('gives clickable buttons type="button" so they never submit a wrapping form', async () => {
+        const html = await previewHtml();
+        // Every code-window button (tabs + Try-Live) is an explicit non-submit.
+        const buttons = html.match(/<button[^>]*>/g) ?? [];
+        expect(buttons.length).toBeGreaterThan(0);
+        for (const btn of buttons) expect(btn).toContain('type="button"');
+    });
+
+    it('always emits data-filename (possibly empty) for a consistent client contract', async () => {
+        const html = await highlightCode(LIVE_CODE, 'tsx', undefined, {
+            live: true,
+            tabs: ['preview', 'code'],
+        });
+        expect(html).toContain('data-filename=""');
+    });
+
+    it('gives the preview pane a uniquely-id\'d run container and an error slot', async () => {
+        const html = await previewHtml();
+        expect(html).toMatch(/class="code-window-preview-container" id="sigx-preview-\d+"/);
+        expect(html).toContain('class="code-window-error"');
+    });
+
+    it('makes the Try-Live button functional (enabled, carries the code)', async () => {
+        const html = await previewHtml();
+        expect(html).toContain('class="code-window-try-live" data-live-code="');
+        expect(html).not.toContain('code-window-try-live" disabled');
     });
 });
 

@@ -38,6 +38,12 @@ const SHELL_LANGS = new Set(['bash', 'shell', 'sh', 'zsh']);
 let pmWindowSeq = 0;
 
 /**
+ * Monotonic counter for per-page unique live-preview container ids. The client
+ * runs each preview's code into `#<id>`; only needs to be unique within a page.
+ */
+let livePreviewSeq = 0;
+
+/**
  * Initialize or get the Shiki highlighter
  */
 export async function getHighlighter(config?: ShikiConfig): Promise<Highlighter> {
@@ -115,35 +121,43 @@ export async function highlightCode(
         ? `<span class="code-window-filename">${escapeHtml(filename)}</span>`
         : `<span class="code-window-lang">${getLanguageLabel(effectiveLang)}</span>`;
 
-    // For preview blocks (has tabs), render a LivePreview island component
+    // For preview blocks (has tabs), SSR the full code-window with the code
+    // *visible*, plus progressive-enhancement hooks. `@sigx/live-code/client`
+    // enhances this in place — delegated tab switching, Try-Live, and running the
+    // preview into the container on scroll-into-view — and never `render()`s over
+    // or wipes the SSR subtree. So the code sample stays in the HTML (SEO / AI /
+    // no-JS) and there's no structural divergence from page hydration that used
+    // to duplicate the widget + stick "Loading preview…" (signalxjs/live-code#34).
     if (hasTabs) {
-        const base64Code = encodeBase64(code);
+        const base64Code = escapeHtml(encodeBase64(code));
         const codeHtml = highlight(code, effectiveLang as BundledLanguage);
-
-        // Generate tab buttons HTML based on tabs array
+        const containerId = `sigx-preview-${livePreviewSeq++}`;
         const firstTab = tabs[0];
+
         const tabButtonsHtml = tabs.map((tab, i) => {
             const label = tab.charAt(0).toUpperCase() + tab.slice(1);
             const isActive = i === 0;
-            return `<button class="code-window-tab${isActive ? ' code-window-tab-active' : ''}">${label}</button>`;
+            return `<button type="button" class="code-window-tab${isActive ? ' code-window-tab-active' : ''}" data-tab="${tab}">${label}</button>`;
         }).join('\n                ');
-        
-        // Return an island marker that will be hydrated on the client
-        // Use code-window styling for consistency with the nice terminal look
-        const html = `<div 
-    class="live-preview-island" 
-    data-no-spa
-    data-island="LivePreview" 
-    data-island-strategy="visible"
-    data-island-props="${escapeHtml(JSON.stringify({
-        code: base64Code,
-        highlightedCode: codeHtml,
-        language: effectiveLang,
-        filename: filename,
-        tabs: tabs,
-        live: isLive
-    }))}"
->
+
+        // Try-Live shares the data contract of non-preview Try-Live blocks, so the
+        // same delegated client handler opens the playground modal.
+        const tryLiveBtn = isLive
+            ? `<button type="button" class="code-window-try-live" data-live-code="${base64Code}" data-lang="${effectiveLang}" data-filename="${escapeHtml(filename)}" title="Open in Live Playground">${triggerLabel}</button>`
+            : '';
+
+        // Block config the client reads to enhance in place (no island props blob).
+        // `data-filename` is always present (possibly empty) so the enhancer sees
+        // the same contract as non-preview Try-Live blocks.
+        const dataAttrs = [
+            `data-live-code="${base64Code}"`,
+            `data-lang="${effectiveLang}"`,
+            `data-filename="${escapeHtml(filename)}"`,
+            `data-tabs="${tabs.join(',')}"`,
+            isLive ? 'data-live="true"' : '',
+        ].filter(Boolean).join(' ');
+
+        return `<div class="live-preview-island" data-no-spa data-live-preview ${dataAttrs}>
     <div class="code-window code-window-live code-window-preview">
         <div class="code-window-header">
             <div class="code-window-header-left">
@@ -157,23 +171,27 @@ export async function highlightCode(
             <div class="code-window-tabs">
                 ${tabButtonsHtml}
             </div>
-            ${isLive ? `<button class="code-window-try-live" disabled>${triggerLabel}</button>` : ''}
+            ${tryLiveBtn}
         </div>
-        <div class="code-window-preview-pane"${firstTab !== 'preview' ? ' style="display:none;"' : ''}>
+        <div class="code-window-preview-pane" data-pane="preview"${firstTab !== 'preview' ? ' style="display:none;"' : ''}>
+            <div class="code-window-error" style="display:none;">
+                <span class="code-window-error-icon">⚠️</span>
+                <pre class="code-window-error-text"></pre>
+            </div>
             <div class="code-window-preview-loading">
                 <span class="code-window-spinner"></span>
                 Loading preview...
             </div>
+            <div class="code-window-preview-container" id="${containerId}"></div>
         </div>
-        <div class="code-window-console-pane"${firstTab !== 'console' ? ' style="display:none;"' : ''}>
+        <div class="code-window-console-pane" data-pane="console"${firstTab !== 'console' ? ' style="display:none;"' : ''}>
             <div class="code-window-console-empty">No console output</div>
         </div>
-        <div class="code-window-content"${firstTab !== 'code' ? ' style="display:none;"' : ''}>
+        <div class="code-window-content" data-pane="code"${firstTab !== 'code' ? ' style="display:none;"' : ''}>
             ${codeHtml}
         </div>
     </div>
 </div>`;
-        return html;
     }
 
     // Shell install fences (`pnpm add …`, `npm i …`, etc.) get an
