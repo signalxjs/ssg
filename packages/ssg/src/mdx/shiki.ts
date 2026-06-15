@@ -115,65 +115,37 @@ export async function highlightCode(
         ? `<span class="code-window-filename">${escapeHtml(filename)}</span>`
         : `<span class="code-window-lang">${getLanguageLabel(effectiveLang)}</span>`;
 
-    // For preview blocks (has tabs), render a LivePreview island component
+    // For preview blocks (has tabs), emit a *content-free* LivePreview island.
+    //
+    // We deliberately ship no code-window chrome inside the island — only the
+    // wrapper + `data-island-props`. The interactive widget is rendered fresh on
+    // the client by `@sigx/live-code/client` (mount, not hydrate). SSR-ing the
+    // chrome here used to fight client hydration: under core 0.6+, page
+    // hydration walks the SSR subtree while live-code renders the widget
+    // out-of-band, producing a structural mismatch → self-heal remount →
+    // duplicated widget + stuck "Loading preview…" (signalxjs/live-code#34). An
+    // empty placeholder has nothing for the client render to diverge from.
+    // (Trade-off: the code sample isn't in the HTML until hydration — it still
+    // ships, base64 + highlighted, in `data-island-props`.)
     if (hasTabs) {
         const base64Code = encodeBase64(code);
         const codeHtml = highlight(code, effectiveLang as BundledLanguage);
 
-        // Generate tab buttons HTML based on tabs array
-        const firstTab = tabs[0];
-        const tabButtonsHtml = tabs.map((tab, i) => {
-            const label = tab.charAt(0).toUpperCase() + tab.slice(1);
-            const isActive = i === 0;
-            return `<button class="code-window-tab${isActive ? ' code-window-tab-active' : ''}">${label}</button>`;
-        }).join('\n                ');
-        
-        // Return an island marker that will be hydrated on the client
-        // Use code-window styling for consistency with the nice terminal look
-        const html = `<div 
-    class="live-preview-island" 
-    data-no-spa
-    data-island="LivePreview" 
-    data-island-strategy="visible"
-    data-island-props="${escapeHtml(JSON.stringify({
-        code: base64Code,
-        highlightedCode: codeHtml,
-        language: effectiveLang,
-        filename: filename,
-        tabs: tabs,
-        live: isLive
-    }))}"
->
-    <div class="code-window code-window-live code-window-preview">
-        <div class="code-window-header">
-            <div class="code-window-header-left">
-                <div class="code-window-dots">
-                    <span class="code-window-dot dot-red"></span>
-                    <span class="code-window-dot dot-yellow"></span>
-                    <span class="code-window-dot dot-green"></span>
-                </div>
-                ${filenameHtml}
-            </div>
-            <div class="code-window-tabs">
-                ${tabButtonsHtml}
-            </div>
-            ${isLive ? `<button class="code-window-try-live" disabled>${triggerLabel}</button>` : ''}
-        </div>
-        <div class="code-window-preview-pane"${firstTab !== 'preview' ? ' style="display:none;"' : ''}>
-            <div class="code-window-preview-loading">
-                <span class="code-window-spinner"></span>
-                Loading preview...
-            </div>
-        </div>
-        <div class="code-window-console-pane"${firstTab !== 'console' ? ' style="display:none;"' : ''}>
-            <div class="code-window-console-empty">No console output</div>
-        </div>
-        <div class="code-window-content"${firstTab !== 'code' ? ' style="display:none;"' : ''}>
-            ${codeHtml}
-        </div>
-    </div>
-</div>`;
-        return html;
+        const islandProps = {
+            code: base64Code,
+            highlightedCode: codeHtml,
+            language: effectiveLang,
+            filename,
+            tabs,
+            live: isLive,
+            // Carry the resolved trigger label in props — the SSR button that
+            // used to hold it is gone, so this is how the hydrated widget honours
+            // `label=` / `shiki.triggerLabel`. Raw here; the whole JSON is
+            // HTML-escaped for the attribute below.
+            ...(isLive ? { triggerLabel: meta?.triggerLabel ?? mergedConfig.triggerLabel } : {}),
+        };
+
+        return `<div class="live-preview-island" data-no-spa data-island="LivePreview" data-island-strategy="visible" data-island-props="${escapeHtml(JSON.stringify(islandProps))}"></div>`;
     }
 
     // Shell install fences (`pnpm add …`, `npm i …`, etc.) get an

@@ -3,6 +3,20 @@ import { highlightCode, rehypeShiki } from '../shiki';
 
 const LIVE_CODE = `render(<App />, '#sandbox');`;
 
+/** Decode the JSON carried in a live-preview island's `data-island-props`. */
+function islandProps(html: string): Record<string, any> {
+    const match = html.match(/data-island-props="([^"]*)"/);
+    if (!match) throw new Error('no data-island-props found in island markup');
+    // The attribute value is HTML-escaped; reverse the escapes the emitter applies.
+    const json = match[1]
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&');
+    return JSON.parse(json);
+}
+
 describe('highlightCode — live trigger label', () => {
     it('defaults the trigger button to "⚡ Try Live"', async () => {
         const html = await highlightCode(LIVE_CODE, 'tsx', undefined, { live: true });
@@ -25,22 +39,27 @@ describe('highlightCode — live trigger label', () => {
         expect(html).not.toContain('Run</button>');
     });
 
-    it('applies the label to the LivePreview island SSR fallback too', async () => {
+    it('carries the resolved label in the island props (the SSR button is gone)', async () => {
         const html = await highlightCode(LIVE_CODE, 'tsx', { triggerLabel: '⚡ Run' }, {
             live: true,
             tabs: ['preview', 'code'],
         });
         expect(html).toContain('class="live-preview-island"');
-        expect(html).toContain('>⚡ Run</button>');
+        // No SSR chrome at all — the label rides in data-island-props, not a button.
+        expect(html).not.toContain('<button');
+        expect(islandProps(html).triggerLabel).toBe('⚡ Run');
     });
 
-    it('omits the island SSR trigger button when the block is not live', async () => {
+    it('omits triggerLabel from the island props when the block is not live', async () => {
         const html = await highlightCode(LIVE_CODE, 'tsx', { triggerLabel: '⚡ Run' }, {
             live: false,
             tabs: ['preview', 'code'],
         });
         expect(html).toContain('class="live-preview-island"');
         expect(html).not.toContain('code-window-try-live');
+        const props = islandProps(html);
+        expect(props.live).toBe(false);
+        expect(props.triggerLabel).toBeUndefined();
     });
 
     it('escapes a configured label', async () => {
@@ -223,6 +242,36 @@ describe('highlightCode — language aliases (#55)', () => {
     it('still falls back to text for unknown languages', async () => {
         const html = await highlightCode('whatever', 'not-a-language');
         expect(html).toContain('code-window');
+    });
+});
+
+describe('LivePreview island — content-free placeholder (#149)', () => {
+    it('emits the island wrapper with no code-window chrome inside', async () => {
+        const html = await highlightCode(LIVE_CODE, 'tsx', undefined, {
+            live: true,
+            tabs: ['preview', 'code'],
+        });
+        expect(html).toContain('class="live-preview-island"');
+        expect(html).toContain('data-island="LivePreview"');
+        // The whole point: nothing for client hydration to structurally diverge
+        // from. No chrome, no spinner, no nested code-window, no buttons.
+        expect(html).not.toContain('code-window');
+        expect(html).not.toContain('code-window-preview-loading');
+        expect(html).not.toContain('Loading preview');
+        expect(html).not.toContain('<button');
+    });
+
+    it('still ships the code (base64 + highlighted) in data-island-props', async () => {
+        const html = await highlightCode(LIVE_CODE, 'tsx', undefined, {
+            live: true,
+            tabs: ['preview', 'code'],
+        });
+        const props = islandProps(html);
+        expect(typeof props.code).toBe('string');
+        expect(props.code.length).toBeGreaterThan(0);
+        expect(props.highlightedCode).toContain('<pre');
+        expect(props.tabs).toEqual(['preview', 'code']);
+        expect(props.live).toBe(true);
     });
 });
 
