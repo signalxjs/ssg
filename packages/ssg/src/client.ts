@@ -111,8 +111,10 @@ export interface SpaNavigationOptions {
      * site's `trailingSlash` config (#163). Without this, a click pushes the
      * anchor's pathname verbatim — usually slash-less — while a hard load is
      * 301'd to the canonical form, so the same page ends up with two URLs.
-     * Paths whose last segment has a file extension (e.g. `/sitemap.xml`,
-     * `/font.woff`) are pushed verbatim — appending a slash to those 404s.
+     * Paths whose last segment looks like a file (a dotted extension
+     * containing a letter, e.g. `/sitemap.xml`, `/font.woff2`) are pushed
+     * verbatim — appending a slash to those 404s. Version segments like
+     * `/v1.0` are still normalised.
      * @default 'always'
      */
     trailingSlash?: TrailingSlash;
@@ -185,10 +187,13 @@ export function installSpaNavigation(
 
         // Normalise to the trailingSlash policy so the URL matches the
         // hard-load / 301 canonical form (#163). Skip paths whose last
-        // segment has a file extension (e.g. `/sitemap.xml`, `/font.woff`):
-        // appending a slash to those 404s — mirroring Next.js/Astro.
+        // segment looks like a file (e.g. `/sitemap.xml`, `/font.woff2`):
+        // appending a slash to those 404s — mirroring Next.js/Astro. The
+        // extension must contain a letter, so version segments like `/v1.0`
+        // or `/docs/2.1` are still treated as routes and get normalised.
         const lastSegment = path.split('/').filter(Boolean).pop() ?? '';
-        if (!lastSegment.includes('.')) {
+        const looksLikeFile = /\.[^.]*[a-z][^.]*$/i.test(lastSegment);
+        if (!looksLikeFile) {
             path = normalizePagePath(path, trailingSlash);
         }
 

@@ -186,6 +186,17 @@ describe('trailingSlash normalization (#163)', () => {
         expect(push).toHaveBeenNthCalledWith(2, '/fonts/inter.woff2');
     });
 
+    it('still normalises dotted version routes (numeric extension is not a file)', () => {
+        // `/v1.0` / `/docs/2.1` are routes, not files — appending the slash
+        // keeps them aligned with the 301 canonical form (#163, review).
+        uninstall();
+        uninstall = installSpaNavigation({ push }, { trailingSlash: 'always' });
+        click(makeAnchor({ href: '/v1.0' }));
+        click(makeAnchor({ href: '/docs/2.1' }));
+        expect(push).toHaveBeenNthCalledWith(1, '/v1.0/');
+        expect(push).toHaveBeenNthCalledWith(2, '/docs/2.1/');
+    });
+
     it('preserves search and hash alongside the added slash', () => {
         uninstall();
         uninstall = installSpaNavigation({ push }, { trailingSlash: 'always' });
