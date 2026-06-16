@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **CLI plugin ported to `@sigx/args` fluent builders** ([#158](https://github.com/signalxjs/ssg/issues/158)): the `dev`/`build`/`preview` command args were declared as plain `ArgDef` objects (`{ type: 'string', … }`), which `@sigx/cli` ≥ 0.4 can no longer register — its `.args()` normalizer reads each entry's internal `~def`, so plain objects crashed the whole CLI at startup with `Cannot use 'in' operator to search for 'required' in undefined`. The args are now built with `a.string()`/`a.boolean()` (re-exported from `@sigx/cli/plugin`), and the `@sigx/cli` peer range moved from `*` to `>=0.4.0` so the incompatibility is declared rather than a runtime crash.
+
 ## [0.12.0] - 2026-06-15
 
 ### Changed
