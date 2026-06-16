@@ -5,7 +5,7 @@
  * Auto-detected when a project has ssg.config.ts.
  */
 
-import { definePlugin } from '@sigx/cli/plugin';
+import { a, definePlugin } from '@sigx/cli/plugin';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -33,11 +33,11 @@ export default definePlugin({
         dev: {
             description: 'Start SSG development server',
             args: {
-                config: { type: 'string', description: 'Path to ssg.config.ts' },
-                port: { type: 'string', description: 'Port number' },
-                host: { type: 'boolean', description: 'Expose to network' },
-                open: { type: 'boolean', description: 'Open browser' },
-                verbose: { type: 'boolean', description: 'Verbose logging' },
+                config: a.string().describe('Path to ssg.config.ts'),
+                port: a.string().describe('Port number'),
+                host: a.boolean().describe('Expose to network'),
+                open: a.boolean().describe('Open browser'),
+                verbose: a.boolean().describe('Verbose logging'),
             },
             async run(ctx) {
                 const { dev } = await import('./dev.js');
@@ -53,10 +53,10 @@ export default definePlugin({
         build: {
             description: 'Build static site for production',
             args: {
-                config: { type: 'string', description: 'Path to ssg.config.ts' },
-                verbose: { type: 'boolean', description: 'Verbose logging' },
-                drafts: { type: 'boolean', description: 'Include draft: true pages in the build' },
-                concurrency: { type: 'string', description: 'Pages to render in parallel (default 20)' },
+                config: a.string().describe('Path to ssg.config.ts'),
+                verbose: a.boolean().describe('Verbose logging'),
+                drafts: a.boolean().describe('Include draft: true pages in the build'),
+                concurrency: a.string().describe('Pages to render in parallel (default 20)'),
             },
             async run(ctx) {
                 const { build } = await import('./build.js');
@@ -71,10 +71,10 @@ export default definePlugin({
         preview: {
             description: 'Preview production build locally',
             args: {
-                config: { type: 'string', description: 'Path to ssg.config.ts' },
-                port: { type: 'string', description: 'Port number' },
-                host: { type: 'boolean', description: 'Expose to network' },
-                open: { type: 'boolean', description: 'Open browser' },
+                config: a.string().describe('Path to ssg.config.ts'),
+                port: a.string().describe('Port number'),
+                host: a.boolean().describe('Expose to network'),
+                open: a.boolean().describe('Open browser'),
             },
             async run(ctx) {
                 const { preview } = await import('./dev.js');

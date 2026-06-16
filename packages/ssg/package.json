@@ -82,7 +82,7 @@
         "unist-util-visit": "^5.0.0"
     },
     "peerDependencies": {
-        "@sigx/cli": "*",
+        "@sigx/cli": ">=0.4.0",
         "@sigx/router": ">=0.7.0 <0.8.0",
         "@sigx/server-renderer": ">=0.7.0 <0.8.0",
         "sigx": ">=0.7.0 <0.8.0",
@@ -94,6 +94,8 @@
         }
     },
     "devDependencies": {
+        "@sigx/args": "^0.6.1",
+        "@sigx/cli": "^0.4.2",
         "@sigx/router": "^0.7.0",
         "@sigx/server-renderer": "^0.7.0",
         "@sigx/vite": "^0.7.0",
