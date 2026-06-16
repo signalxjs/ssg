@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-06-16
+
 ### Fixed
 
 - **SPA navigation now honours `trailingSlash`** ([#163](https://github.com/signalxjs/ssg/issues/163)): `installSpaNavigation` pushed the clicked anchor's pathname verbatim — usually slash-less — so under `trailingSlash: 'always'` (the default) a click landed the address bar on `/x` while a hard load was 301'd to the canonical `/x/`, giving the same page two URLs depending on how it was reached. The pushed path is now normalised to the configured policy (via the same `normalizePagePath` used for canonical/sitemap URLs), so SPA-navigated URLs match the hard-load / 301 form. Paths whose last segment has a file extension (e.g. `/sitemap.xml`, `/font.woff`) are pushed verbatim, since appending a slash to those 404s. `installSpaNavigation` takes a new `trailingSlash` option (default `'always'`), wired automatically from config in the generated client entry. Removes the need for sites to shim `history.pushState`/`replaceState` client-side.
