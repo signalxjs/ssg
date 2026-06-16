@@ -9,6 +9,11 @@
 
 export { ssrClientPlugin } from '@sigx/server-renderer/client';
 
+// Trailing-slash policy — shared with the canonical/sitemap URL builders so
+// SPA navigation lands on the same URL a hard load is 301'd to (#163). `url.ts`
+// is pure and dependency-free, so it bundles cleanly into the client.
+import { normalizePagePath, type TrailingSlash } from './url';
+
 // Package-manager command parsing/translation — public API (#63). Pure and
 // dependency-free; the same functions the build-time switcher uses.
 import { DEFAULT_PM, PMS, type Pm } from './mdx/package-manager';
@@ -100,6 +105,17 @@ export interface SpaNavigationOptions {
      * @default '/'
      */
     base?: string;
+
+    /**
+     * Trailing-slash policy to normalise the pushed path to, matching the
+     * site's `trailingSlash` config (#163). Without this, a click pushes the
+     * anchor's pathname verbatim — usually slash-less — while a hard load is
+     * 301'd to the canonical form, so the same page ends up with two URLs.
+     * Paths whose last segment has a file extension (e.g. `/sitemap.xml`,
+     * `/font.woff`) are pushed verbatim — appending a slash to those 404s.
+     * @default 'always'
+     */
+    trailingSlash?: TrailingSlash;
 }
 
 /**
@@ -116,6 +132,9 @@ export interface SpaNavigationOptions {
  *   (the attribute opts out the anchor or any ancestor container)
  * - pure-hash and same-page `#hash` links (native scroll)
  *
+ * The pushed path is normalised to the configured `trailingSlash` policy so
+ * SPA-navigated URLs match the hard-load / 301 canonical form (#163).
+ *
  * Returns an uninstall function. Wired automatically into the generated
  * client entry; call it yourself in custom entries.
  */
@@ -126,6 +145,7 @@ export function installSpaNavigation(
     if (typeof document === 'undefined') return () => {};
 
     const base = options.base && options.base !== '/' ? options.base.replace(/\/+$/, '') : '';
+    const trailingSlash: TrailingSlash = options.trailingSlash ?? 'always';
 
     const onClick = (event: MouseEvent) => {
         if (event.defaultPrevented || event.button !== 0) return;
@@ -161,6 +181,15 @@ export function installSpaNavigation(
             if (path === base) path = '/';
             else if (path.startsWith(base + '/')) path = path.slice(base.length);
             else return;
+        }
+
+        // Normalise to the trailingSlash policy so the URL matches the
+        // hard-load / 301 canonical form (#163). Skip paths whose last
+        // segment has a file extension (e.g. `/sitemap.xml`, `/font.woff`):
+        // appending a slash to those 404s — mirroring Next.js/Astro.
+        const lastSegment = path.split('/').filter(Boolean).pop() ?? '';
+        if (!lastSegment.includes('.')) {
+            path = normalizePagePath(path, trailingSlash);
         }
 
         event.preventDefault();

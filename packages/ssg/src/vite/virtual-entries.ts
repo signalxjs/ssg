@@ -224,9 +224,10 @@ defineApp(<App />)
     .hydrate('#app');
 
 ${spaNavEnabled ? `// Route internal anchor clicks (incl. MDX content links) through the
-// router instead of full page reloads (#35). Opt out per link with
-// \`data-no-spa\`, or globally with \`spaNavigation: false\`.
-installSpaNavigation(router, { base: '${config.base || '/'}' });
+// router instead of full page reloads (#35). The pushed path is normalised to
+// the configured trailingSlash so SPA nav matches the 301 canonical URL (#163).
+// Opt out per link with \`data-no-spa\`, or globally with \`spaNavigation: false\`.
+installSpaNavigation(router, { base: '${config.base || '/'}', trailingSlash: '${config.trailingSlash || 'always'}' });
 ` : ''}
 // Enable the npm/pnpm/yarn/bun switcher on install code blocks. Runs after
 // hydration so it never races the framework; on pages with no install fences it
