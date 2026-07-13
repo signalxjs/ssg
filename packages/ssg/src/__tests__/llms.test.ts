@@ -265,7 +265,7 @@ describe('writeLlmsOutputs (#176)', () => {
         page('/docs/setup', { title: 'Setup', category: 'Basics', order: 2 }),
     ];
 
-    async function run(options = {}, pages = PAGES) {
+    async function run(options = {}, pages = PAGES, publicDir?: string) {
         // page.source paths don't exist on disk — patch prepare via a real
         // source file per page instead: write them under outDir/src.
         const withSources = pages.map((p) => {
@@ -274,7 +274,7 @@ describe('writeLlmsOutputs (#176)', () => {
             fs.writeFileSync(src, `---\ntitle: ${p.meta?.title}\n---\n\n# ${p.meta?.title}\n\nBody of ${p.path}\n`);
             return { ...p, source: src };
         });
-        return writeLlmsOutputs(withSources, CONFIG, outDir, options);
+        return writeLlmsOutputs(withSources, CONFIG, outDir, options, publicDir);
     }
 
     it('writes llms.txt, llms-full.txt, and nested .md renditions', async () => {
@@ -288,10 +288,27 @@ describe('writeLlmsOutputs (#176)', () => {
         expect(files.length).toBe(5);
     });
 
-    it('never overwrites a user-shipped llms.txt (public/ courtesy)', async () => {
+    it('never overwrites an llms.txt shipped via public/', async () => {
+        // Vite copies public/ into outDir before this stage runs.
+        const publicDir = path.join(outDir, '.public');
+        fs.mkdirSync(publicDir, { recursive: true });
+        fs.writeFileSync(path.join(publicDir, 'llms.txt'), 'user-authored\n');
         fs.writeFileSync(path.join(outDir, 'llms.txt'), 'user-authored\n');
-        await run();
+        await run({}, PAGES, publicDir);
         expect(fs.readFileSync(path.join(outDir, 'llms.txt'), 'utf-8')).toBe('user-authored\n');
+        // ...while files with no public/ source are still written
+        expect(fs.existsSync(path.join(outDir, 'llms-full.txt'))).toBe(true);
+    });
+
+    it("overwrites a previous build's llms.txt (outDir is not emptied between builds)", async () => {
+        // A stale file in outDir alone is a derived artifact from the last
+        // run, not a user file — guarding on its existence would make the
+        // first build's output permanent.
+        const publicDir = path.join(outDir, '.public');
+        fs.mkdirSync(publicDir, { recursive: true });
+        fs.writeFileSync(path.join(outDir, 'llms.txt'), 'stale from a previous build\n');
+        await run({}, PAGES, publicDir);
+        expect(fs.readFileSync(path.join(outDir, 'llms.txt'), 'utf-8')).toContain('# My Site');
     });
 
     it('honors index/full/pageMd toggles and a custom full output name', async () => {

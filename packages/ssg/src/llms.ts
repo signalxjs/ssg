@@ -384,22 +384,29 @@ export function buildLlmsFullText(pages: LlmsPage[], options: LlmsFullOptions = 
 
 /**
  * Write every llms output into `outDir`: the per-page `.md` renditions,
- * `llms.txt`, `llms-full.txt`, and the per-area sub-indexes. Index files a
- * user ships via `public/` (already copied into `outDir`) are never
- * overwritten — same courtesy as robots.txt (#56).
+ * `llms.txt`, `llms-full.txt`, and the per-area sub-indexes. An llms file
+ * the user ships via `public/` is never overwritten — same courtesy as
+ * robots.txt (#56). `publicDir` locates those user files; a file that is
+ * merely present in `outDir` (a previous build's output — `outDir` is not
+ * emptied between builds) is a derived artifact and is rewritten.
  */
 export async function writeLlmsOutputs(
     pages: PageBuildResult[],
     config: SSGConfig,
     outDir: string,
-    options: LlmsOptions = {}
+    options: LlmsOptions = {},
+    publicDir?: string
 ): Promise<{ files: string[]; warnings: string[] }> {
     const llmsPages = await prepareLlmsPages(pages, config, options);
     const files: string[] = [];
     const warnings: string[] = [];
 
     const writeGuarded = async (target: string, content: string) => {
-        if (fsSync.existsSync(target)) return; // user file from public/ wins
+        // "public/ wins": the user ships this exact file, Vite already
+        // copied it into outDir — leave it alone.
+        if (publicDir && fsSync.existsSync(path.join(publicDir, path.relative(outDir, target)))) {
+            return;
+        }
         await fs.mkdir(path.dirname(target), { recursive: true });
         await fs.writeFile(target, content, 'utf-8');
         files.push(target);

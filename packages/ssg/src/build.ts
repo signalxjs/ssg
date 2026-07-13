@@ -458,7 +458,10 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                     pages,
                     resolvedConfig,
                     resolvedConfig.outDir!,
-                    llmsOptions
+                    llmsOptions,
+                    // Vite's default public dir — user-shipped llms files
+                    // (copied into outDir by the client build) are preserved.
+                    path.join(root, 'public')
                 );
                 warnings.push(...llmsWarnings);
                 for (const warning of llmsWarnings) console.warn(`   ⚠️  ${warning}`);
