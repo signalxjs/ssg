@@ -92,6 +92,22 @@ describe('prepareLlmsPages (#176)', () => {
         expect(pages[0].mdPath).toBeUndefined();
     });
 
+    it('detects dynamic segments in directory names too', async () => {
+        // users/[id]/index.mdx — the bracket segment is a directory, not the
+        // basename; its expansions still share one source.
+        const pages = await prepareLlmsPages(
+            [
+                page('/users/1/posts', {}, 'src/pages/users/[id]/posts.mdx'),
+                page('/users/2', {}, 'src\\pages\\users\\[id]\\index.mdx'),
+            ],
+            CONFIG,
+            {},
+            READ
+        );
+        expect(pages[0].mdPath).toBeUndefined();
+        expect(pages[1].mdPath).toBeUndefined();
+    });
+
     it('derives urls with base and trailingSlash, like the sitemap (#41)', async () => {
         const config: SSGConfig = { ...CONFIG, base: '/site/', trailingSlash: 'never' };
         const pages = await prepareLlmsPages([page('/docs/guide')], config, {}, READ);
@@ -305,6 +321,17 @@ describe('writeLlmsOutputs (#176)', () => {
         const full = fs.readFileSync(path.join(outDir, 'docs', 'llms-full.txt'), 'utf-8');
         expect(full).toContain('url: https://example.com/docs/intro/');
         expect(full).not.toContain('url: https://example.com/\n');
+    });
+
+    it('applies a per-area exclude to the area outputs', async () => {
+        await run({ areas: { '/docs': { exclude: ['/docs/setup'], full: true } } });
+        const area = fs.readFileSync(path.join(outDir, 'docs', 'llms.txt'), 'utf-8');
+        expect(area).toContain('- [Intro](/docs/intro.md)');
+        expect(area).not.toContain('Setup');
+        const full = fs.readFileSync(path.join(outDir, 'docs', 'llms-full.txt'), 'utf-8');
+        expect(full).not.toContain('/docs/setup');
+        // ...without affecting the site-wide outputs
+        expect(fs.readFileSync(path.join(outDir, 'llms.txt'), 'utf-8')).toContain('Setup');
     });
 
     it('warns and skips an area with no pages', async () => {

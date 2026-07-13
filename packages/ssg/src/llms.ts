@@ -102,10 +102,12 @@ export async function prepareLlmsPages(
 
         // Only `.md`/`.mdx` sources have a markdown rendition; a dynamic
         // route's source is shared by all its expansions, so per-path
-        // renditions would be N identical copies — skip those too.
+        // renditions would be N identical copies — skip those too. Bracket
+        // segments can sit anywhere in the path (`users/[id]/posts.mdx`),
+        // not just the basename.
         const source = page.source ?? '';
         const isMarkdown = /\.mdx?$/i.test(source);
-        const isDynamic = /\[.*\]/.test(path.basename(source));
+        const isDynamic = source.split(/[\\/]/).some((segment) => /\[.*\]/.test(segment));
         if (isMarkdown && !isDynamic) {
             const raw = await readSource(source);
             if (raw != null) {
@@ -437,7 +439,10 @@ export async function writeLlmsOutputs(
 
     // Per-area sub-indexes: filtered re-invocations of the same builders.
     for (const [prefix, areaOptions] of Object.entries(options.areas ?? {})) {
-        const areaPages = llmsPages.filter((lp) => isUnderCollectionPath(lp.page.path, prefix));
+        const areaExcluded = createGlobMatcher(areaOptions.exclude ?? []);
+        const areaPages = llmsPages.filter(
+            (lp) => isUnderCollectionPath(lp.page.path, prefix) && !areaExcluded(lp.page.path)
+        );
         if (areaPages.length === 0) {
             warnings.push(`llms.areas: no pages under '${prefix}' — skipped`);
             continue;
