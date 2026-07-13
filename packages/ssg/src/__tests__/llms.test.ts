@@ -334,6 +334,20 @@ describe('writeLlmsOutputs (#176)', () => {
         expect(fs.readFileSync(path.join(outDir, 'llms.txt'), 'utf-8')).toContain('Setup');
     });
 
+    it('drops the colliding page from .md links, not just from emission', async () => {
+        // '/about' and '/about.html' both map to about.md — the first wins;
+        // the loser must fall back to its HTML route in llms.txt instead of
+        // linking the winner's rendition.
+        const { warnings } = await run({}, [
+            page('/about', { title: 'About' }),
+            page('/about.html', { title: 'About Html' }),
+        ]);
+        expect(warnings.some((w) => w.includes('collision'))).toBe(true);
+        const index = fs.readFileSync(path.join(outDir, 'llms.txt'), 'utf-8');
+        expect(index).toContain('- [About](/about.md)');
+        expect(index).toContain('- [About Html](/about.html)');
+    });
+
     it('warns and skips an area with no pages', async () => {
         const { warnings } = await run({ areas: { '/nowhere': {} } });
         expect(warnings.some((w) => w.includes("'/nowhere'"))).toBe(true);

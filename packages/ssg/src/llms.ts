@@ -411,10 +411,14 @@ export async function writeLlmsOutputs(
         for (const lp of llmsPages) {
             if (!lp.markdown || !lp.mdPath) continue;
             if (emitted.has(lp.mdPath)) {
-                // e.g. `/docs` and `/docs.html` both mapping to docs.md
+                // e.g. `/docs` and `/docs.html` both mapping to docs.md —
+                // the first page keeps the file; clearing the loser's mdPath
+                // makes the index link its HTML route instead of the other
+                // page's rendition (markdown stays, for llms-full.txt).
                 warnings.push(
                     `llms: markdown path collision — '${lp.page.path}' also maps to ${lp.mdPath}; kept the first page`
                 );
+                delete lp.mdPath;
                 continue;
             }
             emitted.add(lp.mdPath);
