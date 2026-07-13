@@ -227,6 +227,23 @@ describe('buildLlmsIndex (#176)', () => {
         expect(out).toContain('(/docs/llms.txt)');
         expect(out).not.toContain('/blog/llms.txt');
     });
+
+    it('omits empty and invalid-prefix areas from the Docs sets block', () => {
+        const out = buildLlmsIndex(PAGES, CONFIG, {
+            areas: {
+                '/docs': {},
+                '/nowhere': {}, // no pages under it — its llms.txt is never written
+                '/blog': { exclude: ['/blog/**', '/blog'] }, // everything excluded
+                'docs': {}, // missing leading slash
+                '/': {}, // the root is not an area
+            },
+        });
+        expect(out).toContain('(/docs/llms.txt)');
+        expect(out).not.toContain('/nowhere/llms.txt');
+        expect(out).not.toContain('/blog/llms.txt');
+        expect(out).not.toContain('(docs/llms.txt');
+        expect(out).not.toContain('(//llms.txt');
+    });
 });
 
 describe('buildLlmsFullText (#176)', () => {
@@ -369,5 +386,14 @@ describe('writeLlmsOutputs (#176)', () => {
         const { warnings } = await run({ areas: { '/nowhere': {} } });
         expect(warnings.some((w) => w.includes("'/nowhere'"))).toBe(true);
         expect(fs.existsSync(path.join(outDir, 'nowhere'))).toBe(false);
+    });
+
+    it('rejects invalid area prefixes instead of writing into outDir root', async () => {
+        // '/' would resolve the area dir to outDir itself and clobber the
+        // top-level llms.txt; 'docs' (no leading slash) can never match.
+        const { warnings } = await run({ areas: { '/': {}, 'docs': {} } });
+        expect(warnings.filter((w) => w.includes('invalid prefix')).length).toBe(2);
+        // top-level index is the site index, not an area index
+        expect(fs.readFileSync(path.join(outDir, 'llms.txt'), 'utf-8')).toContain('# My Site');
     });
 });

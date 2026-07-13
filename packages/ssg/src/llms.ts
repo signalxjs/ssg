@@ -24,6 +24,7 @@ import type {
     LlmsOptions,
     LlmsSection,
     LlmsFullOptions,
+    LlmsAreaOptions,
     NavItem,
 } from './types';
 import { normalizePagePath } from './url';
@@ -195,10 +196,10 @@ export function buildLlmsIndex(
         blocks.push(`## ${section.title}\n\n${section.entries.map(entryLine).join('\n')}`);
     }
 
-    // Hub block linking the per-area sub-indexes (Svelte style). Areas
-    // with `index: false` never write their llms.txt — linking them here
-    // would be a broken link.
-    const areas = Object.entries(options.areas ?? {}).filter(
+    // Hub block linking the per-area sub-indexes (Svelte style). Only areas
+    // that will actually write an llms.txt appear — an `index: false`,
+    // empty, or invalid-prefix area here would be a broken link.
+    const areas = activeAreas(options, pages).filter(
         ([, areaOptions]) => areaOptions.index !== false
     );
     if (areas.length > 0) {
@@ -218,6 +219,29 @@ export function buildLlmsIndex(
 interface ResolvedSection {
     title: string;
     entries: LlmsEntry[];
+}
+
+/** A usable area prefix: rooted, and not the site root itself. */
+function isValidAreaPrefix(prefix: string): boolean {
+    return prefix.startsWith('/') && routeKey(prefix) !== '/';
+}
+
+/**
+ * The areas that will actually emit files: valid prefix and at least one
+ * page under it after the area's own exclude globs. Shared by the writer
+ * and the index's hub block so neither can reference a missing file.
+ */
+function activeAreas(
+    options: LlmsOptions,
+    pages: LlmsPage[]
+): Array<[string, LlmsAreaOptions]> {
+    return Object.entries(options.areas ?? {}).filter(([prefix, areaOptions]) => {
+        if (!isValidAreaPrefix(prefix)) return false;
+        const excluded = createGlobMatcher(areaOptions.exclude ?? []);
+        return pages.some(
+            (lp) => isUnderCollectionPath(lp.page.path, prefix) && !excluded(lp.page.path)
+        );
+    });
 }
 
 /** Prettified name of the collection matching an area prefix, else of the prefix. */
@@ -450,6 +474,14 @@ export async function writeLlmsOutputs(
 
     // Per-area sub-indexes: filtered re-invocations of the same builders.
     for (const [prefix, areaOptions] of Object.entries(options.areas ?? {})) {
+        if (!isValidAreaPrefix(prefix)) {
+            // '/' would resolve areaDir to outDir itself and clobber the
+            // top-level files; a slash-less prefix can never match a route.
+            warnings.push(
+                `llms.areas: invalid prefix '${prefix}' — must start with '/' and not be the root`
+            );
+            continue;
+        }
         const areaExcluded = createGlobMatcher(areaOptions.exclude ?? []);
         const areaPages = llmsPages.filter(
             (lp) => isUnderCollectionPath(lp.page.path, prefix) && !areaExcluded(lp.page.path)
