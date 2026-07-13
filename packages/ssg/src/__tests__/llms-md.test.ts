@@ -201,6 +201,14 @@ describe('renderPageMarkdown — expressions (mdx)', () => {
 });
 
 describe('renderPageMarkdown — tidy', () => {
+    it('collapses blank runs outside fences but preserves them inside', () => {
+        const out = render('```txt\nline\n\n\n\nline2\n```\n\n\n\nAfter.\n');
+        // fence content byte-exact, intentional spacing included
+        expect(out).toContain('line\n\n\n\nline2');
+        // outside the fence, runs collapse to one blank line
+        expect(out).toContain('```\n\nAfter.');
+    });
+
     it('collapses the blank runs left by dropped blocks', () => {
         const out = render("import x from 'y';\n\n\n\n<Demo />\n\n\n\nProse.\n");
         expect(out).not.toMatch(/\n{3,}/);

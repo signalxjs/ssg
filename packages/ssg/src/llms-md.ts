@@ -50,11 +50,12 @@ export function renderPageMarkdown(source: string, options: RenderPageMarkdownOp
 
     // Normalize to LF first: `.` and `$` in the scanner's regexes treat
     // `\r` as a line terminator, and the rendition is a derived artifact —
-    // LF-only output keeps it identical across platforms.
+    // LF-only output keeps it identical across platforms. Blank-run
+    // collapsing happens inside the scanner, which knows fence state —
+    // a global regex here would mutate intentional spacing in fences.
     const body = cleanBody(content.replace(/\r\n?/g, '\n'), isMdx, data)
-        .replace(/\n{3,}/g, '\n\n') // collapse gaps left by dropped blocks
         .replace(/^\n+/, '')
-        .replace(/\s*$/, '\n');
+        .replace(/\n*$/, '\n');
 
     return `${header.join('\n')}\n\n${body}`;
 }
@@ -80,6 +81,17 @@ function cleanBody(content: string, isMdx: boolean, frontmatter: PageMeta): stri
     const out: string[] = [];
     let state: State = 'text';
 
+    // Outside fences, dropped blocks leave blank-line gaps — never emit two
+    // consecutive blank lines. Fence content bypasses this (pushed directly):
+    // spacing inside examples is intentional.
+    let lastBlank = true; // also swallows leading blanks
+    const emit = (line: string) => {
+        const blank = line.trim() === '';
+        if (blank && lastBlank) return;
+        out.push(line);
+        lastBlank = blank;
+    };
+
     // fence bookkeeping — close requires the same marker char, at least the
     // open run's length (` ``` ` never closes `~~~`); unclosed fences keep
     // the rest of the file verbatim, same posture as extractTitleFromContent.
@@ -100,7 +112,8 @@ function cleanBody(content: string, isMdx: boolean, frontmatter: PageMeta): stri
         let line = lines[i];
 
         if (state === 'fence') {
-            out.push(line);
+            out.push(line); // verbatim — no blank collapsing inside fences
+            lastBlank = false;
             const close = line.match(/^ {0,3}(`{3,}|~{3,})\s*$/);
             if (close && close[1][0] === fenceChar && close[1].length >= fenceLen) {
                 state = 'text';
@@ -112,7 +125,7 @@ function cleanBody(content: string, isMdx: boolean, frontmatter: PageMeta): stri
             // An MDX ESM block runs to the next blank line — its own grammar,
             // so multi-line imports/exports need no brace counting.
             if (line.trim() === '') {
-                out.push(line);
+                emit(line);
                 state = 'text';
             }
             continue;
@@ -150,7 +163,7 @@ function cleanBody(content: string, isMdx: boolean, frontmatter: PageMeta): stri
             const lang = info.split(/\s+/)[0] ?? '';
             // ` ```tsx code console live ` → ` ```tsx ` (drops live-code /
             // code-window tokens and shiki meta); unrecognizable info → bare.
-            out.push(fence[1] + fence[2] + (FENCE_LANG.test(lang) ? lang : ''));
+            emit(fence[1] + fence[2] + (FENCE_LANG.test(lang) ? lang : ''));
             fenceChar = fence[2][0];
             fenceLen = fence[2].length;
             state = 'fence';
@@ -159,12 +172,12 @@ function cleanBody(content: string, isMdx: boolean, frontmatter: PageMeta): stri
 
         // Indented code blocks: verbatim, no rules.
         if (/^ {4,}/.test(line) && line.trim() !== '') {
-            out.push(line);
+            emit(line);
             continue;
         }
 
         if (!isMdx) {
-            out.push(line);
+            emit(line);
             continue;
         }
 
@@ -212,11 +225,11 @@ function cleanBody(content: string, isMdx: boolean, frontmatter: PageMeta): stri
             const open = trimmed.match(/^<([A-Z][\w.]*)(\s[^>]*?)?>(.*)$/);
             if (open) {
                 jsxStack.push(open[1]);
-                if (open[3].trim() !== '') out.push(open[3]);
+                if (open[3].trim() !== '') emit(open[3]);
                 continue;
             }
 
-            out.push(line);
+            emit(line);
             continue;
         }
 
@@ -239,7 +252,7 @@ function cleanBody(content: string, isMdx: boolean, frontmatter: PageMeta): stri
             // `{x} and prose` / `{a} between {b}` — leave it alone.
         }
 
-        out.push(line);
+        emit(line);
     }
 
     return out.join('\n');

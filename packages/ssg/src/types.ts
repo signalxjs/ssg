@@ -692,7 +692,12 @@ export interface LlmsLink {
     note?: string;
 }
 
-/** One curated section of the llms.txt index (#176). */
+/**
+ * One curated section of the llms.txt index (#176). Auto-generated
+ * sections list markdown-sourced pages only; `.tsx`/`.jsx` pages appear
+ * only when named explicitly here (via `pages` or `links`), linked to
+ * their HTML route since they have no `.md` rendition.
+ */
 export interface LlmsSection {
     /** Section heading (emitted as `## title`). */
     title: string;
@@ -700,7 +705,7 @@ export interface LlmsSection {
     collections?: string[];
     /** Explicit route paths. */
     pages?: string[];
-    /** Hand-authored links — the only way `.tsx`/`.jsx` pages appear. */
+    /** Hand-authored links — external URLs or route paths, with a note. */
     links?: LlmsLink[];
 }
 
