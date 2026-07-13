@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-07-13
+
+No changes — version aligned with `@sigx/ssg` 0.15.0.
+
 ## [0.14.0] - 2026-06-16
 
 No changes — version aligned with `@sigx/ssg` 0.14.0.
