@@ -32,6 +32,13 @@ export default defineSSGConfig({
         transform: (entry) => (entry.path === '/guide' ? { ...entry, priority: 0.9 } : entry),
     },
 
+    // LLM-friendly outputs (#176): llms.txt index, llms-full.txt, and a .md
+    // rendition next to each markdown page's HTML. The area emits a
+    // /docs/llms.txt scoped to that collection.
+    llms: {
+        areas: { '/docs': { description: 'The docs collection as its own set' } },
+    },
+
     // Internal link validation (#99): fail the build on dead hrefs/anchors.
     linkCheck: 'error',
     // Programmatic routes (#59): pages that don't come from src/pages.

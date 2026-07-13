@@ -442,6 +442,38 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
             console.log(`   ✓ ${searchOptions.output ?? 'search-index.json'} (${entries.length} pages)`);
         }
 
+        // LLM-friendly outputs (#176) — llms.txt, llms-full.txt, per-page .md
+        if (resolvedConfig.llms) {
+            if (!resolvedConfig.site?.url) {
+                console.warn(
+                    '⚠️  Skipping llms outputs: set `site.url` in your ssg.config — ' +
+                        'the markdown renditions embed absolute page URLs.'
+                );
+                warnings.push('llms outputs skipped: site.url is not configured.');
+            } else {
+                console.log('🤖 Writing LLM-friendly outputs...');
+                const { writeLlmsOutputs } = await import('./llms');
+                const llmsOptions = resolvedConfig.llms === true ? {} : resolvedConfig.llms;
+                const { files, warnings: llmsWarnings } = await writeLlmsOutputs(
+                    pages,
+                    resolvedConfig,
+                    resolvedConfig.outDir!,
+                    llmsOptions,
+                    // Vite's default public dir — user-shipped llms files
+                    // (copied into outDir by the client build) are preserved.
+                    path.join(root, 'public')
+                );
+                warnings.push(...llmsWarnings);
+                for (const warning of llmsWarnings) console.warn(`   ⚠️  ${warning}`);
+                const mdCount = files.filter((f) => f.endsWith('.md')).length;
+                const rest = files.filter((f) => !f.endsWith('.md'));
+                for (const f of rest) {
+                    console.log(`   ✓ ${path.relative(resolvedConfig.outDir!, f).replace(/\\/g, '/')}`);
+                }
+                if (mdCount > 0) console.log(`   ✓ ${mdCount} page markdown file(s)`);
+            }
+        }
+
         // postBuild hook (#58) — everything is on disk; search indexes,
         // link checkers etc. run here.
         if (resolvedConfig.hooks?.postBuild) {

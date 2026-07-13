@@ -321,7 +321,7 @@ function buildNestedSection(category: NavBuildCategory): NavItem {
  * @example '/docs/getting-started' -> 'Getting Started'
  * @example '/docs/api/router' -> 'Router'
  */
-function routeToTitle(routePath: string): string {
+export function routeToTitle(routePath: string): string {
     const segments = routePath.split('/').filter(Boolean);
     const lastSegment = segments[segments.length - 1] || 'Home';
 

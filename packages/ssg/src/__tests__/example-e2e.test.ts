@@ -216,4 +216,70 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         // redirects are not crawlable content
         expect(read('sitemap.xml')).not.toContain('old-guide');
     });
+
+    it('emits an llms.txt index over the markdown pages (#176)', () => {
+        const index = read('llms.txt');
+        expect(index).toContain('# SSG Basic Example');
+        expect(index).toContain('> A minimal site built with @sigx/ssg');
+
+        // Sections are H2s (llmstxt.org convention), one per collection,
+        // links in sidebar (category/order) order pointing at .md renditions.
+        const docs = index.indexOf('## Docs');
+        const start = index.indexOf('- [Getting Started](/docs/getting-started.md)');
+        const config = index.indexOf('- [Configuration](/docs/configuration.md)');
+        expect(docs).toBeGreaterThan(-1);
+        expect(start).toBeGreaterThan(docs);
+        expect(config).toBeGreaterThan(start); // order: 1 before order: 2
+
+        // Area hub block
+        expect(index).toContain('## Docs sets');
+        expect(index).toContain('- [Docs](/docs/llms.txt): The docs collection as its own set');
+
+        // No drafts, no tsx-backed dynamic pages, no redirects
+        expect(index).not.toContain('drafts-demo');
+        expect(index).not.toContain('first-post');
+        expect(index).not.toContain('old-guide');
+    });
+
+    it('emits per-page .md renditions next to the HTML (#176)', () => {
+        const md = read('docs', 'getting-started.md');
+        expect(md.startsWith('---\nurl: https://basic.example/docs/getting-started/\n')).toBe(true);
+        expect(md).toContain('title: Getting Started');
+        // Original frontmatter is replaced by the header block
+        expect(md).not.toContain('category:');
+        // Fence body survives verbatim
+        expect(md).toContain('npm install @sigx/ssg sigx');
+
+        // MDX syntax is stripped, fence contents are not (guide.mdx carries
+        // an import inside a ```ts fence)
+        const guide = read('guide.md');
+        expect(guide).toContain("import { defineSSGConfig } from '@sigx/ssg';");
+
+        const features = read('docs', 'mdx-features.md');
+        expect(features).not.toContain('<Callout');
+        expect(features).not.toContain('never renders');
+        expect(features).toContain('version 1.2.3');
+        // The top-level import is stripped; the identical line inside the
+        // fence is untouched — so exactly one copy survives, fenced.
+        const importLine = "import Callout from '../../components/Callout';";
+        expect(features.split(importLine).length - 1).toBe(1);
+        expect(features).toContain(`\`\`\`ts\n${importLine}\n\`\`\``);
+
+        // No renditions for drafts or tsx-backed pages
+        expect(fs.existsSync(path.join(DIST, 'drafts-demo.md'))).toBe(false);
+        expect(fs.existsSync(path.join(DIST, 'blog', 'first-post.md'))).toBe(false);
+    });
+
+    it('emits llms-full.txt and the /docs area index (#176)', () => {
+        const full = read('llms-full.txt');
+        expect(full).toContain('url: https://basic.example/guide/');
+        expect(full).toContain('url: https://basic.example/docs/getting-started/');
+        expect(full).not.toContain('drafts-demo');
+
+        const area = read('docs', 'llms.txt');
+        expect(area).toContain('- [Getting Started](/docs/getting-started.md)');
+        // Scoped to the /docs prefix only
+        expect(area).not.toContain('(/guide.md)');
+        expect(area).not.toContain('(/index.md)');
+    });
 });
