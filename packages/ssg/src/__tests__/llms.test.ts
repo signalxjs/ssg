@@ -200,6 +200,17 @@ describe('buildLlmsIndex (#176)', () => {
         });
         expect(out).toContain('## Docs sets\n\n- [Docs](/docs/llms.txt): Just the docs');
     });
+
+    it('omits index-disabled areas from the Docs sets block (no broken links)', () => {
+        const out = buildLlmsIndex(PAGES, CONFIG, {
+            areas: {
+                '/docs': {},
+                '/blog': { index: false }, // its /blog/llms.txt is never written
+            },
+        });
+        expect(out).toContain('(/docs/llms.txt)');
+        expect(out).not.toContain('/blog/llms.txt');
+    });
 });
 
 describe('buildLlmsFullText (#176)', () => {

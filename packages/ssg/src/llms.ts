@@ -193,8 +193,12 @@ export function buildLlmsIndex(
         blocks.push(`## ${section.title}\n\n${section.entries.map(entryLine).join('\n')}`);
     }
 
-    // Hub block linking the per-area sub-indexes (Svelte style).
-    const areas = Object.entries(options.areas ?? {});
+    // Hub block linking the per-area sub-indexes (Svelte style). Areas
+    // with `index: false` never write their llms.txt — linking them here
+    // would be a broken link.
+    const areas = Object.entries(options.areas ?? {}).filter(
+        ([, areaOptions]) => areaOptions.index !== false
+    );
     if (areas.length > 0) {
         const lines = areas.map(([prefix, areaOptions]) =>
             entryLine({

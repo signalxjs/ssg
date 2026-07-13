@@ -775,8 +775,8 @@ export interface LlmsOptions {
 
     /**
      * Per-area sub-indexes; key = path prefix. `areas: { '/docs': {} }`
-     * emits `/docs/llms.txt` (and its `llms-full.txt` unless disabled)
-     * scoped to pages under that prefix.
+     * emits `/docs/llms.txt` scoped to pages under that prefix (a per-area
+     * `llms-full.txt` is opt-in via the area's `full`).
      */
     areas?: Record<string, LlmsAreaOptions>;
 
