@@ -186,8 +186,9 @@ export interface SSGConfig {
      * renditions, and a cleaned `.md` rendition next to each
      * `.md`/`.mdx`-sourced page's HTML. Visibility follows the sitemap:
      * drafts, `noindex` pages and the 404 page are excluded; per-page
-     * frontmatter `llms: false` opts a page out. Files the user ships via
-     * `public/` are never overwritten.
+     * frontmatter `llms: false` opts a page out. `llms.txt`/`llms-full.txt`
+     * files the user ships via `public/` are never overwritten; the per-page
+     * `.md` renditions are derived artifacts and always are.
      * @default false
      */
     llms?: boolean | LlmsOptions;
