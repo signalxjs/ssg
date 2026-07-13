@@ -46,7 +46,7 @@
     "devDependencies": {
         "@sigx/router": "^0.7.0",
         "@sigx/ssg": "workspace:^",
-        "sigx": "^0.7.0",
+        "sigx": "^0.8.0",
         "typescript": "^6.0.3"
     },
     "publishConfig": {
