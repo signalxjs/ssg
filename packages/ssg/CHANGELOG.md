@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **LLM-friendly output — `llms` config option** ([#176](https://github.com/signalxjs/ssg/issues/176)): `llms: true` (or an options object) emits the [llms.txt convention](https://llmstxt.org/) at build time — an `llms.txt` index over the pages (sections as `##` H2s, one per collection in sidebar order, or curated via `sections`), an `llms-full.txt` concatenation of the pages' markdown renditions (with `include`/`exclude` globs), a cleaned `.md` rendition next to every `.md`/`.mdx`-sourced page's HTML (route `/docs/guide/` → `dist/docs/guide.md`), and per-area sub-indexes (`areas: { '/docs': {} }` → `/docs/llms.txt`). Renditions strip MDX ESM/JSX/expressions with a fence-aware scanner that never touches code-fence contents, substitute `{frontmatter.x}`, and normalize fence info strings to the bare language; a `transform(md, page)` hook adjusts or drops (null) individual pages. Visibility matches the sitemap (drafts, `noindex`, 404 excluded) plus `exclude` globs and per-page frontmatter `llms: false`; a user-shipped `public/llms.txt` is never overwritten. Exported helpers: `prepareLlmsPages`, `buildLlmsIndex`, `buildLlmsFullText`, `renderPageMarkdown`, `getMarkdownPath`, `writeLlmsOutputs`. Internally, the sitemap's `exclude` glob matching moved to a shared helper (behavior unchanged).
+
 ## [0.14.0] - 2026-06-16
 
 ### Fixed

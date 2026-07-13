@@ -55,6 +55,18 @@ export { loadThemeModule, applyThemeConfig, resolveThemeConfig } from './theme';
 export { generateRedirectHtml, generateRedirectsFile, writeRedirects } from './redirects';
 export { extractSearchText, buildSearchIndex, writeSearchIndex } from './search';
 export type { SearchOptions, SearchIndexEntry } from './types';
+
+// LLM-friendly outputs (#176)
+export {
+    prepareLlmsPages,
+    buildLlmsIndex,
+    buildLlmsFullText,
+    getMarkdownPath,
+    writeLlmsOutputs,
+} from './llms';
+export { renderPageMarkdown } from './llms-md';
+export type { LlmsPage } from './llms';
+export type { LlmsOptions, LlmsSection, LlmsLink, LlmsFullOptions, LlmsAreaOptions } from './types';
 export { runDataLoaders, generateDataModule } from './data';
 export { checkLinks, extractLocalLinks, extractElementIds, formatLinkCheckReport } from './link-check';
 export { generateDefault404 } from './default-404';

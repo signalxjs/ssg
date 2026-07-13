@@ -180,6 +180,19 @@ export interface SSGConfig {
     search?: boolean | SearchOptions;
 
     /**
+     * LLM-friendly output (#176). `true` (or an options object) emits, at
+     * build time: an `llms.txt` index over the pages (llmstxt.org
+     * convention), an `llms-full.txt` concatenation of the pages' markdown
+     * renditions, and a cleaned `.md` rendition next to each
+     * `.md`/`.mdx`-sourced page's HTML. Visibility follows the sitemap:
+     * drafts, `noindex` pages and the 404 page are excluded; per-page
+     * frontmatter `llms: false` opts a page out. Files the user ships via
+     * `public/` are never overwritten.
+     * @default false
+     */
+    llms?: boolean | LlmsOptions;
+
+    /**
      * Internal link & anchor validation (#99). After rendering, every
      * internal `<a href>` is checked: the path must be an emitted page (or
      * redirect source / on-disk asset) and any `#fragment` must match an
@@ -666,6 +679,117 @@ export interface SearchIndexEntry {
     tags?: string[];
 }
 
+/** A hand-authored llms.txt link (#176). */
+export interface LlmsLink {
+    title: string;
+    /**
+     * Route path (resolved to its `.md` rendition when one is emitted,
+     * otherwise to the HTML route) or an external URL passed through as-is.
+     */
+    href: string;
+    /** Rendered as the `: note` suffix after the link. */
+    note?: string;
+}
+
+/** One curated section of the llms.txt index (#176). */
+export interface LlmsSection {
+    /** Section heading (emitted as `## title`). */
+    title: string;
+    /** Pull these collections' pages, in sidebar (category/order) order. */
+    collections?: string[];
+    /** Explicit route paths. */
+    pages?: string[];
+    /** Hand-authored links — the only way `.tsx`/`.jsx` pages appear. */
+    links?: LlmsLink[];
+}
+
+/** `llms-full.txt` options (#176). */
+export interface LlmsFullOptions {
+    /**
+     * Output filename inside `outDir`.
+     * @default 'llms-full.txt'
+     */
+    output?: string;
+    /** Route globs to include (default: every markdown-sourced page). */
+    include?: string[];
+    /** Route globs to exclude. */
+    exclude?: string[];
+}
+
+/**
+ * Per-area options (#176) — the `LlmsOptions` shape minus `areas` (no
+ * nesting), `pageMd` (renditions are emitted once, site-wide) and
+ * `transform` (a per-area transform would fork the shared rendition;
+ * the global one receives the page and can branch on `page.path`).
+ * Unlike the top level, an area's `full` defaults to `false` — per-area
+ * `llms-full.txt` files are opt-in.
+ */
+export type LlmsAreaOptions = Omit<LlmsOptions, 'areas' | 'pageMd' | 'transform'>;
+
+/** LLM-friendly output configuration (#176). */
+export interface LlmsOptions {
+    /**
+     * Emit `llms.txt`.
+     * @default true
+     */
+    index?: boolean;
+
+    /**
+     * Index title (`# title`).
+     * @default site.title
+     */
+    title?: string;
+
+    /**
+     * Index description (`> description` blockquote).
+     * @default site.description
+     */
+    description?: string;
+
+    /**
+     * Markdown emitted after the blockquote — the place for "notes for
+     * LLMs" and links to cheatsheet pages.
+     */
+    intro?: string;
+
+    /**
+     * Curated index sections. When omitted, sections are auto-generated:
+     * one per collection (declaration order, links in sidebar order),
+     * with pages outside every collection under `## Other`.
+     */
+    sections?: LlmsSection[];
+
+    /**
+     * Emit `llms-full.txt` — the pages' markdown renditions concatenated,
+     * each prefixed with a `---\nurl: …\n---` block.
+     * @default true
+     */
+    full?: boolean | LlmsFullOptions;
+
+    /**
+     * Emit a cleaned `.md` rendition next to each markdown-sourced page's
+     * HTML (route `/docs/guide/` → `dist/docs/guide.md`).
+     * @default true
+     */
+    pageMd?: boolean;
+
+    /**
+     * Per-area sub-indexes; key = path prefix. `areas: { '/docs': {} }`
+     * emits `/docs/llms.txt` (and its `llms-full.txt` unless disabled)
+     * scoped to pages under that prefix.
+     */
+    areas?: Record<string, LlmsAreaOptions>;
+
+    /** Route globs excluded from ALL llms outputs. */
+    exclude?: string[];
+
+    /**
+     * Per-page escape hatch: adjust a page's markdown rendition, or return
+     * `null`/`undefined` to drop the page from every llms output. Runs last.
+     */
+    transform?: (md: string, page: PageBuildResult) => string | null | undefined;
+}
+
 // ============================================================================
 // Route Types
 // ============================================================================
@@ -851,6 +975,9 @@ export interface PageMeta {
 
     /** Sitemap override: priority for this page (#38). */
     priority?: number;
+
+    /** Set `false` to exclude this page from every llms output (#176). */
+    llms?: boolean;
 
     // ========================================================================
     // SEO Fields

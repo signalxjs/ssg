@@ -1,0 +1,25 @@
+---
+title: MDX features
+description: Components and expressions inside MDX pages
+category: Going further
+order: 2
+version: 1.2.3
+---
+
+import Callout from '../../components/Callout';
+
+# MDX features
+
+Pages can import components and use JSX expressions.
+
+{/* This comment never renders — and never reaches the llms .md rendition. */}
+
+<Callout text="Rendered by an imported component." />
+
+This page's frontmatter declares version {frontmatter.version}.
+
+Code fences are never treated as MDX:
+
+```ts
+import Callout from '../../components/Callout';
+```

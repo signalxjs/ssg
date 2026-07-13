@@ -10,6 +10,7 @@ import fsSync from 'node:fs';
 import path from 'node:path';
 import type { SSGConfig, PageBuildResult, SitemapEntry, SitemapOptions } from './types';
 import { normalizePagePath } from './url';
+import { createGlobMatcher } from './glob';
 
 // Definitions live in types.ts (referenced by SSGConfig.sitemap); re-exported
 // here for backwards compatibility with existing imports.
@@ -94,6 +95,8 @@ export function pagesToSitemapEntries(
         defaultPriority = 0.5,
     } = options;
 
+    const excluded = createGlobMatcher(exclude);
+
     return pages
         .filter((page) => {
             // Pages opting out of indexing must not be advertised (#56),
@@ -102,26 +105,7 @@ export function pagesToSitemapEntries(
             if (typeof robots === 'string' && robots.includes('noindex')) return false;
             if (page.path === '/404' || page.path === '/404.html') return false;
 
-            // Filter out excluded paths
-            for (const pattern of exclude) {
-                if (pattern.includes('*') || pattern.includes('?')) {
-                    // Glob matching: escape regex metacharacters first so e.g.
-                    // the `.` in `/docs/v1.0/*` stays literal, then expand the
-                    // glob tokens.
-                    const regex = new RegExp(
-                        '^' +
-                            pattern
-                                .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-                                .replace(/\*/g, '.*')
-                                .replace(/\?/g, '.') +
-                            '$'
-                    );
-                    if (regex.test(page.path)) return false;
-                } else if (page.path === pattern) {
-                    return false;
-                }
-            }
-            return true;
+            return !excluded(page.path);
         })
         .map((page) => {
             // Determine priority based on path depth

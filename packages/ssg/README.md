@@ -47,6 +47,29 @@ Everything else — routing rules, layouts, MDX, the package-manager code-fence
 switcher, theming, islands hydration and the full config reference — lives in the
 docs: **<https://sigx.dev/ssg/>**.
 
+## LLM-friendly output (llms.txt)
+
+`llms: true` emits the [llms.txt convention](https://llmstxt.org/) at build time,
+so LLMs can ingest your site without scraping HTML: an `llms.txt` index (one `##`
+section per collection, in sidebar order), an `llms-full.txt` concatenation, and a
+cleaned `.md` rendition next to every markdown page's HTML (`/docs/guide/` →
+`dist/docs/guide.md`). MDX imports, components and expressions are stripped from
+the renditions; code-fence contents are never touched.
+
+```ts
+llms: {
+    intro: 'Read /llms-full.txt for everything in one file.',
+    exclude: ['/internal/**'],          // globs excluded from all outputs
+    areas: { '/docs': {} },             // also emit a scoped /docs/llms.txt
+    transform: (md, page) => md,        // per-page escape hatch; null drops the page
+},
+```
+
+Visibility follows the sitemap (drafts, `noindex` and the 404 page are excluded);
+frontmatter `llms: false` opts a page out. `.tsx` pages have no markdown source —
+list them via `sections[].links` if wanted. A `public/llms.txt` you ship yourself
+is never overwritten. Build-time only; the dev server doesn't serve these files.
+
 ## Part of SignalX
 
 - [SignalX core](https://sigx.dev/core/) — `reactivity`, `runtime-core`, `runtime-dom`, `server-renderer`, `vite`, `sigx`
