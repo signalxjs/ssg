@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Aligned `@sigx/*` dependency pins with the 0.10 core line** ([#182](https://github.com/signalxjs/ssg/issues/182)). Peer ranges: `sigx` and `@sigx/server-renderer` `>=0.7.0 <0.8.0` → `>=0.10.0 <0.11.0`, `@sigx/router` `>=0.7.0 <0.8.0` → `>=0.8.0 <0.9.0` (`@sigx/router@0.8.0` is the release aligned to core 0.10; the router no longer mirrors core's minor). `@sigx/cli` peer (`>=0.4.0`) and the `vite` peer are unchanged. devDependencies bumped to match (`@sigx/server-renderer`, `@sigx/vite`, `sigx` → `^0.10.0`; `@sigx/router` → `^0.8.0`). Without this, a consumer on core 0.10 could not satisfy the old peers and was forced onto a second, older copy of the SignalX core — the duplicate-reactivity-engine hazard. Mirrors the 0.6→0.7 alignment ([#153](https://github.com/signalxjs/ssg/pull/153)).
+- **No API migration.** `@sigx/ssg` consumes only stable surfaces (`component`/`signal`/`watch`/`onUnmounted`/`defineApp`/`jsx`/`ComponentFactory` from core, `renderToString`/`ssrClientPlugin` from `@sigx/server-renderer`, the router's `createRouter`/`useRoute`/etc., and `@sigx/vite`'s `defineLibConfig`/`sigxPlugin`/`registerHMRModule`) — none of core's 0.8/0.9/0.10 breaking removals touch this repo. Verified against the published 0.10 packages: `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test` (46 files, 498 tests — includes both example-site e2e builds covering hydration + SPA nav), and `pnpm verify:pack` all pass, resolving a single copy of `sigx@0.10.0` / `@sigx/router@0.8.0` across every workspace.
+
 ## [0.15.0] - 2026-07-13
 
 ### Added
