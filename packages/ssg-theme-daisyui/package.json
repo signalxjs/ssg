@@ -1,6 +1,6 @@
 {
     "name": "@sigx/ssg-theme-daisyui",
-    "version": "0.15.0",
+    "version": "0.16.0",
     "description": "DaisyUI theme for @sigx/ssg with pre-built layouts and components",
     "type": "module",
     "main": "./dist/index.js",

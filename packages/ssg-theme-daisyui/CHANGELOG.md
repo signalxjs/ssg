@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-07-16
+
 ### Changed
 
 - **Aligned `@sigx/*` dependency pins with the 0.10 core line** ([#182](https://github.com/signalxjs/ssg/issues/182)). Peer ranges: `sigx` `>=0.7.0 <0.8.0` → `>=0.10.0 <0.11.0`, `@sigx/router` `>=0.7.0 <0.8.0` → `>=0.8.0 <0.9.0` (`@sigx/ssg` peer stays `workspace:^`; `daisyui`/`tailwindcss` peers unchanged). devDependencies bumped to match (`sigx` → `^0.10.0`, `@sigx/router` → `^0.8.0`). Keeps the theme installable alongside `@sigx/ssg` on the 0.10 core without pulling a second copy of the SignalX core. No code or API change.
