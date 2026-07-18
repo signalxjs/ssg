@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-07-18
+
 ### Changed
 
 - **Aligned `@sigx/*` dependency pins with the 0.12 core line and moved the core/router pins into a pnpm catalog** ([#187](https://github.com/signalxjs/ssg/issues/187)). Effective (published) peer ranges: `sigx` and `@sigx/server-renderer` `>=0.10.0 <0.11.0` → `^0.12.0`, `@sigx/router` `>=0.8.0 <0.9.0` → `^0.9.0` (`@sigx/router@0.9.0` is the release aligned to core 0.12 — it peers `sigx@^0.12.0`). In the source tree these peers are written as `"catalog:"` refs and only resolve to those concrete ranges when pnpm rewrites them on `pnpm pack`/publish (see below). `@sigx/cli` peer (`>=0.4.0`) and the `vite` peer are unchanged. `@sigx/cli` (`^0.4.2`) / `@sigx/args` (`^0.6.1`) dev deps are left as-is: they are a separate tooling train (peering `@sigx/args`/`@sigx/terminal`, not core), and `@sigx/cli@0.5.1` still peers `@sigx/args@^0.6.0`. The core packages (`sigx`, `@sigx/server-renderer`, `@sigx/vite`) and `@sigx/router` now live in a `catalog:` block in `pnpm-workspace.yaml` and are referenced as `"catalog:"` in dependencies/devDependencies/peerDependencies (both packages and both example apps); pnpm rewrites these to the concrete ranges (`^0.12.0` / `^0.9.0`) on `pnpm pack`/publish, so published manifests are unchanged in shape. Pinning to a single minor via one catalog guarantees exactly one `@sigx/reactivity` copy across the workspace — two copies break reactivity. `scripts/verify-pack.js` scratch-app peers were updated to `^0.12.0` / `^0.9.0` to match. Mirrors the 0.10 alignment ([#183](https://github.com/signalxjs/ssg/pull/183)).
