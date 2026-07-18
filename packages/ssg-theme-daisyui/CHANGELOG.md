@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Aligned `@sigx/*` dependency pins with the 0.12 core line and moved core/router pins into a pnpm catalog** ([#187](https://github.com/signalxjs/ssg/issues/187)). Peer ranges: `sigx` `>=0.10.0 <0.11.0` → `^0.12.0`, `@sigx/router` `>=0.8.0 <0.9.0` → `^0.9.0` (`@sigx/ssg` peer stays `workspace:^`; `daisyui`/`tailwindcss` peers unchanged). `sigx` and `@sigx/router` are now referenced as `"catalog:"` (resolved from the shared catalog in `pnpm-workspace.yaml`), which pnpm rewrites to `^0.12.0` / `^0.9.0` on publish. Keeps the theme installable alongside `@sigx/ssg` on core 0.12 without pulling a second copy of the SignalX core. No code or API change.
+
 ## [0.16.0] - 2026-07-16
 
 ### Changed
