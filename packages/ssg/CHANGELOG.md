@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-07-23
+
+### Changed
+
+- **Retargeted the `@sigx/*` catalog from the 0.12 core line to 0.13** ([#195](https://github.com/signalxjs/ssg/issues/195), completing [#194](https://github.com/signalxjs/ssg/pull/194)). Effective (published) peer/dev ranges: `sigx` and `@sigx/server-renderer` `^0.12.0` → `^0.13.0`, `@sigx/router` `^0.9.0` → `^0.10.0` (`@sigx/router@0.10.0` is the release aligned to core 0.13 — it peers `sigx@^0.13.0`). In the source tree these stay `"catalog:"` refs and only resolve to the concrete ranges when pnpm rewrites them on `pnpm pack`/publish; the catalog block in `pnpm-workspace.yaml` now pins `sigx`/`@sigx/server-renderer`/`@sigx/vite` at `^0.13.0` and `@sigx/router` at `^0.10.0`. Pinning to a single minor via one catalog guarantees exactly one `@sigx/reactivity` copy across the workspace — two copies break reactivity. `@sigx/cli` peer (`>=0.4.0`) and the `vite` peer are unchanged.
+- **Dev-toolchain pins moved to the 0.13-era releases**: `@sigx/cli` `^0.6.0` → `^0.7.0` and `@sigx/args` `^0.8.0` → `^0.9.0` in devDependencies. These are a separate tooling train (peering `@sigx/args`/`@sigx/terminal`, not core); `@sigx/cli@0.7.0` is the toolchain build aligned to core 0.13 (it devDepends `@sigx/vite@^0.13.0`), and `@sigx/args@0.9.0` is core-agnostic. The pre-0.13 `^0.6.0`/`^0.8.0` pins from [#194](https://github.com/signalxjs/ssg/pull/194) would have resolved the older core-0.12-era cli into the build toolchain.
+- **No API migration.** `@sigx/ssg` consumes only stable surfaces from core/router/server-renderer/vite — none of core's 0.13 changes touch this repo (router 0.10 has no public API change). Verified against the published 0.13 packages: `pnpm verify:catalog`, `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test`, and `pnpm verify:pack` all pass, resolving a single copy of `sigx@0.13.0` / `@sigx/router@0.10.0` across every workspace.
+
 ## [0.17.0] - 2026-07-18
 
 ### Changed
