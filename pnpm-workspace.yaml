@@ -2,19 +2,19 @@ packages:
   - packages/*
   - examples/*
 
-# Core sigx packages are pinned to a single minor (^0.12.0) via a catalog so
+# Core sigx packages are pinned to a single minor (^0.13.0) via a catalog so
 # every workspace package's runtime resolves the SAME @sigx/reactivity copy —
-# two copies on the app/runtime line break reactivity. (A dev-only 0.4.x copy
+# two copies on the app/runtime line break reactivity. (A dev-only older copy
 # may still appear under the @sigx/cli → @sigx/terminal toolchain; that is
 # isolated from the ssg runtime and unaffected by this catalog.) @sigx/router
-# is a sibling aligned to core 0.12 (peers ^0.12.0), pinned here to ^0.9.0.
+# is a sibling aligned to core 0.13 (peers ^0.13.0), pinned here to ^0.10.0.
 # `catalog:` refs rewrite to these concrete ranges on `pnpm pack`/publish
 # (deps, devDeps, and peerDeps alike).
 catalog:
-  sigx: ^0.12.0
-  '@sigx/server-renderer': ^0.12.0
-  '@sigx/vite': ^0.12.0
-  '@sigx/router': ^0.9.0
+  sigx: ^0.13.0
+  '@sigx/server-renderer': ^0.13.0
+  '@sigx/vite': ^0.13.0
+  '@sigx/router': ^0.10.0
 
 onlyBuiltDependencies:
   - esbuild
