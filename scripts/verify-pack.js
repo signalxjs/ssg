@@ -32,6 +32,43 @@ const rootDir = join(__dirname, '..');
 
 const PACKAGES = ['packages/ssg', 'packages/ssg-theme-daisyui'];
 
+/**
+ * The scratch app's non-tarball deps must match what the PACKED manifests
+ * peer-require, and those come from the `catalog:` block — `pnpm pack` rewrites
+ * `catalog:` to the concrete range on publish. Hardcoding them here meant the
+ * sandbox pinned one version while the tarball demanded another, and npm failed
+ * the install with ERESOLVE on every core rollout (`peer @sigx/router@^0.11.0`
+ * from the packed `@sigx/ssg` against `^0.10.0` in the sandbox root). Reading
+ * the catalog keeps the one source of truth actually singular.
+ */
+function readCatalog() {
+    const ws = readFileSync(join(rootDir, 'pnpm-workspace.yaml'), 'utf8');
+    const entry = /^\s+(["']?)([@a-zA-Z0-9._/-]+)\1\s*:\s*(?:"([^"]*)"|'([^']*)'|([^\s#]+))/;
+    const out = {};
+    let inCatalog = false;
+    for (const line of ws.split('\n')) {
+        if (/^(catalog|catalogs)\s*:/.test(line)) { inCatalog = true; continue; }
+        // A column-0 comment is valid YAML mid-mapping and does not end the block.
+        if (inCatalog && line.trim() !== '' && !/^\s*#/.test(line) && /^\S/.test(line)) inCatalog = false;
+        if (!inCatalog) continue;
+        const m = entry.exec(line);
+        if (m) out[m[2]] = m[3] ?? m[4] ?? m[5];
+    }
+    return out;
+}
+
+/** Look a spec up in the catalog, failing loudly rather than pinning a stale default. */
+function fromCatalog(catalog, name) {
+    const spec = catalog[name];
+    if (!spec) {
+        throw new Error(
+            `verify-pack: "${name}" is not in the pnpm-workspace.yaml catalog, so the ` +
+                `scratch app cannot pin the version the packed tarball peer-requires.`
+        );
+    }
+    return spec;
+}
+
 const sandbox = join(tmpdir(), `sigx-ssg-verify-pack-${Date.now()}`);
 const tarballDir = join(sandbox, 'tarballs');
 const appDir = join(sandbox, 'app');
@@ -78,6 +115,7 @@ function main() {
 
     step('Create scratch app');
     const rootPkg = readJson(join(rootDir, 'package.json'));
+    const catalog = readCatalog();
     const deps = Object.fromEntries(
         packed.map((p) => [p.name, `file:${p.tarball.replace(/\\/g, '/')}`])
     );
@@ -89,9 +127,9 @@ function main() {
         scripts: { smoke: 'tsx smoke.ts' },
         dependencies: {
             ...deps,
-            '@sigx/router': '^0.10.0',
-            '@sigx/server-renderer': '^0.13.0',
-            sigx: '^0.13.0',
+            '@sigx/router': fromCatalog(catalog, '@sigx/router'),
+            '@sigx/server-renderer': fromCatalog(catalog, '@sigx/server-renderer'),
+            sigx: fromCatalog(catalog, 'sigx'),
             vite: rootPkg.devDependencies.vite,
         },
         devDependencies: {
