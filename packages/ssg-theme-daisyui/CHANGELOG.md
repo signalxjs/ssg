@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-07-31
+
+### Changed
+
+- **Aligned to SignalX core 0.14**, matching `@sigx/ssg` 0.19.0 — `sigx` and
+  `@sigx/router` peers move to core 0.14 / router 0.11 (#199). Breaking for
+  consumers on core 0.13; no API change here.
+
 ## [0.18.0] - 2026-07-23
 
 ### Changed
