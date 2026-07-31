@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-07-31
+
+### Changed
+
+- **Aligned to SignalX core 0.14.** The peer ranges this package publishes move
+  from `sigx` / `@sigx/server-renderer` `^0.13.0` to `^0.14.0`, and
+  `@sigx/router` from `^0.10.0` to `^0.11.0` (#199). In the source tree these
+  peers read `"catalog:"` — the concrete ranges live in `pnpm-workspace.yaml`
+  and pnpm substitutes them on `pack`/`publish`, so the versions above are what
+  a consumer installs, not a diff you will find in `package.json`.
+
+  This is a **breaking change for consumers still on core 0.13** — hence the
+  minor. Core keeps reactive state in module-local variables, so two physical
+  copies of `@sigx/reactivity` silently split it; move your app to core 0.14 in
+  the same step rather than letting both resolve. After upgrading, check
+  `pnpm why -r @sigx/reactivity` reports exactly one version.
+
+  No API change in this package. Verified against a built site driven in
+  Chromium: it hydrates, and client-side navigation updates the path, heading
+  and docs sidebar on core 0.14 / router 0.11.
+
 ## [0.18.0] - 2026-07-23
 
 ### Changed
