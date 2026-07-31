@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **Aligned to SignalX core 0.14**, matching `@sigx/ssg` 0.19.0 — `sigx` and
-  `@sigx/router` peers move to core 0.14 / router 0.11 (#199). Breaking for
-  consumers on core 0.13; no API change here.
+- **Aligned to SignalX core 0.14**, matching `@sigx/ssg` 0.19.0 — the published
+  `sigx` and `@sigx/router` peer ranges move to core 0.14 / router 0.11 (#199).
+  In the source tree both read `"catalog:"`; pnpm substitutes the concrete
+  ranges from `pnpm-workspace.yaml` on publish. Breaking for consumers on core
+  0.13; no API change here.
 
 ## [0.18.0] - 2026-07-23
 
