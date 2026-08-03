@@ -16,9 +16,10 @@ import fsSync from 'node:fs';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import type { InlineConfig } from 'vite';
-import type { SSGConfig, BuildOptions, BuildResult, PageBuildResult, PageMeta } from './types';
+import type { SSGConfig, BuildOptions, BuildResult, PageBuildResult } from './types';
 import { loadConfig, resolveConfigPaths } from './config';
 import { scanPages } from './routing/index';
+import { normalizeFrontmatter } from './mdx/frontmatter';
 import { collectPaths, getOutputPath, type PathToRender } from './collect-paths';
 import { injectIntoTemplate } from './template';
 import { registerProcessCleanup } from './cleanup';
@@ -188,9 +189,13 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
                 const bundleMeta = metaByPath.get(route.path);
                 if (bundleMeta && typeof bundleMeta === 'object') {
                     // headings is injected for TOCs — not page meta; keep
-                    // route.meta shaped like the scanner's output.
+                    // route.meta shaped like the scanner's output. The bundle
+                    // serializes MDX frontmatter via JSON.stringify, which
+                    // turns Dates into ISO strings — normalize so consumers
+                    // that expect `meta.date instanceof Date` (sitemap
+                    // lastmod) keep working.
                     const { headings: _headings, ...meta } = bundleMeta as Record<string, unknown>;
-                    route.meta = meta as PageMeta;
+                    route.meta = normalizeFrontmatter(meta);
                 }
             }
         }

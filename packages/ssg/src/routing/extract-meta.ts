@@ -175,6 +175,16 @@ function skipTemplateExpr(src: string, i: number): number {
         } else if (ch === '`') {
             i = skipTemplate(src, i);
             if (i < 0) return -1;
+        } else if (ch === '/' && src[i + 1] === '/') {
+            // Comments can contain braces too — same handling as the outer
+            // object scanner.
+            const nl = src.indexOf('\n', i);
+            if (nl === -1) return -1;
+            i = nl + 1;
+        } else if (ch === '/' && src[i + 1] === '*') {
+            const end = src.indexOf('*/', i + 2);
+            if (end === -1) return -1;
+            i = end + 2;
         } else {
             i++;
         }

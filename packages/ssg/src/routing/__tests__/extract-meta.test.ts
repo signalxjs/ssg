@@ -75,6 +75,17 @@ describe('extractTsxMeta', () => {
         });
     });
 
+    it('handles comments containing braces inside template interpolations', () => {
+        // esbuild strips comments in practice, but the scanner must not rely
+        // on that — a stray brace in a comment must not desync the matcher.
+        const { meta, warning } = extractTsxMeta(
+            'export const meta = { title: `T${/* } */ "x"}`, description: "d" };',
+            'page.tsx'
+        );
+        expect(warning).toBeUndefined();
+        expect(meta).toMatchObject({ title: 'Tx', description: 'd' });
+    });
+
     it('handles template literals without interpolation of outer scope', () => {
         const { meta } = extractTsxMeta(
             'export const meta = { title: `Tem${"pl"}ate`, description: `has a } brace` };',
