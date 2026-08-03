@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Per-page OG overrides and richer OG tags** ([#206](https://github.com/signalxjs/ssg/issues/206)): `meta.ogImage` overrides `site.ogImage` (twitter:image and the twitter:card flip inherit it), `meta.ogType` overrides the hardcoded `website`, and `meta.ogImageAlt`/`site.ogImageAlt` emit `og:image:alt`. New always-on tags when OG is emitted: `og:site_name` (from `site.title`) and `og:locale` (from `site.lang`, `-`→`_`). All additive — no output change unless the new fields are set, beyond the two new tags.
+- **Opt-in auto JSON-LD** ([#206](https://github.com/signalxjs/ssg/issues/206)): `autoJsonLd: true | { breadcrumbs?, article? }` emits a per-page `BreadcrumbList` (absolute URLs derived like the canonical; skipped on `/` and without `site.url`) and a `TechArticle`/`Article`/`WebPage` (headline/description/url/datePublished/dateModified from the page's meta, only fields that exist). Auto objects are skipped when a hand-written `jsonLd` entry of the same `@type` covers the page; `meta.autoJsonLd: false` opts a page out. Default off.
+
 ## [0.19.0] - 2026-07-31
 
 ### Changed

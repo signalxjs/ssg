@@ -154,6 +154,23 @@ export interface SSGConfig {
     sitemap?: SitemapOptions | false;
 
     /**
+     * Auto-generated JSON-LD structured data (#206). `true` (or an options
+     * object) emits per page, alongside any `site.jsonLd`/`meta.jsonLd`:
+     *
+     * - a `BreadcrumbList` derived from the URL path segments (needs
+     *   `site.url` for absolute item URLs; skipped on `/`), and
+     * - a `TechArticle` (configurable via `article`) with
+     *   headline/description/url/datePublished/dateModified from the page's
+     *   meta — only fields that exist are included.
+     *
+     * An auto object is skipped when a hand-written JSON-LD entry of the
+     * same `@type` exists for the page; a page opts out entirely with
+     * `meta.autoJsonLd: false`.
+     * @default false
+     */
+    autoJsonLd?: boolean | AutoJsonLdOptions;
+
+    /**
      * Build pipeline hooks — the extension points for search indexing,
      * OG-image generation, link checking, HTML post-processing, …
      * A hook that throws fails the build.
@@ -321,6 +338,24 @@ export interface SitemapOptions {
      * directly only when calling `writeSitemap` programmatically.)
      */
     lastmodByPath?: Map<string, string>;
+}
+
+/**
+ * Options for auto-generated JSON-LD (#206) — see `SSGConfig.autoJsonLd`.
+ */
+export interface AutoJsonLdOptions {
+    /**
+     * Emit a `BreadcrumbList` derived from the URL path segments.
+     * @default true
+     */
+    breadcrumbs?: boolean;
+
+    /**
+     * Emit an article object from the page's meta. `true` emits a
+     * `TechArticle`; pass a type name to use `Article` or `WebPage` instead.
+     * @default true
+     */
+    article?: boolean | 'TechArticle' | 'Article' | 'WebPage';
 }
 
 // ============================================================================
@@ -534,6 +569,8 @@ export interface SiteConfig {
     favicon?: string;
     /** Open Graph image URL for social sharing */
     ogImage?: string;
+    /** Alt text for the Open Graph image (`og:image:alt`) */
+    ogImageAlt?: string;
     /** Twitter/X handle (without @) */
     twitter?: string;
     /** Google Fonts to preload (e.g., ['Inter:wght@400;500;600;700', 'JetBrains+Mono:wght@400;500']) */
@@ -1014,6 +1051,27 @@ export interface PageMeta {
      * Keywords for `<meta name="keywords">` (arrays are joined with ', ').
      */
     keywords?: string | string[];
+
+    /**
+     * Per-page Open Graph image URL (`og:image` / `twitter:image`),
+     * overriding `site.ogImage` (#206).
+     */
+    ogImage?: string;
+
+    /**
+     * Per-page Open Graph type (`og:type`), e.g. `'article'`.
+     * @default 'website'
+     */
+    ogType?: string;
+
+    /** Per-page alt text for the Open Graph image, overriding `site.ogImageAlt`. */
+    ogImageAlt?: string;
+
+    /**
+     * Opt this page out of `autoJsonLd` (#206) — set `false` to skip the
+     * auto-generated BreadcrumbList/article JSON-LD for this page only.
+     */
+    autoJsonLd?: boolean;
 
     /**
      * Additional custom metadata
