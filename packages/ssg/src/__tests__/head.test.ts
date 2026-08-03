@@ -216,3 +216,139 @@ describe('generateHeadTags — dedup', () => {
         expect(html).toContain('href="https://example.com/custom"');
     });
 });
+
+describe('generateHeadTags — per-page OG overrides (#206)', () => {
+    it('meta.ogImage overrides site.ogImage for og:image and twitter:image', () => {
+        const config: SSGConfig = { ...SITE, site: { ...SITE.site, ogImage: 'https://example.com/site.png' } };
+        const html = gen({ ogImage: 'https://example.com/page.png' }, config);
+        expect(html).toContain('<meta property="og:image" content="https://example.com/page.png">');
+        expect(html).toContain('<meta name="twitter:image" content="https://example.com/page.png">');
+        expect(html).not.toContain('site.png');
+    });
+
+    it('a page-only ogImage flips twitter:card to summary_large_image', () => {
+        const html = gen({ ogImage: 'https://example.com/page.png' });
+        expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
+    });
+
+    it('meta.ogType overrides the default website type', () => {
+        const html = gen({ ogType: 'article' });
+        expect(html).toContain('<meta property="og:type" content="article">');
+        expect(gen({})).toContain('<meta property="og:type" content="website">');
+    });
+
+    it('emits og:image:alt from meta.ogImageAlt or site.ogImageAlt, only with an image', () => {
+        const config: SSGConfig = {
+            ...SITE,
+            site: { ...SITE.site, ogImage: 'https://example.com/site.png', ogImageAlt: 'Site alt' },
+        };
+        expect(gen({}, config)).toContain('<meta property="og:image:alt" content="Site alt">');
+        expect(gen({ ogImageAlt: 'Page alt' }, config)).toContain('<meta property="og:image:alt" content="Page alt">');
+        expect(gen({ ogImageAlt: 'No image, no alt' })).not.toContain('og:image:alt');
+    });
+});
+
+describe('generateHeadTags — og:site_name / og:locale (#206)', () => {
+    it('emits og:site_name from the site title even when the page overrides the title', () => {
+        const html = gen({ title: 'Page Title' });
+        expect(html).toContain('<meta property="og:site_name" content="My Site">');
+        expect(html).toContain('<meta property="og:title" content="Page Title">');
+    });
+
+    it('emits og:locale in underscore form', () => {
+        const config: SSGConfig = { ...SITE, site: { ...SITE.site, lang: 'en-US' } };
+        expect(gen({}, config)).toContain('<meta property="og:locale" content="en_US">');
+    });
+
+    it('emits a bare language code as-is and nothing without site.lang', () => {
+        const config: SSGConfig = { ...SITE, site: { ...SITE.site, lang: 'en' } };
+        expect(gen({}, config)).toContain('<meta property="og:locale" content="en">');
+        expect(gen({})).not.toContain('og:locale');
+    });
+});
+
+describe('generateHeadTags — autoJsonLd (#206)', () => {
+    const AUTO: SSGConfig = { ...SITE, autoJsonLd: true };
+
+    function jsonLdBlocks(html: string): Record<string, unknown>[] {
+        return [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map((m) =>
+            JSON.parse(m[1].replace(/\u003c/g, '<'))
+        );
+    }
+
+    it('is off by default', () => {
+        expect(gen({ title: 'Guide' })).not.toContain('application/ld+json');
+    });
+
+    it('emits a BreadcrumbList with absolute URLs and humanized names', () => {
+        const html = generateHeadTags(
+            { path: '/docs/getting-started', route: { meta: { title: 'Getting Started Guide' } } },
+            AUTO
+        );
+        const crumbs = jsonLdBlocks(html).find((b) => b['@type'] === 'BreadcrumbList') as any;
+        expect(crumbs).toBeDefined();
+        expect(crumbs.itemListElement).toEqual([
+            { '@type': 'ListItem', position: 1, name: 'My Site', item: 'https://example.com/' },
+            { '@type': 'ListItem', position: 2, name: 'Docs', item: 'https://example.com/docs/' },
+            {
+                '@type': 'ListItem',
+                position: 3,
+                name: 'Getting Started Guide',
+                item: 'https://example.com/docs/getting-started/',
+            },
+        ]);
+    });
+
+    it('skips breadcrumbs on the root page and without site.url', () => {
+        const rootHtml = generateHeadTags({ path: '/', route: { meta: {} } }, AUTO);
+        expect(jsonLdBlocks(rootHtml).find((b) => b['@type'] === 'BreadcrumbList')).toBeUndefined();
+
+        const noUrl: SSGConfig = { ...AUTO, site: { title: 'My Site' } };
+        const html = generateHeadTags({ path: '/docs/x', route: { meta: {} } }, noUrl);
+        expect(jsonLdBlocks(html).find((b) => b['@type'] === 'BreadcrumbList')).toBeUndefined();
+    });
+
+    it('emits a TechArticle with only the fields that exist', () => {
+        const html = gen({ title: 'Guide', description: 'A guide', date: new Date('2026-01-15T00:00:00Z') }, AUTO);
+        const article = jsonLdBlocks(html).find((b) => b['@type'] === 'TechArticle') as any;
+        expect(article).toMatchObject({
+            headline: 'Guide',
+            description: 'A guide',
+            url: 'https://example.com/guide/',
+            datePublished: '2026-01-15T00:00:00.000Z',
+            dateModified: '2026-01-15T00:00:00.000Z',
+        });
+    });
+
+    it('honors the article type option and breadcrumbs opt-out', () => {
+        const config: SSGConfig = { ...SITE, autoJsonLd: { breadcrumbs: false, article: 'WebPage' } };
+        const blocks = jsonLdBlocks(gen({ title: 'Guide' }, config));
+        expect(blocks.find((b) => b['@type'] === 'BreadcrumbList')).toBeUndefined();
+        expect(blocks.find((b) => b['@type'] === 'WebPage')).toBeDefined();
+    });
+
+    it('survives malformed percent-escapes in path segments', () => {
+        const html = generateHeadTags({ path: '/docs/100%-coverage', route: { meta: {} } }, AUTO);
+        const crumbs = jsonLdBlocks(html).find((b) => b['@type'] === 'BreadcrumbList') as any;
+        expect(crumbs).toBeDefined();
+        expect(crumbs.itemListElement.at(-1).name).toBe('100% Coverage');
+    });
+
+    it('meta.autoJsonLd: false opts the page out', () => {
+        expect(gen({ title: 'Guide', autoJsonLd: false }, AUTO)).not.toContain('application/ld+json');
+    });
+
+    it('skips auto objects whose @type a hand-written entry already covers, keeping order auto → site → page', () => {
+        const config: SSGConfig = {
+            ...AUTO,
+            site: { ...AUTO.site, jsonLd: { '@type': 'Organization', name: 'Org' } },
+        };
+        const blocks = jsonLdBlocks(
+            gen({ title: 'Guide', jsonLd: { '@type': 'TechArticle', headline: 'Hand-written' } }, config)
+        );
+        const articles = blocks.filter((b) => b['@type'] === 'TechArticle');
+        expect(articles).toHaveLength(1);
+        expect((articles[0] as any).headline).toBe('Hand-written');
+        expect(blocks.map((b) => b['@type'])).toEqual(['BreadcrumbList', 'Organization', 'TechArticle']);
+    });
+});

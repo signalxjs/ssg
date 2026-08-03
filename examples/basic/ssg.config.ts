@@ -23,6 +23,10 @@ export default defineSSGConfig({
     // Built-in search (#62): emits search-index.json over the rendered pages.
     search: true,
 
+    // Auto JSON-LD (#206): per-page BreadcrumbList + TechArticle derived from
+    // the URL and each page's meta, alongside any hand-written jsonLd.
+    autoJsonLd: true,
+
     // Sitemap freshness (#38): derive <lastmod> from source files. 'mtime'
     // here for CI determinism; real sites usually want 'git' (with full
     // history checked out). The transform bumps the guide's priority —

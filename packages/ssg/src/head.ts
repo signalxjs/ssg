@@ -10,7 +10,7 @@
  * injected at the `<!--head-tags-->` marker during the build.
  */
 
-import type { SSGConfig, PageMeta, HeadTag } from './types';
+import type { SSGConfig, PageMeta, HeadTag, AutoJsonLdOptions } from './types';
 import { normalizePagePath } from './url';
 
 /**
@@ -43,7 +43,10 @@ export function generateHeadTags(pathInfo: HeadPathInfo, config: SSGConfig): str
 
     const title = meta.title || site.title;
     const description = meta.description || site.description;
-    const ogImage = site.ogImage;
+    // Per-page OG overrides (#206); twitter:image/card inherit the resolved image.
+    const ogImage = (typeof meta.ogImage === 'string' && meta.ogImage) || site.ogImage;
+    const ogImageAlt = (typeof meta.ogImageAlt === 'string' && meta.ogImageAlt) || site.ogImageAlt;
+    const ogType = (typeof meta.ogType === 'string' && meta.ogType) || 'website';
     const twitter = site.twitter;
 
     // Build canonical first so OG/Twitter can reuse it. Mirror sitemap.ts so
@@ -83,7 +86,16 @@ export function generateHeadTags(pathInfo: HeadPathInfo, config: SSGConfig): str
     }
 
     if (canonical || ogImage) {
-        push(`<meta property="og:type" content="website">`, 'meta:property:og:type');
+        push(`<meta property="og:type" content="${escapeHtml(ogType)}">`, 'meta:property:og:type');
+        if (site.title) {
+            // Deliberately the site title even when meta.title overrides the
+            // page title — og:site_name names the site, not the page.
+            push(`<meta property="og:site_name" content="${escapeHtml(site.title)}">`, 'meta:property:og:site_name');
+        }
+        if (site.lang) {
+            // og:locale wants underscore form (en_US); bare "en" is valid as-is.
+            push(`<meta property="og:locale" content="${escapeHtml(site.lang.replace(/-/g, '_'))}">`, 'meta:property:og:locale');
+        }
         if (title) {
             push(`<meta property="og:title" content="${escapeHtml(title)}">`, 'meta:property:og:title');
         }
@@ -95,6 +107,9 @@ export function generateHeadTags(pathInfo: HeadPathInfo, config: SSGConfig): str
         }
         if (ogImage) {
             push(`<meta property="og:image" content="${escapeHtml(ogImage)}">`, 'meta:property:og:image');
+            if (ogImageAlt) {
+                push(`<meta property="og:image:alt" content="${escapeHtml(ogImageAlt)}">`, 'meta:property:og:image:alt');
+            }
         }
     }
 
@@ -127,12 +142,119 @@ export function generateHeadTags(pathInfo: HeadPathInfo, config: SSGConfig): str
         tags.push(renderHeadTag(tag));
     }
 
-    // JSON-LD structured data: site-wide first, then per-page.
-    for (const item of [...normalizeJsonLd(site.jsonLd), ...normalizeJsonLd(meta.jsonLd)]) {
+    // JSON-LD structured data: auto-generated first (#206), then site-wide,
+    // then per-page (most specific last). An auto object is skipped when a
+    // hand-written entry of the same @type exists, so a page can hand-craft
+    // its breadcrumbs without double emission.
+    const handWritten = [...normalizeJsonLd(site.jsonLd), ...normalizeJsonLd(meta.jsonLd)];
+    const handTypes = new Set(
+        handWritten
+            .map((item) => (item as Record<string, unknown>)['@type'])
+            .filter((t): t is string => typeof t === 'string')
+    );
+    const auto = generateAutoJsonLd(pathInfo, config, canonical).filter(
+        (item) => !handTypes.has((item as Record<string, unknown>)['@type'] as string)
+    );
+    for (const item of [...auto, ...handWritten]) {
         tags.push(renderJsonLd(item));
     }
 
     return tags.join('\n    ');
+}
+
+/**
+ * Auto-generated JSON-LD for a page (#206): a BreadcrumbList derived from the
+ * URL path segments and a TechArticle/Article/WebPage from the page's meta.
+ * Opt-in via `config.autoJsonLd`; per-page opt-out via `meta.autoJsonLd: false`.
+ */
+export function generateAutoJsonLd(
+    pathInfo: HeadPathInfo,
+    config: SSGConfig,
+    canonical: string | null
+): object[] {
+    const meta = pathInfo.route.meta || {};
+    if (!config.autoJsonLd || meta.autoJsonLd === false) return [];
+    const opts: AutoJsonLdOptions = config.autoJsonLd === true ? {} : config.autoJsonLd;
+    const site = config.site || {};
+    const out: object[] = [];
+
+    // BreadcrumbList — needs site.url for absolute item URLs; a single-crumb
+    // list on the root page is noise, so / is skipped.
+    if (opts.breadcrumbs !== false && site.url && pathInfo.path !== '/') {
+        const siteUrl = site.url.replace(/\/$/, '');
+        const base = config.base?.replace(/\/$/, '') || '';
+        const toUrl = (p: string) => `${siteUrl}${base}${normalizePagePath(p, config.trailingSlash)}`;
+
+        const segments = pathInfo.path.split('/').filter(Boolean);
+        const items = [{ name: site.title || 'Home', path: '/' }];
+        let cumulative = '';
+        for (const segment of segments) {
+            cumulative += `/${segment}`;
+            items.push({ name: humanizeSegment(segment), path: cumulative });
+        }
+        // The page itself is best named by its title, not its URL slug.
+        if (meta.title) items[items.length - 1].name = meta.title;
+
+        out.push({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: items.map((item, i) => ({
+                '@type': 'ListItem',
+                position: i + 1,
+                name: item.name,
+                item: toUrl(item.path),
+            })),
+        });
+    }
+
+    // Article object — only fields that exist are included.
+    if (opts.article !== false) {
+        const type = opts.article === true || opts.article === undefined ? 'TechArticle' : opts.article;
+        const headline = meta.title || site.title;
+        const description = meta.description || site.description;
+        if (headline || description) {
+            const article: Record<string, unknown> = {
+                '@context': 'https://schema.org',
+                '@type': type,
+            };
+            if (headline) article.headline = headline;
+            if (description) article.description = description;
+            if (canonical) article.url = canonical;
+            const published = toIsoDate(meta.date);
+            const modified = toIsoDate(meta.lastmod) || published;
+            if (published) article.datePublished = published;
+            if (modified) article.dateModified = modified;
+            out.push(article);
+        }
+    }
+
+    return out;
+}
+
+/** 'getting-started' → 'Getting Started' */
+function humanizeSegment(segment: string): string {
+    // A malformed percent-escape in a slug must not break head generation.
+    let decoded = segment;
+    try {
+        decoded = decodeURIComponent(segment);
+    } catch {
+        // keep the raw segment
+    }
+    return decoded
+        .split(/[-_]+/)
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+/**
+ * A meta date as a JSON-LD-ready string: Dates are converted to ISO form,
+ * strings pass through as-is (frontmatter dates are already ISO-like), else null.
+ */
+function toIsoDate(value: unknown): string | null {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString();
+    if (typeof value === 'string' && value) return value;
+    return null;
 }
 
 /** Tags that never have children / closing tags. */

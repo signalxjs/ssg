@@ -56,6 +56,21 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         expect(home).not.toContain('<!--head-tags-->');
     });
 
+    it('emits og:site_name and auto JSON-LD breadcrumbs/article (#206)', () => {
+        const guide = read('docs', 'getting-started', 'index.html');
+        expect(guide).toContain('<meta property="og:site_name" content="SSG Basic Example">');
+
+        const blocks = [...guide.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map((m) =>
+            JSON.parse(m[1].replace(/\\u003c/g, '<'))
+        );
+        const crumbs = blocks.find((b) => b['@type'] === 'BreadcrumbList');
+        expect(crumbs).toBeDefined();
+        expect(crumbs.itemListElement[0]).toMatchObject({ position: 1, item: 'https://basic.example/' });
+        expect(crumbs.itemListElement.at(-1).item).toBe('https://basic.example/docs/getting-started/');
+        const article = blocks.find((b) => b['@type'] === 'TechArticle');
+        expect(article).toMatchObject({ url: 'https://basic.example/docs/getting-started/' });
+    });
+
     it("emits head tags from a TSX page's export const meta (#205)", () => {
         const about = read('about', 'index.html');
         expect(about).toContain('<title>About - Basic Example</title>');
