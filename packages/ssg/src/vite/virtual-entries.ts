@@ -286,6 +286,14 @@ export async function render(url, context) {
 }
 
 /**
+ * Build-time meta for every route, straight from the bundled page modules.
+ * The build merges this over scan-time meta so head tags, sitemap, drafts,
+ * llms and search see exactly the meta the rendered page sees — including
+ * TSX meta that static extraction could not analyze (#205).
+ */
+export const routeMetas = routes.map((r) => ({ path: r.path, meta: r.meta }));
+
+/**
  * Resolve a dynamic route's getStaticPaths from the bundled page modules.
  * The build calls this instead of import()ing raw .tsx/.mdx sources, which
  * Node cannot load (#46). Returns null when the route has no

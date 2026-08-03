@@ -48,8 +48,11 @@ export function parseFrontmatter(source: string): FrontmatterResult {
 
 /**
  * Normalize frontmatter data to PageMeta
+ *
+ * Also used for meta extracted from .tsx/.jsx pages (#205) so that
+ * `date`/`tags`/`draft` typing matches MDX pages exactly.
  */
-function normalizeFrontmatter(data: Record<string, unknown>): PageMeta {
+export function normalizeFrontmatter(data: Record<string, unknown>): PageMeta {
     const meta: PageMeta = {};
 
     // Standard fields

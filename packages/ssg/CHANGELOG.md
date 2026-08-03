@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`export const meta` in `.tsx`/`.jsx` pages now reaches the build** ([#205](https://github.com/signalxjs/ssg/issues/205)). Previously only `.mdx`/`.md` frontmatter was read at scan time, so TSX pages shipped the site-wide `<title>`/`<meta name="description">`/OG tags and every other build-time meta consumer silently ignored them. Meta is now extracted statically (esbuild type-strip → object-literal slice → guarded evaluation → sanitize + frontmatter normalization); meta that references imports or local bindings extracts as absent with a build warning. As a backstop, the generated server entry exports `routeMetas` and the build overwrites scan-time meta with the SSR bundle's authoritative per-route meta, so head tags, sitemap, drafts, llms and search match the rendered page by construction (custom `src/entry-server.tsx` files without the export keep the scanned meta).
+- **Behavior changes for TSX pages that were silent no-ops before** (call-outs, all previously "worked" only by being ignored): `draft: true` now excludes the page from production builds (use `--drafts` to include); `llms: false` now excludes it from llms outputs; `robots`, `canonical`, `keywords`, per-page `jsonLd` and `head` now emit; `robots: 'noindex'` now excludes the page from the sitemap; sitemap `lastmod`/`changefreq`/`priority` overrides now apply; navigation/sidebar may reorder where TSX pages export `category`/`order`/`sidebar`. A TSX page whose meta must not affect the build should not export `meta`.
+
 ## [0.19.0] - 2026-07-31
 
 ### Changed

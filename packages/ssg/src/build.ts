@@ -19,6 +19,7 @@ import type { InlineConfig } from 'vite';
 import type { SSGConfig, BuildOptions, BuildResult, PageBuildResult } from './types';
 import { loadConfig, resolveConfigPaths } from './config';
 import { scanPages } from './routing/index';
+import { normalizeFrontmatter } from './mdx/frontmatter';
 import { collectPaths, getOutputPath, type PathToRender } from './collect-paths';
 import { injectIntoTemplate } from './template';
 import { registerProcessCleanup } from './cleanup';
@@ -172,6 +173,32 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         const ssrEntryName = ssrEntryBasename + '.js';
         const entryPath = path.join(ssrOutDir, ssrEntryName);
         const entryModule = await import(pathToFileURL(entryPath).href);
+
+        // Overwrite scan-time meta with the bundle's authoritative meta (#205).
+        // The runtime merge order is Module.meta > default.frontmatter >
+        // scan-time meta (see routing/virtual.ts), so this makes head tags,
+        // sitemap, drafts, llms and search match the rendered page by
+        // construction — including TSX meta static extraction couldn't
+        // analyze. Custom server entries without the export skip this and
+        // keep the scanned meta.
+        if (Array.isArray(entryModule.routeMetas)) {
+            const metaByPath = new Map<string, unknown>(
+                entryModule.routeMetas.map((r: { path: string; meta?: unknown }) => [r.path, r.meta])
+            );
+            for (const route of routes) {
+                const bundleMeta = metaByPath.get(route.path);
+                if (bundleMeta && typeof bundleMeta === 'object') {
+                    // headings is injected for TOCs — not page meta; keep
+                    // route.meta shaped like the scanner's output. The bundle
+                    // serializes MDX frontmatter via JSON.stringify, which
+                    // turns Dates into ISO strings — normalize so consumers
+                    // that expect `meta.date instanceof Date` (sitemap
+                    // lastmod) keep working.
+                    const { headings: _headings, ...meta } = bundleMeta as Record<string, unknown>;
+                    route.meta = normalizeFrontmatter(meta);
+                }
+            }
+        }
 
         // Step 6: Collect all paths to render
         console.log('📝 Collecting paths to render...');
