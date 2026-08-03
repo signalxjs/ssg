@@ -327,6 +327,13 @@ describe('generateHeadTags — autoJsonLd (#206)', () => {
         expect(blocks.find((b) => b['@type'] === 'WebPage')).toBeDefined();
     });
 
+    it('survives malformed percent-escapes in path segments', () => {
+        const html = generateHeadTags({ path: '/docs/100%-coverage', route: { meta: {} } }, AUTO);
+        const crumbs = jsonLdBlocks(html).find((b) => b['@type'] === 'BreadcrumbList') as any;
+        expect(crumbs).toBeDefined();
+        expect(crumbs.itemListElement.at(-1).name).toBe('100% Coverage');
+    });
+
     it('meta.autoJsonLd: false opts the page out', () => {
         expect(gen({ title: 'Guide', autoJsonLd: false }, AUTO)).not.toContain('application/ld+json');
     });

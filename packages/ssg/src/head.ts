@@ -233,14 +233,24 @@ export function generateAutoJsonLd(
 
 /** 'getting-started' → 'Getting Started' */
 function humanizeSegment(segment: string): string {
-    return decodeURIComponent(segment)
+    // A malformed percent-escape in a slug must not break head generation.
+    let decoded = segment;
+    try {
+        decoded = decodeURIComponent(segment);
+    } catch {
+        // keep the raw segment
+    }
+    return decoded
         .split(/[-_]+/)
         .filter(Boolean)
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 }
 
-/** Normalize a meta date (Date or string) to an ISO string, or null. */
+/**
+ * A meta date as a JSON-LD-ready string: Dates are converted to ISO form,
+ * strings pass through as-is (frontmatter dates are already ISO-like), else null.
+ */
 function toIsoDate(value: unknown): string | null {
     if (value instanceof Date && !Number.isNaN(value.getTime())) return value.toISOString();
     if (typeof value === 'string' && value) return value;
