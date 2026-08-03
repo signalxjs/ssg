@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-08-03
+
+### Changed
+
+- **Version bump only**, keeping lockstep with `@sigx/ssg` 0.20.0 (the `workspace:^` peer publishes as `^0.20.0`). No changes in this package; see the `@sigx/ssg` changelog for what 0.20.0 ships (TSX `export const meta` at build time, per-page OG overrides, opt-in auto JSON-LD).
+
 ## [0.19.0] - 2026-07-31
 
 ### Changed
