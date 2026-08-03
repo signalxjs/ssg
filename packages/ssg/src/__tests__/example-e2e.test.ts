@@ -71,6 +71,19 @@ describe.skipIf(!ssgDistBuilt)('examples/basic — end-to-end production build',
         expect(article).toMatchObject({ url: 'https://basic.example/docs/getting-started/' });
     });
 
+    it("emits head tags from a TSX page's export const meta (#205)", () => {
+        const about = read('about', 'index.html');
+        expect(about).toContain('<title>About - Basic Example</title>');
+        expect(about).toContain(
+            '<meta name="description" content="A TSX page whose export const meta drives the build-time head tags (#205).">'
+        );
+
+        // The dynamic TSX route's meta reaches head tags too.
+        const first = read('blog', 'first-post', 'index.html');
+        expect(first).toContain('<title>Blog post</title>');
+        expect(first).toContain('<meta name="description" content="A statically generated blog post">');
+    });
+
     it('builds dynamic routes from getStaticPaths (#46)', () => {
         // The SSR renderer may emit text-marker comments between text parts.
         const first = read('blog', 'first-post', 'index.html');

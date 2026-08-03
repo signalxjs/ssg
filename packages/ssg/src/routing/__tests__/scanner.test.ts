@@ -103,6 +103,70 @@ describe('fileToRoute', () => {
     });
 });
 
+describe('scanPages — TSX meta extraction (#205)', () => {
+    it('populates route.meta from export const meta in .tsx pages', async () => {
+        const fs = await import('node:fs');
+        const os = await import('node:os');
+        const path = await import('node:path');
+        const { scanPages } = await import('../scanner');
+
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ssg-scan-tsx-'));
+        fs.mkdirSync(path.join(root, 'src', 'pages'), { recursive: true });
+        fs.writeFileSync(
+            path.join(root, 'src', 'pages', 'cli.tsx'),
+            `export const meta = {\n` +
+                `    title: 'SignalX CLI - Scaffold & manage projects',\n` +
+                `    description: 'Project scaffolding and platform commands.',\n` +
+                `    layout: 'package',\n` +
+                `    draft: true,\n` +
+                `};\n` +
+                `export default function Page() { return <div>cli</div>; }\n`
+        );
+        fs.writeFileSync(
+            path.join(root, 'src', 'pages', 'plain.tsx'),
+            `export default function Page() { return <div>plain</div>; }\n`
+        );
+
+        try {
+            const routes = await scanPages({}, root);
+            const cli = routes.find((r) => r.name === 'cli');
+            const plain = routes.find((r) => r.name === 'plain');
+            expect(cli?.meta?.title).toBe('SignalX CLI - Scaffold & manage projects');
+            expect(cli?.meta?.description).toBe('Project scaffolding and platform commands.');
+            expect(cli?.meta?.layout).toBe('package');
+            expect(cli?.meta?.draft).toBe(true);
+            expect(plain?.meta?.title).toBeUndefined();
+        } finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+
+    it('leaves route.meta unset for non-analyzable TSX meta', async () => {
+        const fs = await import('node:fs');
+        const os = await import('node:os');
+        const path = await import('node:path');
+        const { scanPages } = await import('../scanner');
+
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ssg-scan-tsx-'));
+        fs.mkdirSync(path.join(root, 'src', 'pages'), { recursive: true });
+        fs.writeFileSync(
+            path.join(root, 'src', 'pages', 'dynamic.tsx'),
+            `import { SITE } from '../lib/site';\n` +
+                `export const meta = { title: SITE.name };\n` +
+                `export default function Page() { return <div />; }\n`
+        );
+
+        try {
+            const routes = await scanPages({}, root);
+            const dynamic = routes.find((r) => r.name === 'dynamic');
+            expect(dynamic).toBeDefined();
+            expect(dynamic?.meta?.title).toBeUndefined();
+        } finally {
+            fs.rmSync(root, { recursive: true, force: true });
+        }
+    });
+});
+
 describe('scanPages — H1 title fallback (#55)', () => {
     it('falls back to the first H1 when frontmatter has no title', async () => {
         const fs = await import('node:fs');

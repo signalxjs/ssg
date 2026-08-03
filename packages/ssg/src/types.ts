@@ -1099,6 +1099,18 @@ export interface PageModule {
     layout?: string;
 
     /**
+     * Page metadata for .tsx/.jsx pages (`export const meta = {...}`).
+     *
+     * For build-time consumers (head tags, sitemap, drafts, llms, search)
+     * the meta is read statically before bundling (#205), so it must be a
+     * self-contained object literal of plain data — strings, numbers,
+     * booleans, null, Dates, arrays and plain objects. Meta that references
+     * imports or local bindings still works at runtime (layouts see it), but
+     * the build falls back to site defaults for that page and logs a warning.
+     */
+    meta?: PageMeta;
+
+    /**
      * Frontmatter from MDX files
      */
     frontmatter?: PageMeta;
