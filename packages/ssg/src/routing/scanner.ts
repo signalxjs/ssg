@@ -10,6 +10,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import type { SSGRoute, SSGConfig, PageMeta, ProgrammaticRoute } from '../types';
 import { parseFrontmatter, extractTitleFromContent } from '../mdx/frontmatter';
+import { extractTsxMeta } from './extract-meta';
 
 /**
  * File extensions to treat as pages
@@ -135,6 +136,18 @@ async function fileToRouteWithMeta(filePath: string, pagesDir: string): Promise<
             }
         } catch (err) {
             // Ignore read errors - frontmatter just won't be available
+        }
+    } else if (ext === '.tsx' || ext === '.jsx') {
+        // Extract `export const meta` statically (#205) so head tags, drafts,
+        // sitemap overrides, llms and search see the same meta the rendered
+        // page does. No H1 title fallback here — there is no markdown body.
+        try {
+            const source = fs.readFileSync(route.file, 'utf-8');
+            const { meta, warning } = extractTsxMeta(source, route.file);
+            if (meta) route.meta = meta;
+            if (warning) console.warn(`⚠️  ${warning}`);
+        } catch (err) {
+            // Ignore read errors - meta just won't be available
         }
     }
 
