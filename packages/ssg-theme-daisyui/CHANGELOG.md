@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-08-05
+
 ### Changed
 
 - **Aligned to SignalX core 0.15** ([#215](https://github.com/signalxjs/ssg/issues/215)): layouts now call `slots.default?.()` — core 0.15 types every slot as possibly-undefined (`SlotsObject` makes `default` optional regardless of the declared slots interface), so the previous unguarded `slots.default()` no longer compiles. Runtime behavior is unchanged when a fill is present; a layout rendered with no page content now renders nothing in that position instead of throwing.
