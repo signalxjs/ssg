@@ -67,7 +67,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) =
                 {/* Article content */}
                 <article class="container mx-auto px-4 py-12">
                     <div class="max-w-3xl mx-auto prose prose-lg">
-                        {slots.default()}
+                        {slots.default?.()}
                     </div>
                 </article>
             </main>

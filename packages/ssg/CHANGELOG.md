@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Aligned to SignalX core 0.15** ([#215](https://github.com/signalxjs/ssg/issues/215)): the catalog now pins `sigx`, `@sigx/server-renderer` and `@sigx/vite` to `^0.15.0`, and the `@sigx/router` sibling pin moves to `^0.12.0` (the release aligned to the same core minor). Dev-only sibling tooling bumped alongside: `@sigx/cli` `^0.10.0`, `@sigx/args` `^0.12.0`.
+
 ## [0.20.0] - 2026-08-03
 
 ### Added
