@@ -60,7 +60,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props, sig
                                 {props.meta?.title && !props.meta?.titleFromContent && (
                                     <h1>{props.meta.title}</h1>
                                 )}
-                                {slots.default()}
+                                {slots.default?.()}
                                 <PageFooter site={props.site} meta={props.meta} />
                                 <PrevNext />
                             </article>

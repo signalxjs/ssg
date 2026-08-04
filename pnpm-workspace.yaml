@@ -13,10 +13,10 @@ packages:
 # `catalog:` refs rewrite to these concrete ranges on `pnpm pack`/publish
 # (deps, devDeps, and peerDeps alike).
 catalog:
-  sigx: ^0.14.0
-  '@sigx/server-renderer': ^0.14.0
-  '@sigx/vite': ^0.14.0
-  '@sigx/router': ^0.11.0
+  sigx: ^0.15.0
+  '@sigx/server-renderer': ^0.15.0
+  '@sigx/vite': ^0.15.0
+  '@sigx/router': ^0.12.0
 
 onlyBuiltDependencies:
   - esbuild

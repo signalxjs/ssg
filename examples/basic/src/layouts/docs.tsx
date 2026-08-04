@@ -59,7 +59,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots }) => {
                             </section>
                         ))}
                     </aside>
-                    <main>{slots.default()}</main>
+                    <main>{slots.default?.()}</main>
                 </div>
                 <footer>Built with @sigx/ssg</footer>
             </div>

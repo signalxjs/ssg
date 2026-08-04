@@ -8,7 +8,7 @@ The smallest realistic `@sigx/ssg` site, exercising the core feature set:
 - **Per-collection layouts** — `/docs` pages get the `docs` layout from `collections.docs.layout`, no per-page frontmatter
 - **Dynamic route** — `src/pages/blog/[slug].tsx` with `getStaticPaths`; route params and per-path `props` arrive as component props (`props.params.slug`, `props.featured`)
 - **Drafts** — `src/pages/drafts-demo.mdx` has `draft: true` and is excluded from production builds and the sitemap (include it with `--drafts` / `build({ drafts: true })`)
-- **Custom layout** — `src/layouts/default.tsx` rendering `slots.default()`
+- **Custom layout** — `src/layouts/default.tsx` rendering `slots.default?.()`
 - **Custom `index.html`** — the `/@ssg/client.tsx` + `<!--head-tags-->` / `<!--app-html-->` pattern
 - **MDX** — frontmatter, GFM, Shiki highlighting, and an npm-install fence that renders the npm/pnpm/yarn/bun switcher
 - **Redirects** — `redirects: { '/old-guide': '/guide/' }` emits a meta-refresh page + `_redirects` entry

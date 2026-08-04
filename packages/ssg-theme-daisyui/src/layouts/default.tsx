@@ -17,7 +17,7 @@ export default component<LayoutProps, unknown, LayoutSlots>(({ slots, props }) =
             <Header site={props.site} search={props.site?.search} />
 
             <main class="flex-1 container mx-auto px-4 py-8">
-                {slots.default()}
+                {slots.default?.()}
             </main>
 
             <Footer site={props.site} />
