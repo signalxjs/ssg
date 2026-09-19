@@ -28,6 +28,14 @@ import { discoverLayouts } from './layouts/index';
 import { writeSitemap } from './sitemap';
 import { isInsideDir } from './vite/paths';
 import { generateHeadTags, pagePropsScript } from './head';
+import {
+    detectCustomEntries,
+    generateClientEntry,
+    generateServerEntry,
+    generateProductionHtmlTemplate,
+    VIRTUAL_CLIENT_ID,
+    VIRTUAL_SERVER_ID,
+} from './vite/virtual-entries';
 
 /**
  * Packages the SSR bundle must import from node_modules instead of inlining.
@@ -63,14 +71,6 @@ export const SSR_EXTERNAL_PACKAGES: readonly string[] = [
     '@sigx/ssr-islands',
     '@sigx/router',
 ];
-import {
-    detectCustomEntries,
-    generateClientEntry,
-    generateServerEntry,
-    generateProductionHtmlTemplate,
-    VIRTUAL_CLIENT_ID,
-    VIRTUAL_SERVER_ID,
-} from './vite/virtual-entries';
 
 /**
  * Build static site
