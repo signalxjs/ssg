@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-09-19
+
 ### Changed
 
 - **Aligned to SignalX core 1.0** ([#224](https://github.com/signalxjs/ssg/issues/224)): the `sigx` peer publishes as `^1.0.0` and the `@sigx/router` peer as `^0.13.0`. No source changes in this package; see the `@sigx/ssg` changelog for the build fix that ships alongside.
