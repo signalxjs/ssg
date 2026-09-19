@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Aligned to SignalX core 1.0** ([#224](https://github.com/signalxjs/ssg/issues/224)): the catalog now pins `sigx`, `@sigx/server-renderer` and `@sigx/vite` to `^1.0.0` (the peer range publishes as `^1.0.0`; core 1.0 promises additive minors), and the `@sigx/router` sibling pin moves to `^0.13.0`. Dev-only sibling tooling bumped alongside: `@sigx/cli` `^0.12.0`, `@sigx/args` `^0.13.0`.
+
+### Fixed
+
+- **The production build no longer loads two copies of the sigx runtime** ([#224](https://github.com/signalxjs/ssg/issues/224)). The SSR bundle is `import()`ed by the build process, which already holds node_modules' copy (Vite evaluates the project's `vite.config`, and `@sigx/vite` with it), while `@sigx/vite` marks the whole `@sigx` family `noExternal` for a standalone SSR build — so the bundle inlined a second `@sigx/reactivity`. Core 1.0's duplicate-copy guard turns that into a hard throw at import time (`[sigx] Two copies of @sigx/reactivity are loaded`), failing every `ssg build`. The SSR build now lists the core runtime packages and `@sigx/router` in `ssr.external`, so the bundle imports the one copy the process already has. Rendered output is unchanged.
+
 ## [0.21.0] - 2026-08-05
 
 ### Changed

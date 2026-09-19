@@ -28,6 +28,41 @@ import { discoverLayouts } from './layouts/index';
 import { writeSitemap } from './sitemap';
 import { isInsideDir } from './vite/paths';
 import { generateHeadTags, pagePropsScript } from './head';
+
+/**
+ * Packages the SSR bundle must import from node_modules instead of inlining.
+ *
+ * The bundle is `import()`ed by the build process itself (see `build()`), and
+ * that process already holds node_modules' copy of the sigx runtime — Vite
+ * evaluated the project's vite.config natively, and `@sigx/vite` pulls in
+ * `@sigx/server-renderer` → `@sigx/reactivity`. `@sigx/vite` also sets
+ * `ssr.noExternal` for the whole `@sigx` family in a standalone
+ * `vite build --ssr`, so left alone the bundle carries a SECOND copy of the
+ * runtime: two module-local tracking contexts, and since core 1.0 a hard
+ * throw at import time from the duplicate-copy guard (rfc-1.0 §3.4, #224).
+ *
+ * `ssr.external` wins over `noExternal` for a listed package name (its
+ * subpaths included), so these resolve from node_modules at import time —
+ * the same files the process already evaluated. One copy, the rfc-1.0 §3
+ * shape: the app owns the runtime and every `@sigx/*` package is a peer of
+ * it. Siblings without per-process singleton state (the theme, `@sigx/ssg`
+ * itself) keep Vite's default treatment; `@sigx/router` is listed because
+ * the virtual entries import it and a bundled copy would carry its own DI
+ * token identities. Exported for tests.
+ */
+export const SSR_EXTERNAL_PACKAGES: readonly string[] = [
+    'sigx',
+    '@sigx/reactivity',
+    '@sigx/runtime-core',
+    '@sigx/runtime-dom',
+    '@sigx/server-renderer',
+    '@sigx/serialize',
+    '@sigx/server',
+    '@sigx/cache',
+    '@sigx/resume',
+    '@sigx/ssr-islands',
+    '@sigx/router',
+];
 import {
     detectCustomEntries,
     generateClientEntry,
@@ -588,6 +623,10 @@ export function createViteBuildConfigs(
                 rollupOptions: {
                     input: ssrEntry,
                 },
+            },
+            // One copy of the sigx runtime per process — see SSR_EXTERNAL_PACKAGES.
+            ssr: {
+                external: [...SSR_EXTERNAL_PACKAGES],
             },
             logLevel,
         },
