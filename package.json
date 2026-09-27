@@ -30,7 +30,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260704.1",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "^4.1.5",
     "happy-dom": "^20.9.0",
     "oxlint": "^1.47.0",
