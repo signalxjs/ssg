@@ -95,15 +95,15 @@
     },
     "devDependencies": {
         "@sigx/args": "^0.13.0",
-        "@sigx/cli": "^0.12.0",
+        "@sigx/cli": "^0.14.0",
         "@sigx/router": "catalog:",
         "@sigx/server-renderer": "catalog:",
         "@sigx/vite": "catalog:",
         "@types/node": "^25.7.0",
         "sigx": "catalog:",
-        "tsx": "^4.19.0",
+        "tsx": "^4.23.15",
         "typescript": "^6.0.3",
-        "vite": "^8.0.3"
+        "vite": "^8.3.1"
     },
     "publishConfig": {
         "access": "public"
